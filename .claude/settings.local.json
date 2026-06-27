@@ -29,7 +29,10 @@
       "Bash(git commit -m 'Bake Render backend URL as fallback in founding.html + admin.html *)",
       "Bash(git commit -m 'Fix magic-link redirect: send redirect_to=<origin>/app.html on OTP *)",
       "Bash(git commit -m 'Restructure post-analysis flow + privacy page *)",
-      "Bash(git commit -m 'Docs: current build state + Phase A status for the incoming UI agent *)"
+      "Bash(git commit -m 'Docs: current build state + Phase A status for the incoming UI agent *)",
+      "Bash(git commit -m 'Docs: reconcile build state with impeccable'\\\\''s new-UI/responsiveness pass + baked Backend URL *)",
+      "Bash(node -e ' *)",
+      "Bash(git commit -m 'Remove user-facing Backend URL + API-key fields from the You page *)"
     ]
   },
   "hooks": {

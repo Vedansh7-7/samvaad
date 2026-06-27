@@ -128,10 +128,24 @@ Intentional flows — do NOT "fix" these, they are by design:
 - Self / "Just me" mode reframes the scripts section as **"Say these out loud"** affirmations
   (express-your-way), not prescriptive rewrites. Relationship mode keeps "try saying".
 
-Headline UI task = make the **kinder-replay + technique-video tiles feel premium**. PRESERVE the
-animation JS wiring — ids/classes: `mouth-a`, `eye`, `bl-a-l/-r`, `brow-a-l/-r`, `ch-a`/`ch-b`,
-`tag-a`, and `#playBtn`/`#muteBtn`/`#prog`/`#scene`/`#bubbles` + the buildScene/advance/speak flow.
-Also polish the new `founding.html` / `admin.html` to the design system. **One agent per file.**
+Headline UI task — kinder-replay premium pass: **DONE (impeccable, 27 Jun)**. Shipped on app.html:
+media-player stage chrome (now-playing bar via `#stage`/`#npLive` + `setNP()`, gradient scrubber);
+redesigned avatar SVG art in `face()` (egg head + skin-gradient, real hair with the **centred x=50
+fix**, eye catchlights, ears/shoulders); per-emotion expressions in `setExpr` (head-tilt + brows +
+blush); robust speaker mapping (`spk()` + `S._alt` alternation fallback) and **data-driven gender**
+from `report.speakers` (added to `server.js` p1 + the standalone prompt); slowed TTS
+(`au.playbackRate=0.9`); `replayWorth()` drops <2s replays (card + slide); dynamic report — the model
+no longer pads `patterns`/`improvements` when an exchange is healthy (server.js prompt + UI gate).
+Bug fixed: `stopReplay()` halts audio/speech/loop on tab-change and "Analyse another" (+ a late-audio
+guard in `speakEleven`/`speakBackend`). **PRESERVE** the animation wiring — ids/classes `mouth-a`,
+`eye`, `bl-a-l/-r`, `brow-a-l/-r`, `ch-a`/`ch-b`, `tag-a`, `#playBtn`/`#muteBtn`/`#prog`/`#scene`/`#bubbles`,
+the `buildScene/advance/speak` flow, AND the newer helpers `spk` / `S._alt` / `S._nm` / `replayWorth` /
+`stopReplay` + the `report.speakers` contract. (App-shell + Home + bottom-nav/left-rail responsiveness
+are this same pass, already credited above.) Still TODO: polish the new `founding.html` / `admin.html`
+to the design system. **One agent per file.**
+Reference decks in `docs/` are now **complete**: `Samvaad-Board-Brief.html` (non-technical, BoD — USP
++ Phase-A KPI *targets*, no fabricated traction) and `Samvaad-Technical-Overview.html` (architecture,
+data flow, 8 security layers, stack). App-aesthetic, A4, print-ready (print with *Background graphics ON*).
 
 Ops facts (not UI): backend live on Render; the Render URL is now the **default Backend URL baked
 into `app.html`, `founding.html`, `admin.html`** — the Settings field is pre-filled + optional and
