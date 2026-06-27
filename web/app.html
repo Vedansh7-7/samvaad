@@ -341,6 +341,38 @@
   .you-sec h3{font-family:'Fraunces',serif;font-weight:500;font-size:16px;margin:0 0 10px}
   .you-acct{font-size:13.5px;color:var(--muted);margin-bottom:14px}
 
+  /* ===== desktop: use the width — left rail + two-column home (phones keep the bottom-bar shell) ===== */
+  @media (min-width:860px){
+    .wrap{max-width:1040px;padding:0 40px 56px 252px;min-height:100vh}
+    .topbar{padding:30px 6px 18px}
+    .topbar .hi{font-size:25px}
+    .bottomnav{top:0;bottom:0;left:0;right:auto;transform:none;width:224px;max-width:224px;height:100vh;
+      flex-direction:column;justify-content:flex-start;align-items:stretch;gap:3px;
+      padding:24px 16px;border-top:none;border-right:1px solid var(--glass-brd)}
+    .bottomnav::before{content:"Samvaad.";display:block;font-family:'Fraunces',serif;font-weight:600;font-size:21px;color:var(--ink);padding:6px 14px 22px}
+    .bottomnav button{flex:0 0 auto;flex-direction:row;justify-content:flex-start;gap:13px;font-size:14px;font-weight:600;padding:12px 14px;border-radius:13px}
+    .bottomnav button svg{width:21px;height:21px}
+    .bottomnav button:hover{background:rgba(255,255,255,.45)}
+    .bottomnav button[aria-current="true"]{background:var(--accent-soft);color:var(--accent-ink)}
+    .bottomnav .talk .tk{margin-top:0;width:auto;height:auto;background:none;border:none;box-shadow:none;color:var(--accent-ink)}
+    .bottomnav .talk .tk svg{width:21px;height:21px}
+
+    #viewHome{display:grid;grid-template-columns:1fr 1fr;column-gap:26px;row-gap:6px;align-items:start;
+      grid-template-areas:"hero hero" "si sr" "ig rc" "ck rc"}
+    #viewHome>.hero{grid-area:hero;margin:6px 0 10px}
+    #viewHome>.hero h2{font-size:27px}
+    #viewHome>.sec-intents{grid-area:si}
+    #viewHome>.intent-grid{grid-area:ig}
+    #viewHome>.sec-recent{grid-area:sr}
+    #viewHome>#homeRecent{grid-area:rc;flex-direction:column}
+    #viewHome>#homeRecent .rcard{width:auto}
+    #viewHome>.checkin{grid-area:ck;align-self:start;margin-top:16px}
+  }
+  @media (min-width:1240px){
+    .wrap{max-width:1180px;padding-left:264px}
+    #viewHome{grid-template-columns:1.15fr .85fr;column-gap:34px}
+  }
+
   /* a11y: keyboard focus visibility (inputs already have a focus ring) */
   :focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px;border-radius:6px}
   .pill:focus-visible,.tab:focus-visible,.seg button:focus-visible,.miniseg button:focus-visible,.btn:focus-visible,.mic:focus-visible,.ctrls button:focus-visible,.fbchip:focus-visible{outline:2px solid var(--accent-ink);outline-offset:3px}
@@ -383,14 +415,14 @@
       <button class="btn" onclick="startSession()">Start a session →</button>
     </div>
 
-    <div class="sec-h">What are we looking at?</div>
+    <div class="sec-h sec-intents">What are we looking at?</div>
     <div class="intent-grid">
       <button class="intent" onclick="startSession('relationship','couple')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="9" r="3"/><circle cx="16" cy="10" r="2.6"/><path d="M3.4 19c.4-3 2.7-4.7 5.1-4.7"/><path d="M13.2 19c.3-2.6 2.2-4 4.3-4"/></svg></span><span class="it">Us two</span></button>
       <button class="intent" onclick="startSession('relationship','solo')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-9.1A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.9C19 15.6 12 20 12 20z"/></svg></span><span class="it">A relationship</span></button>
       <button class="intent" onclick="startSession('self','solo')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.2"/><path d="M6 19c.4-3.3 3-5 6-5s5.6 1.7 6 5"/></svg></span><span class="it">Just me</span></button>
     </div>
 
-    <div class="sec-h">Recent reflections <a onclick="view('dash')">See all →</a></div>
+    <div class="sec-h sec-recent">Recent reflections <a onclick="view('dash')">See all →</a></div>
     <div class="carousel" id="homeRecent"></div>
 
     <button class="checkin" onclick="startSession('self','solo')">
@@ -549,8 +581,11 @@ if(!SamvaadAuth.isGuest()){SamvaadAuth.ensureValid().then(function(s){if(!s){loc
 
 /* nav — bottom tab bar */
 function cap(s){s=(s||'')+'';return s.charAt(0).toUpperCase()+s.slice(1);}
+/* fully stop a playing replay (audio + speech + loop) when leaving or restarting a session */
+function stopReplay(){try{S.playing=false;if(window.speechSynthesis)window.speechSynthesis.cancel();if(S._au){S._au.pause();S._au=null;}if(typeof stopTalk==='function')stopTalk();if(typeof setNP==='function')setNP('Paused');var p=$('playBtn');if(p)p.textContent='▶';}catch(e){}}
 var VIEWS={home:'viewHome',analyse:'viewAnalyse',dash:'viewDash',you:'viewYou'};
 function view(v){
+  stopReplay();
   Object.keys(VIEWS).forEach(function(k){var el=$(VIEWS[k]);if(el)el.classList.toggle('hide',k!==v);});
   document.querySelectorAll('.bottomnav button').forEach(function(b){b.setAttribute('aria-current',String(b.dataset.tab===v));});
   if(v==='home')renderHome();
@@ -608,7 +643,7 @@ $('drop').addEventListener('drop',function(e){if(e.dataTransfer.files[0])setFile
 $('file').onchange=function(e){if(e.target.files[0])setFile(e.target.files[0]);};
 function setFile(f){S.audioFile=f;$('fileName').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB';}
 
-$('goBtn').onclick=run;$('againBtn').onclick=function(){screen('input');};
+$('goBtn').onclick=run;$('againBtn').onclick=function(){stopReplay();screen('input');};
 function screen(s){$('screenInput').classList.toggle('hide',s!=='input');$('screenProc').classList.toggle('hide',s!=='proc');$('screenResults').classList.toggle('hide',s!=='results');window.scrollTo({top:0,behavior:'smooth'});}
 function showErr(m){$('errBox').textContent=m;$('errBox').classList.add('show');}
 function be(){return $('beUrl').value.trim().replace(/\/$/,'');}
@@ -802,8 +837,8 @@ function advance(){if(!S.playing)return;if(S.idx>=S.improved.length){S.playing=f
   speak(t.speak||t.display,cls,function(){if(m)m.classList.remove('talk');S.idx++;setTimeout(advance,260);});}
 function speak(text,cls,done){if(S.mute){setTimeout(done,700);return;}if(be())return speakBackend(text,cls,done,function(){browser(text,cls,done);});var k=$('elKey').value.trim();if(k)return speakEleven(text,cls,k,done,function(){browser(text,cls,done);});browser(text,cls,done);}
 function browser(text,cls,done){try{window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);var vs=window.speechSynthesis.getVoices();var p=vs.filter(function(v){return /en-IN|hi-IN/i.test(v.lang);});if(!p.length)p=vs.filter(function(v){return /en-/i.test(v.lang);});if(p.length)u.voice=cls==='a'?(p.find(function(v){return /female|heera|aria|kalpana/i.test(v.name);})||p[0]):(p.find(function(v){return /male|ravi|prabhat/i.test(v.name);})||p[p.length-1]);u.lang='en-IN';u.pitch=cls==='a'?1.18:0.85;u.rate=0.88;u.onend=done;u.onerror=done;window.speechSynthesis.speak(u);}catch(e){setTimeout(done,900);}}
-async function speakEleven(text,cls,key,done,fb){try{var vid=cls==='a'?($('elA').value.trim()||'EXAVITQu4vr4xnSDxMaL'):($('elB').value.trim()||'onwK4e9ZLuTAKqWW03F9');var r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid,{method:'POST',headers:{'xi-api-key':key,'content-type':'application/json'},body:JSON.stringify({text:text,model_id:'eleven_multilingual_v2',voice_settings:{stability:0.4,similarity_boost:0.7}})});if(!r.ok)throw 0;var u=URL.createObjectURL(await r.blob());var au=new Audio(u);S._au=au;au.playbackRate=0.9;try{au.preservesPitch=true;}catch(e){}au.onended=function(){URL.revokeObjectURL(u);done();};au.onerror=done;au.play();}catch(e){fb();}}
-async function speakBackend(text,cls,done,fb){try{var r=await fetch(be()+'/api/tts',{method:'POST',headers:beHeaders(),body:JSON.stringify({text:text,speaker:cls==='a'?'A':'B'})});if(!r.ok)throw 0;var u=URL.createObjectURL(await r.blob());var au=new Audio(u);S._au=au;au.playbackRate=0.9;try{au.preservesPitch=true;}catch(e){}au.onended=function(){URL.revokeObjectURL(u);done();};au.onerror=done;au.play();}catch(e){fb();}}
+async function speakEleven(text,cls,key,done,fb){try{var vid=cls==='a'?($('elA').value.trim()||'EXAVITQu4vr4xnSDxMaL'):($('elB').value.trim()||'onwK4e9ZLuTAKqWW03F9');var r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid,{method:'POST',headers:{'xi-api-key':key,'content-type':'application/json'},body:JSON.stringify({text:text,model_id:'eleven_multilingual_v2',voice_settings:{stability:0.4,similarity_boost:0.7}})});if(!r.ok)throw 0;var u=URL.createObjectURL(await r.blob());var au=new Audio(u);S._au=au;au.playbackRate=0.9;try{au.preservesPitch=true;}catch(e){}au.onended=function(){URL.revokeObjectURL(u);done();};au.onerror=done;if(!S.playing){try{au.pause();}catch(e){}URL.revokeObjectURL(u);return;}au.play();}catch(e){fb();}}
+async function speakBackend(text,cls,done,fb){try{var r=await fetch(be()+'/api/tts',{method:'POST',headers:beHeaders(),body:JSON.stringify({text:text,speaker:cls==='a'?'A':'B'})});if(!r.ok)throw 0;var u=URL.createObjectURL(await r.blob());var au=new Audio(u);S._au=au;au.playbackRate=0.9;try{au.preservesPitch=true;}catch(e){}au.onended=function(){URL.revokeObjectURL(u);done();};au.onerror=done;if(!S.playing){try{au.pause();}catch(e){}URL.revokeObjectURL(u);return;}au.play();}catch(e){fb();}}
 
 /* ---------- breathing exercise (the intervene layer) ---------- */
 var BR=null;
