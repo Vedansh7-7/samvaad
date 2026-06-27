@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Samvaad — Technical Overview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Mulish:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+  :root{
+    --ink:#2E2024; --muted:#6E5258; --faint:#7A5E63;
+    --cherry:#C8324B; --cherry-2:#A52741; --cherry-soft:#F8DDE0;
+    --plum:#9E6A86; --good:#4F8A6B; --warn:#C0792E; --risk:#C0463C;
+    --line:rgba(46,32,36,.12); --paper:#fff;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{margin:0;color:var(--ink);font-family:'Mulish','Noto Sans Devanagari',system-ui,sans-serif;line-height:1.6;font-size:14px;
+    background:radial-gradient(120% 80% at 15% 5%,#FDEEF0 0%,rgba(253,238,240,0) 45%),radial-gradient(120% 90% at 90% 15%,#F8D6DD 0%,rgba(248,214,221,0) 50%),linear-gradient(160deg,#FDF3F2,#F1DDE8)}
+  .doc{max-width:860px;margin:0 auto;padding:26px 20px 60px}
+  .sheet{background:var(--paper);border-radius:18px;box-shadow:0 30px 70px -40px rgba(76,40,52,.5);overflow:hidden}
+  .pad{padding:34px 40px}
+  h1,h2,h3,h4{font-family:'Fraunces',serif;font-weight:600;line-height:1.15;margin:0}
+  .serif{font-family:'Fraunces',serif}
+  .dv{font-family:'Noto Sans Devanagari','Mulish',sans-serif}
+  code,.mono{font-family:'JetBrains Mono',monospace;font-size:12.5px}
+  a{color:var(--cherry-2)}
+
+  /* cover */
+  .cover{position:relative;padding:60px 40px 48px;text-align:center;color:#fff;overflow:hidden;
+    background:linear-gradient(160deg,var(--cherry) 0%,var(--cherry-2) 70%,#7E1E37 100%)}
+  .cover .lotus{width:96px;height:70px;margin:0 auto 18px;display:block}
+  .cover .lotus path{fill:none;stroke:rgba(255,255,255,.9);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .cover .lotus .pad{stroke:rgba(255,255,255,.55)}
+  .cover .word{font-family:'Fraunces',serif;font-weight:600;font-size:20px;letter-spacing:.02em;opacity:.95}
+  .cover h1{font-size:42px;font-weight:600;margin:14px 0 6px;letter-spacing:-.02em}
+  .cover .tag{font-size:15px;opacity:.92;max-width:46ch;margin:0 auto}
+  .cover .meta{margin-top:26px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;font-size:12px}
+  .cover .chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:5px 13px;font-weight:600}
+  .cover .arc{position:absolute;inset:0;pointer-events:none;opacity:.5}
+
+  .kicker{font-family:'Mulish';font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--cherry-2)}
+  h2.sec{font-size:25px;margin:6px 0 4px;color:var(--ink)}
+  .lead{color:var(--muted);font-size:14.5px;margin:0 0 18px;max-width:64ch}
+  section{padding:30px 40px;border-top:1px solid var(--line)}
+  section:first-of-type{border-top:none}
+
+  .card{border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:12px 0;background:#fff;break-inside:avoid}
+  .tint{background:linear-gradient(0deg,rgba(200,50,75,.05),rgba(200,50,75,.05)),#fff}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  h3.h{font-size:16px;margin:0 0 8px}
+  h4.h4{font-size:13px;font-family:'Mulish';font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cherry-2);margin:0 0 6px}
+  ul{margin:8px 0;padding-left:18px}li{margin:4px 0}
+  .muted{color:var(--muted)}
+  b,strong{color:var(--ink)}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px;break-inside:avoid}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:'Mulish';font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--cherry-2);background:rgba(200,50,75,.05)}
+  tr:last-child td{border-bottom:none}
+
+  /* architecture / flow boxes */
+  .arch{display:flex;flex-direction:column;gap:0;margin:14px 0}
+  .tier{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;break-inside:avoid}
+  .tier .tt{font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--cherry-2);margin-bottom:6px}
+  .tier .boxes{display:flex;flex-wrap:wrap;gap:8px}
+  .box{border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12.5px;font-weight:600;background:#FCF4F5}
+  .box.key{background:var(--cherry);color:#fff;border-color:var(--cherry)}
+  .down{align-self:center;color:var(--cherry);font-size:18px;line-height:1;margin:3px 0}
+
+  .flow{counter-reset:step;margin:14px 0}
+  .step{position:relative;border:1px solid var(--line);border-radius:12px;padding:13px 16px 13px 52px;margin:9px 0;background:#fff;break-inside:avoid}
+  .step::before{counter-increment:step;content:counter(step);position:absolute;left:13px;top:13px;width:26px;height:26px;border-radius:50%;background:var(--cherry);color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:14px;display:grid;place-items:center}
+  .step .sh{font-weight:800;font-size:13.5px}
+  .step .sd{font-size:13px;color:var(--muted);margin-top:2px}
+  .step .ep{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--cherry-2);background:var(--cherry-soft);padding:1px 6px;border-radius:5px}
+
+  .lvl{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--line);break-inside:avoid}
+  .lvl:last-child{border-bottom:none}
+  .lvl .n{flex:0 0 auto;width:30px;height:30px;border-radius:8px;background:var(--cherry-soft);color:var(--cherry-2);display:grid;place-items:center;font-weight:800;font-size:12px}
+  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;background:var(--cherry-soft);color:var(--cherry-2);margin-right:5px}
+  .ok{background:rgba(79,138,107,.14);color:#3c6b54}
+  .plan{background:rgba(192,121,46,.14);color:#9a6022}
+
+  .foot{padding:20px 40px;color:var(--faint);font-size:11px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .pbreak{break-before:page}
+
+  @page{size:A4;margin:14mm 12mm}
+  @media print{
+    body{background:#fff}
+    .doc{max-width:none;margin:0;padding:0}
+    .sheet{box-shadow:none;border-radius:0}
+    .no-print{display:none}
+    section,.cover{padding-left:8mm;padding-right:8mm}
+  }
+</style>
+</head>
+<body>
+<div class="doc">
+<div class="sheet">
+
+  <!-- COVER -->
+  <div class="cover">
+    <svg class="arc" viewBox="0 0 600 300" fill="none"><path d="M600 20 A300 300 0 0 0 120 300" stroke="#fff" stroke-width="1"/><path d="M600 70 A250 250 0 0 0 180 300" stroke="#fff" stroke-width="1"/></svg>
+    <svg class="lotus" viewBox="0 0 120 90"><path class="pad" d="M16 80 Q60 89 104 80"/><path d="M60 79 C36 62 22 52 12 46 C30 50 48 62 60 79"/><path d="M60 79 C84 62 98 52 108 46 C90 50 72 62 60 79"/><path d="M60 79 C44 56 38 40 32 30 C46 36 54 54 60 79"/><path d="M60 79 C76 56 82 40 88 30 C74 36 66 54 60 79"/><path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/></svg>
+    <div class="word">Samvaad<span style="opacity:.7">.</span></div>
+    <h1>Technical Overview</h1>
+    <p class="tag">Architecture, data flows, security layers and the AI pipeline behind a wellness-leaning conversation-understanding app for the Indian market.</p>
+    <div class="meta">
+      <span class="chip">For: Product / Eng leadership</span>
+      <span class="chip">Phase 1 · Validation</span>
+      <span class="chip">Updated 27 Jun 2026</span>
+      <span class="chip">Confidential</span>
+    </div>
+  </div>
+
+  <!-- 1. WHAT IT IS -->
+  <section>
+    <div class="kicker">Executive snapshot</div>
+    <h2 class="sec">What Samvaad is, technically</h2>
+    <p class="lead">A static web client talks to a single <b>Node/Express proxy</b> that holds <b>all</b> provider secrets and brokers every external call. The browser never touches a provider key. Three AI services — speech-to-text, an LLM analysis brain, and text-to-speech — are composed into one flow: <b>understand a conversation → surface what to try → replay a kinder version</b>. State, auth and storage are Supabase (Postgres) with row-level security and Mumbai data residency.</p>
+    <div class="grid3">
+      <div class="card tint"><h4 class="h4">Client</h4>Vanilla HTML/CSS/JS. No framework, no build step. Glassmorphism UI, inline-SVG voiced avatars.</div>
+      <div class="card tint"><h4 class="h4">Proxy</h4>Express. Verifies the Supabase JWT, injects secrets from env, calls Deepgram / LLM / ElevenLabs, persists per-user rows.</div>
+      <div class="card tint"><h4 class="h4">Data</h4>Supabase Postgres + Auth + Storage. RLS locks every row to its owner. Region <b>ap-south-1</b> (Mumbai).</div>
+    </div>
+  </section>
+
+  <!-- 2. PRODUCT FLOW -->
+  <section>
+    <div class="kicker">The experience</div>
+    <h2 class="sec">Product flow, screen by screen</h2>
+    <p class="lead">The app shell is a mobile-first column with a bottom tab bar (a left rail on desktop): <b>Home · Insights · Talk · You</b>.</p>
+    <div class="flow">
+      <div class="step"><div class="sh">Authenticate</div><div class="sd">Magic-link or 6-digit OTP via Supabase GoTrue. A guest path exists (no persistence). Session is carried into the app.</div></div>
+      <div class="step"><div class="sh">Choose intent &amp; bring the conversation in</div><div class="sd">Three intents — <b>Us two</b> (couple, consent required), <b>A relationship</b> (solo), <b>Just me</b> (introspection). Input by paste, in-browser record, or audio upload.</div></div>
+      <div class="step"><div class="sh">Analyse</div><div class="sd">A report is produced: scores (connection, empathy, escalation risk, overall), the patterns underneath, what each person did well, and exact "scripts" to try next time. Content is fully dynamic — healthy exchanges are not padded with invented faults.</div></div>
+      <div class="step"><div class="sh">Intervene</div><div class="sd">A guided walk-through (slideshow) paces it: strengths first, a contextual 60-second breathing reset only when escalation is high, scripts, then a voiced animated <b>kinder replay</b> of the same moment, softened.</div></div>
+      <div class="step"><div class="sh">Stay connected</div><div class="sd">Optional WhatsApp daily check-in opt-in (own number only). Sessions accrue on Home (recent reflections) and Insights (trend over time).</div></div>
+    </div>
+  </section>
+
+  <!-- 3. ARCHITECTURE -->
+  <section>
+    <div class="kicker">System architecture</div>
+    <h2 class="sec">One proxy, all secrets behind it</h2>
+    <p class="lead">The key design fix versus the early demo: the browser holds <b>no</b> provider secrets. The publishable Supabase key is public by design; RLS protects the data.</p>
+    <div class="arch">
+      <div class="tier"><div class="tt">Client — static, public</div><div class="boxes"><span class="box">login.html · GoTrue REST</span><span class="box">app.html · modes, analysis, replay, dashboard</span><span class="box">Supabase publishable key (safe)</span></div></div>
+      <div class="down">↓ HTTPS · Bearer JWT</div>
+      <div class="tier"><div class="tt">Backend proxy — Node/Express (holds all secrets)</div><div class="boxes"><span class="box key">/api/transcribe</span><span class="box key">/api/analyze</span><span class="box key">/api/tts</span><span class="box key">/api/feedback</span><span class="box key">/api/history</span><span class="box key">/api/optin</span></div></div>
+      <div class="down">↓ server-side, keyed from env</div>
+      <div class="tier"><div class="tt">External services</div><div class="boxes"><span class="box">Deepgram · STT</span><span class="box">LLM · analysis brain</span><span class="box">ElevenLabs · TTS</span><span class="box">Supabase · Postgres/Auth/Storage</span></div></div>
+    </div>
+    <p class="muted" style="font-size:12.5px">Hosting: static client on <b>Vercel</b>, proxy on <b>Render</b> — both free-tier to start. The client can also run standalone (keys pasted into Settings) for demos only.</p>
+  </section>
+
+  <!-- 4. DATA FLOW -->
+  <section class="pbreak">
+    <div class="kicker">Data flow</div>
+    <h2 class="sec">A request, end to end</h2>
+    <div class="flow">
+      <div class="step"><div class="sh">Sign-in <span class="ep">Supabase /auth/v1</span></div><div class="sd">GoTrue issues a JWT (magic-link hash or OTP verify). Held in <code>sessionStorage</code>; every backend call sends it as a Bearer token.</div></div>
+      <div class="step"><div class="sh">Transcribe audio <span class="ep">POST /api/transcribe</span></div><div class="sd">Audio is base64'd to the proxy → Deepgram <code>nova-2</code> with <code>diarize=true</code> → speaker-separated transcript returned. Raw audio is <b>auto-deleted after transcription</b> (purpose limitation).</div></div>
+      <div class="step"><div class="sh">Analyse <span class="ep">POST /api/analyze</span></div><div class="sd">Two-step LLM call to avoid truncation: (1) report JSON — scores, summary, speaker genders, patterns, strengths, improvements, KPIs; (2) improved-conversation JSON — a kinder rewrite with per-turn speaker + emotion for the replay. Persisted to <code>sessions</code> under the caller's <code>user_id</code> (RLS).</div></div>
+      <div class="step"><div class="sh">Voice the replay <span class="ep">POST /api/tts</span></div><div class="sd">Each rewritten line → ElevenLabs <code>eleven_multilingual_v2</code> → audio streamed back; the inline-SVG avatar lip-syncs and emotes per line.</div></div>
+      <div class="step"><div class="sh">Feedback &amp; history <span class="ep">/api/feedback · /api/history</span></div><div class="sd">A one-tap "will you try this?" signal is logged (the seed for a future contextual-bandit recommender). History rehydrates the dashboard.</div></div>
+      <div class="step"><div class="sh">Daily-loop opt-in <span class="ep">POST /api/optin</span></div><div class="sd">Stores the user's own WhatsApp number to <code>nudge_subscriptions</code> (stub — no provider wired yet). Consent-based, honors STOP.</div></div>
+    </div>
+  </section>
+
+  <!-- 5. SECURITY -->
+  <section>
+    <div class="kicker">Security &amp; privacy</div>
+    <h2 class="sec">Defense in depth, basic → advanced</h2>
+    <div class="lvl"><div class="n">1</div><div><b>Transport.</b> HTTPS everywhere; secrets never traverse the client.</div></div>
+    <div class="lvl"><div class="n">2</div><div><b>Secret isolation.</b> Every provider key (Deepgram, LLM, ElevenLabs, Supabase <code>service_role</code>) lives only in the proxy's environment. The browser ships solely the <i>publishable</i> Supabase key, which is public by design.</div></div>
+    <div class="lvl"><div class="n">3</div><div><b>Authentication.</b> Supabase GoTrue (magic-link + OTP). The proxy verifies the JWT via <code>getUser</code> before any privileged operation.</div></div>
+    <div class="lvl"><div class="n">4</div><div><b>Authorization.</b> Postgres <b>Row-Level Security</b> on every table; policies enforce <code>auth.uid() = user_id</code> — a user can read/write only their own rows.</div></div>
+    <div class="lvl"><div class="n">5</div><div><b>Data minimization.</b> Raw audio is deleted right after transcription. Consent for couple recordings is logged to a dedicated <code>consents</code> table.</div></div>
+    <div class="lvl"><div class="n">6</div><div><b>Key scoping &amp; caps.</b> The ElevenLabs key is scoped to Text-to-Speech only, with a monthly character cap — blast-radius and cost are bounded.</div></div>
+    <div class="lvl"><div class="n">7</div><div><b>Two-party &amp; own-number rules.</b> Couple analysis requires an explicit consent checkbox; WhatsApp opt-in accepts the user's own number only — no third-party PII captured by default.</div></div>
+    <div class="lvl"><div class="n">8</div><div><b>Residency.</b> All data sits in <b>ap-south-1 (Mumbai)</b> for India DPDP data-residency expectations.</div></div>
+  </section>
+
+  <!-- 6. TECH STACK -->
+  <section>
+    <div class="kicker">Tech stack</div>
+    <h2 class="sec">What powers each layer</h2>
+    <table>
+      <tr><th>Layer</th><th>Choice</th><th>Why</th></tr>
+      <tr><td>Frontend</td><td>Vanilla HTML/CSS/JS, Fraunces + Mulish + Noto Sans Devanagari</td><td>Zero build, instant deploy, Hinglish/Devanagari-native rendering. Inline-SVG avatars with CSS lip-sync &amp; expressions.</td></tr>
+      <tr><td>Backend</td><td>Node.js + Express proxy</td><td>Thin, secret-holding broker; easy to host free-tier; one place to enforce auth.</td></tr>
+      <tr><td>STT</td><td>Deepgram <code>nova-2</code>, diarized</td><td>Strong accuracy, speaker separation; one-time credit covers validation.</td></tr>
+      <tr><td>Analysis brain</td><td>LLM, two-step JSON (currently Groq <code>llama-3.3-70b-versatile</code>; provider-abstracted)</td><td>Free-tier validation today; the call sites are provider-agnostic and can upgrade to a frontier model (e.g. Claude) without UI change.</td></tr>
+      <tr><td>TTS</td><td>ElevenLabs <code>eleven_multilingual_v2</code></td><td>Natural Hindi/Indian-English voices for the kinder replay.</td></tr>
+      <tr><td>DB / Auth / Storage</td><td>Supabase (Postgres, GoTrue, Storage), RLS</td><td>Managed, India-region, security primitives built in.</td></tr>
+      <tr><td>Payments</td><td>Razorpay (UPI/cards) — planned</td><td>India-native rails for the founding pre-sell.</td></tr>
+      <tr><td>Hosting</td><td>Vercel (client) + Render (proxy)</td><td>Free-tier, fast, simple CI from git.</td></tr>
+    </table>
+  </section>
+
+  <!-- 7. DATA MODEL -->
+  <section class="pbreak">
+    <div class="kicker">Data model</div>
+    <h2 class="sec">Tables &amp; ownership</h2>
+    <p class="lead">All tables carry <code>user_id</code> and are RLS-locked to the authenticated owner. Schema is mirrored in <code>backend/schema.sql</code>.</p>
+    <div class="grid2">
+      <div class="card"><h3 class="h">sessions</h3><p class="muted">One row per analysis: mode/submode, names, scores, summary, patterns, strengths, improvements, the improved (replay) turns, KPIs.</p></div>
+      <div class="card"><h3 class="h">feedback</h3><p class="muted">The "will you try this?" signal with context (escalation risk, mode) — training data for a future {context → intervention → outcome} recommender.</p></div>
+      <div class="card"><h3 class="h">consents</h3><p class="muted">An auditable consent record tied to a session (e.g. both-partners vs self-only).</p></div>
+      <div class="card"><h3 class="h">nudge_subscriptions</h3><p class="muted">WhatsApp daily check-in opt-ins (own number, opt-out honored). Provider not yet wired.</p></div>
+    </div>
+  </section>
+
+  <!-- 8. AI PIPELINE -->
+  <section>
+    <div class="kicker">AI pipeline</div>
+    <h2 class="sec">From audio to a kinder replay</h2>
+    <div class="flow">
+      <div class="step"><div class="sh">STT + diarization</div><div class="sd">Audio → speaker-labelled transcript. Paste/record paths skip this step.</div></div>
+      <div class="step"><div class="sh">Report generation (LLM call 1)</div><div class="sd">A Gottman-method-informed prompt returns strict JSON: scores, neutral non-blaming patterns/strengths, verbatim Hinglish "scripts," KPI awareness signals, and inferred speaker gender (drives correct avatars). Instructed to return empty arrays when the exchange is genuinely healthy.</div></div>
+      <div class="step"><div class="sh">Kinder rewrite (LLM call 2)</div><div class="sd">The same conversation rewritten applying the improvements; each turn tagged with speaker (A/B, strictly alternating) and an emotion that drives facial expression.</div></div>
+      <div class="step"><div class="sh">Voiced avatar replay</div><div class="sd">Per-line TTS + a CSS-driven SVG rig (blink, lip-sync, brows, blush, head-tilt, per-emotion expression). Two speakers are distinguished by voice and avatar; gender is data-driven, not hardcoded.</div></div>
+    </div>
+    <div class="card tint"><h4 class="h4">Framing guardrail</h4>All output is <b>wellness awareness, not medical diagnosis</b>. Voice-biomarker KPIs (pitch/jitter/rate) are staged for later, not implemented.</div>
+  </section>
+
+  <!-- 9. COMPLIANCE -->
+  <section>
+    <div class="kicker">Compliance posture</div>
+    <h2 class="sec">India DPDP Act 2023 + 2025 Rules</h2>
+    <div class="grid2">
+      <div class="card"><b>Consent-first &amp; purpose limitation.</b> <span class="muted">Explicit consent for couple recordings; raw audio auto-deleted after its single purpose (transcription).</span></div>
+      <div class="card"><b>Data residency.</b> <span class="muted">Mumbai (ap-south-1) storage.</span></div>
+      <div class="card"><b>Per-user isolation.</b> <span class="muted">RLS everywhere; a user only ever sees their own rows.</span></div>
+      <div class="card"><b>Minors &amp; sensitivity.</b> <span class="muted">No under-18 without parental consent; framing kept to wellness, never diagnosis.</span></div>
+    </div>
+  </section>
+
+  <!-- 10. ROADMAP -->
+  <section>
+    <div class="kicker">What's next</div>
+    <h2 class="sec">Hardening &amp; scale</h2>
+    <ul>
+      <li><span class="pill ok">shipped</span> Cherry design system, app-shell + Home, dynamic report, voiced replay with expressions, guided walk-through, responsive desktop rail.</li>
+      <li><span class="pill plan">next</span> Founding pre-sell (₹199, Razorpay/UPI), explicit guest-vs-paid, append-only "Your data" view (user can view or delete, never edit).</li>
+      <li><span class="pill plan">next</span> Event logging + an Admin KPI dashboard; manual consented WhatsApp daily loop for ~10 founding users.</li>
+      <li><span class="pill plan">later</span> Upgrade analysis to a frontier model; results as a swipeable deck; Rive-based avatars from the Figma expression sheet; contextual-bandit recommender; voice-biomarker KPIs; the always-on wearable (Series-A horizon).</li>
+    </ul>
+  </section>
+
+  <div class="foot"><span>Samvaad · Technical Overview · Confidential</span><span>v1 · 27 Jun 2026</span></div>
+</div>
+</div>
+</body>
+</html>

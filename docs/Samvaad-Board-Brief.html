@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Samvaad — The Story &amp; The Opportunity</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Mulish:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500&display=swap');
+  :root{
+    --ink:#2E2024; --muted:#6E5258; --faint:#7A5E63;
+    --cherry:#C8324B; --cherry-2:#A52741; --cherry-soft:#F8DDE0;
+    --plum:#9E6A86; --good:#4F8A6B; --line:rgba(46,32,36,.12); --paper:#fff;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{margin:0;color:var(--ink);font-family:'Mulish','Noto Sans Devanagari',system-ui,sans-serif;line-height:1.62;font-size:14.5px;
+    background:radial-gradient(120% 80% at 15% 5%,#FDEEF0 0%,rgba(253,238,240,0) 45%),radial-gradient(120% 90% at 90% 15%,#F8D6DD 0%,rgba(248,214,221,0) 50%),linear-gradient(160deg,#FDF3F2,#F1DDE8)}
+  .doc{max-width:860px;margin:0 auto;padding:26px 20px 60px}
+  .sheet{background:var(--paper);border-radius:18px;box-shadow:0 30px 70px -40px rgba(76,40,52,.5);overflow:hidden}
+  h1,h2,h3,h4{font-family:'Fraunces',serif;font-weight:600;line-height:1.15;margin:0}
+  .dv{font-family:'Noto Sans Devanagari','Mulish',sans-serif}
+  a{color:var(--cherry-2)}
+  b,strong{color:var(--ink)}
+
+  .cover{position:relative;padding:64px 44px 52px;text-align:center;color:#fff;overflow:hidden;
+    background:linear-gradient(160deg,var(--cherry) 0%,var(--cherry-2) 68%,#7E1E37 100%)}
+  .cover .arc{position:absolute;inset:0;pointer-events:none;opacity:.5}
+  .cover .lotus{width:100px;height:74px;margin:0 auto 18px;display:block}
+  .cover .lotus path{fill:none;stroke:rgba(255,255,255,.92);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .cover .lotus .pad{stroke:rgba(255,255,255,.55)}
+  .cover .word{font-family:'Fraunces',serif;font-weight:600;font-size:21px}
+  .cover h1{font-size:40px;font-weight:600;margin:14px 0 8px;letter-spacing:-.02em}
+  .cover .dvline{font-family:'Noto Sans Devanagari';font-size:16px;opacity:.92;margin-bottom:6px}
+  .cover .tag{font-size:15.5px;opacity:.94;max-width:48ch;margin:0 auto}
+  .cover .meta{margin-top:26px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;font-size:12px}
+  .cover .chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:5px 13px;font-weight:600}
+
+  section{padding:32px 44px;border-top:1px solid var(--line)}
+  .kicker{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--cherry-2)}
+  h2.sec{font-size:27px;margin:6px 0 6px}
+  .lead{color:var(--muted);font-size:15px;margin:0 0 18px;max-width:66ch}
+  .big{font-family:'Fraunces',serif;font-weight:500;font-size:24px;line-height:1.3;color:var(--ink);max-width:30ch}
+
+  .card{border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:#fff;break-inside:avoid}
+  .tint{background:linear-gradient(0deg,rgba(200,50,75,.05),rgba(200,50,75,.05)),#fff}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  h3.h{font-size:17px;margin:0 0 6px}
+  h4.h4{font-size:12px;font-family:'Mulish';font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--cherry-2);margin:0 0 6px}
+  .muted{color:var(--muted)}
+  ul{margin:8px 0;padding-left:18px}li{margin:5px 0}
+
+  /* the three pillars */
+  .pillar{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px dashed var(--line);break-inside:avoid}
+  .pillar:last-child{border-bottom:none}
+  .pillar .ic{flex:0 0 auto;width:44px;height:44px;border-radius:12px;background:var(--cherry-soft);display:grid;place-items:center}
+  .pillar .ic svg{width:24px;height:24px;stroke:var(--cherry-2)}
+  .pillar h3{font-size:17px;margin:2px 0 3px}
+
+  /* USP */
+  .usp{display:flex;gap:12px;align-items:flex-start;break-inside:avoid;padding:9px 0}
+  .usp .dot{flex:0 0 auto;width:24px;height:24px;border-radius:50%;background:var(--cherry);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;margin-top:1px}
+
+  /* KPI tiles */
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:14px 0}
+  .kpi{border:1px solid var(--line);border-radius:16px;padding:18px;background:linear-gradient(160deg,var(--cherry-soft),#fff);break-inside:avoid}
+  .kpi .v{font-family:'Fraunces',serif;font-weight:600;font-size:30px;color:var(--cherry-2);line-height:1}
+  .kpi .l{font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin-top:8px}
+  .kpi .s{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .note{font-size:12px;color:var(--faint);font-style:italic;margin-top:6px}
+
+  .steps{display:flex;flex-direction:column;gap:10px;counter-reset:s;margin:12px 0}
+  .st{position:relative;padding-left:46px;break-inside:avoid}
+  .st::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--cherry);color:#fff;font-family:'Fraunces',serif;font-weight:600;display:grid;place-items:center}
+  .st b{font-size:15px}
+
+  .quote{font-family:'Fraunces',serif;font-weight:500;font-size:20px;line-height:1.4;color:var(--ink);border-left:0;padding:6px 0;max-width:40ch}
+  .foot{padding:22px 44px;color:var(--faint);font-size:11px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .pbreak{break-before:page}
+
+  @page{size:A4;margin:14mm 12mm}
+  @media print{
+    body{background:#fff}.doc{max-width:none;margin:0;padding:0}.sheet{box-shadow:none;border-radius:0}
+    section,.cover{padding-left:8mm;padding-right:8mm}
+  }
+</style>
+</head>
+<body>
+<div class="doc">
+<div class="sheet">
+
+  <div class="cover">
+    <svg class="arc" viewBox="0 0 600 300" fill="none"><path d="M600 20 A300 300 0 0 0 120 300" stroke="#fff" stroke-width="1"/><path d="M600 70 A250 250 0 0 0 180 300" stroke="#fff" stroke-width="1"/></svg>
+    <svg class="lotus" viewBox="0 0 120 90"><path class="pad" d="M16 80 Q60 89 104 80"/><path d="M60 79 C36 62 22 52 12 46 C30 50 48 62 60 79"/><path d="M60 79 C84 62 98 52 108 46 C90 50 72 62 60 79"/><path d="M60 79 C44 56 38 40 32 30 C46 36 54 54 60 79"/><path d="M60 79 C76 56 82 40 88 30 C74 36 66 54 60 79"/><path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/></svg>
+    <div class="word">Samvaad<span style="opacity:.7">.</span></div>
+    <div class="dvline">संवाद · the art of conversation</div>
+    <h1>Understanding, between people</h1>
+    <p class="tag">A wellness app that helps India's couples and individuals actually understand their hardest conversations, in their own language, with privacy by design.</p>
+    <div class="meta">
+      <span class="chip">Board &amp; Leadership Brief</span>
+      <span class="chip">Phase 1 · Validation</span>
+      <span class="chip">27 Jun 2026</span>
+      <span class="chip">Confidential</span>
+    </div>
+  </div>
+
+  <!-- ONE LINER -->
+  <section>
+    <div class="kicker">In one line</div>
+    <p class="big">Samvaad listens to a difficult conversation and gently shows people what happened, what they did well, and a kinder way to say it next time.</p>
+    <p class="lead" style="margin-top:14px">Not therapy. Not a chatbot. A calm, private, Hinglish-native companion that turns a tense moment into a moment of growth, in about a minute.</p>
+  </section>
+
+  <!-- PROBLEM -->
+  <section>
+    <div class="kicker">The problem</div>
+    <h2 class="sec">Relationships strain in silence</h2>
+    <p class="lead">Most people never get neutral, affordable, in-the-moment help with how they communicate. Therapy carries stigma and cost. Self-help is generic, English-first, and Western in tone. And the hardest conversations happen in <b>Hinglish</b>, in homes, on commutes, late at night, where no tool meets them.</p>
+    <div class="grid3">
+      <div class="card tint"><h4 class="h4">Stigma</h4>Asking for help with a relationship still feels like admitting failure.</div>
+      <div class="card tint"><h4 class="h4">Cost &amp; access</h4>Counselling is expensive and scarce outside metros.</div>
+      <div class="card tint"><h4 class="h4">Wrong language</h4>Existing apps don't speak Hinglish or understand Indian family dynamics.</div>
+    </div>
+  </section>
+
+  <!-- SOLUTION -->
+  <section>
+    <div class="kicker">The solution</div>
+    <h2 class="sec">How Samvaad works</h2>
+    <div class="steps">
+      <div class="st"><b>Bring a conversation in.</b><div class="muted">Speak it, record it, or paste it. For a couple, for a relationship situation, or just for yourself.</div></div>
+      <div class="st"><b>Understand it.</b><div class="muted">A clear, non-blaming read: how connected the exchange was, what each person did well, and the patterns underneath.</div></div>
+      <div class="st"><b>Try something better.</b><div class="muted">Exact, ready-to-say lines in their own words, a one-minute breathing reset when things ran hot, and a voiced, animated replay of a kinder version of the same moment.</div></div>
+      <div class="st"><b>Keep going.</b><div class="muted">A gentle daily WhatsApp check-in and a growing picture of progress over time.</div></div>
+    </div>
+  </section>
+
+  <!-- THE THREE THINGS -->
+  <section>
+    <div class="kicker">The experience</div>
+    <h2 class="sec">Three things, in the order a person needs them</h2>
+    <div class="pillar">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg></div>
+      <div><h3>Calm first</h3><span class="muted">When a conversation ran hot, Samvaad leads with a 60-second breathing reset, because you can't hear feedback while your heart is racing. It only appears when it's actually needed.</span></div>
+    </div>
+    <div class="pillar">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v10H9l-4 4z"/></svg></div>
+      <div><h3>Exact words to try</h3><span class="muted">Not vague advice. Verbatim lines, in Hinglish, you could actually say next time, drawn from the moment you just had.</span></div>
+    </div>
+    <div class="pillar">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 8-14 8z"/></svg></div>
+      <div><h3>See it, kinder</h3><span class="muted">A voiced, animated replay shows the same conversation, softened, so a better version isn't abstract, it's something you watch and hear.</span></div>
+    </div>
+  </section>
+
+  <!-- USP -->
+  <section class="pbreak">
+    <div class="kicker">Why we win</div>
+    <h2 class="sec">The unfair advantages</h2>
+    <div class="usp"><div class="dot">1</div><div><b>Hinglish &amp; Devanagari native.</b> <span class="muted">Built for how Indians actually argue and make up, not a translated Western app.</span></div></div>
+    <div class="usp"><div class="dot">2</div><div><b>Intervention, not just analysis.</b> <span class="muted">Most tools tell you what's wrong. Samvaad hands you the breath, the words, and a kinder replay, the action, in the moment.</span></div></div>
+    <div class="usp"><div class="dot">3</div><div><b>Privacy as a feature.</b> <span class="muted">India-resident data (Mumbai), consent-first, raw audio deleted after use. Trust is the product in this category.</span></div></div>
+    <div class="usp"><div class="dot">4</div><div><b>Affordable &amp; habit-forming.</b> <span class="muted">A founding price of ₹199 and a once-a-day WhatsApp check-in that meets people where they already are.</span></div></div>
+    <div class="usp"><div class="dot">5</div><div><b>A widening moat.</b> <span class="muted">Every session teaches the product which nudge fits whom, and when, a feedback loop competitors can't copy.</span></div></div>
+  </section>
+
+  <!-- MARKET -->
+  <section>
+    <div class="kicker">The opportunity</div>
+    <h2 class="sec">A large, underserved, mobile-first market</h2>
+    <p class="lead">Hundreds of millions of young, smartphone-first Indians are coming of age as relationship-wellness and mental-health awareness rise sharply, while stigma around formal help remains. Samvaad sits at the intersection of three growing waves: <b>digital wellness</b>, <b>vernacular-first products</b>, and <b>AI-native consumer apps</b>.</p>
+    <div class="grid3">
+      <div class="card"><h4 class="h4">Who</h4>Urban &amp; tier-2 couples and individuals, 22–40, comfortable in Hinglish, living on their phones.</div>
+      <div class="card"><h4 class="h4">When</h4>The quiet moment after a fight; the commute debrief; the late-night journal.</div>
+      <div class="card"><h4 class="h4">Why now</h4>Capable, low-cost AI + India-region infra make a private, affordable companion finally possible.</div>
+    </div>
+    <p class="note">Detailed market sizing (TAM / SAM / SOM) is maintained in a separate model; figures here are directional.</p>
+  </section>
+
+  <!-- METRICS -->
+  <section>
+    <div class="kicker">How we'll measure success</div>
+    <h2 class="sec">Phase-A validation scorecard</h2>
+    <p class="lead">We are deliberately <b>validation-first</b>: prove that real strangers will pay and come back <i>before</i> we scale. These are the Phase-A targets we are steering toward, not yet results.</p>
+    <div class="kpis">
+      <div class="kpi"><div class="v">10</div><div class="l">Founding paying users</div><div class="s">Real strangers paying ₹199, not friends.</div></div>
+      <div class="kpi"><div class="v">★</div><div class="l">Solo → Couple conversion</div><div class="s">Our north-star: a solo user inviting their partner.</div></div>
+      <div class="kpi"><div class="v">D7</div><div class="l">7-day retention</div><div class="s">Driven by the daily WhatsApp check-in loop.</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h4 class="h4">Willingness to pay</h4><span class="muted">Does the value justify a price, before any discounting? The ₹199 founding pre-sell tests this directly.</span></div>
+      <div class="card"><h4 class="h4">A working retention loop</h4><span class="muted">A manual, consented daily check-in for ~10 founding users, to prove the habit before we automate it.</span></div>
+    </div>
+    <p class="note">All targets are Phase-A goals to be validated with the founding cohort, shown for alignment, not as current traction.</p>
+  </section>
+
+  <!-- BUSINESS MODEL -->
+  <section>
+    <div class="kicker">The model</div>
+    <h2 class="sec">From founding pre-sell to durable revenue</h2>
+    <div class="grid3">
+      <div class="card tint"><h4 class="h4">Now</h4>Founding pre-sell at <b>₹199</b> via UPI/cards (Razorpay), with explicit guest-vs-paid.</div>
+      <div class="card tint"><h4 class="h4">Next</h4>Subscription for ongoing analysis, the daily loop, and history/insights over time.</div>
+      <div class="card tint"><h4 class="h4">Later</h4>Premium "cinematic" replays and, on a Series-A horizon, an always-on voice-wellness wearable.</div>
+    </div>
+  </section>
+
+  <!-- TRUST -->
+  <section>
+    <div class="kicker">Trust &amp; compliance</div>
+    <h2 class="sec">Built for India, by design</h2>
+    <p class="lead">In an intimate category, trust isn't a checkbox, it's the brand. Samvaad is built to the <b>India DPDP Act (2023) and 2025 Rules</b> from day one: consent-first, purpose-limited, data resident in Mumbai, and framed as <b>wellness awareness, never medical diagnosis</b>.</p>
+    <p class="quote">"Your reflections are yours. We hold them gently, in India, and only ever show you your own."</p>
+  </section>
+
+  <!-- ASK -->
+  <section>
+    <div class="kicker">What's next</div>
+    <h2 class="sec">The near-term milestones</h2>
+    <ul>
+      <li><b>Sign 10 founding, paying users</b> and stand up the manual daily check-in loop.</li>
+      <li><b>Instrument everything</b> with an internal KPI dashboard (conversion, retention, willingness-to-pay).</li>
+      <li><b>Prove the solo → couple conversion</b> that defines the category's growth engine.</li>
+      <li><b>Then, and only then, scale</b> distribution, automation, and the premium tiers.</li>
+    </ul>
+    <p class="lead" style="margin-top:14px">The product is already rich and shipping. The single most important question now is the right one to answer first: <b>will real people pay, and return?</b> Everything in Phase A is built to answer it.</p>
+  </section>
+
+  <div class="foot"><span>Samvaad · Board &amp; Leadership Brief · Confidential</span><span>v1 · 27 Jun 2026</span></div>
+</div>
+</div>
+</body>
+</html>
