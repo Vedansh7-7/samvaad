@@ -34,7 +34,7 @@ async function claude(prompt) {
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + GROQ_API_KEY },
-    body: JSON.stringify({ model: 'mixtral-8x7b-32768', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] })
+    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1200, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }] })
   });
   if (!r.ok) throw new Error('groq ' + r.status + ' ' + (await r.text()).slice(0, 160));
   const d = await r.json();
