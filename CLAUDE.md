@@ -109,6 +109,30 @@ STOP** (consent-based = not a breach) (E3). Execute with one subagent per task, 
 file** (app.html collisions are real). `/agents` manages custom subagent definitions in
 `.claude/agents/`.
 
+## Current build state (2026-06-27 EOD) — read this if you're the UI / impeccable agent
+Pages in `web/` and polish status:
+- `login.html` — canonical design reference (polished). `app.html` — main app (polished; an
+  aesthetics agent has been doing a premium pass on the replay/video — **`git pull` before editing**).
+- `founding.html` — NEW ₹199 pre-sell landing (functional, **needs a design-polish pass**).
+- `admin.html` — NEW internal KPI + WhatsApp-nudge dashboard (functional, lower-priority polish).
+- `privacy.html` — NEW privacy notice (simple, fine). `index.html` — Vercel redirect (ignore).
+
+Intentional flows — do NOT "fix" these, they are by design:
+- After analysis the results screen shows ONLY a centered score + "✦ Walk me through it". Finishing
+  the walk-through **redirects to the Dashboard**; dashboard tiles (date·time) open the full report
+  via `openSession`; trend graph sits below. The detailed report now lives behind dashboard tiles.
+- Self / "Just me" mode reframes the scripts section as **"Say these out loud"** affirmations
+  (express-your-way), not prescriptive rewrites. Relationship mode keeps "try saying".
+
+Headline UI task = make the **kinder-replay + technique-video tiles feel premium**. PRESERVE the
+animation JS wiring — ids/classes: `mouth-a`, `eye`, `bl-a-l/-r`, `brow-a-l/-r`, `ch-a`/`ch-b`,
+`tag-a`, and `#playBtn`/`#muteBtn`/`#prog`/`#scene`/`#bubbles` + the buildScene/advance/speak flow.
+Also polish the new `founding.html` / `admin.html` to the design system. **One agent per file.**
+
+Ops facts (not UI): backend live on Render (URL baked into founding/admin as a fallback); admin
+needs `ADMIN_USER_IDS` set on Render + one admin login; Supabase built-in email is rate-limited
+until custom SMTP (Gmail app password) is set — demo via "Continue as guest".
+
 ## Guardrails for the agent
 - NEVER commit secrets. Keys live in `backend/.env` (git-ignored). The publishable/anon
   Supabase key is public by design and may appear in frontend code; the service_role key

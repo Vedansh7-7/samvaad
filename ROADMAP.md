@@ -20,6 +20,14 @@ Modes (couple/solo/self), Groq `llama-3.3-70b-versatile` analysis (report + repl
 **stub** (`/api/optin` + `nudge_subscriptions`), Supabase (RLS) persistence, login/guest auth,
 deploy = Vercel (web) + Render (backend). See CLAUDE.md for the locked design/architecture.
 
+**Shipped 2026-06-27 (this session):** Phase A largely done — `founding.html` (₹199 pre-sell,
+`POST /api/founding` → `founding_members`), `admin.html` (KPIs + manual WhatsApp nudge list,
+`/api/admin/kpis` + `/api/admin/nudges`, gated by `ADMIN_USER_IDS`), `privacy.html`. Post-analysis
+flow restructured: centered "Walk me through it" → finish redirects to Dashboard → tappable tiles
+open full reports (`openSession`). Self-mode "say aloud" reframing. Magic-link redirect fixed.
+**Remaining for Phase A:** founder sets `ADMIN_USER_IDS` + Razorpay link + custom SMTP; then share
+`founding.html` for paying strangers. **Next focus = UI polish (E6-T1) via impeccable.**
+
 ## 2. Epics (each task is written to be handed to a subagent)
 IDs: E#-T# . Each task lists **Goal · Files · Approach · Done-when**. Backend = `backend/`,
 frontend = `web/app.html` (coordinate — aesthetics agent also edits it).
