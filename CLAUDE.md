@@ -135,7 +135,9 @@ Also polish the new `founding.html` / `admin.html` to the design system. **One a
 
 Ops facts (not UI): backend live on Render; the Render URL is now the **default Backend URL baked
 into `app.html`, `founding.html`, `admin.html`** — the Settings field is pre-filled + optional and
-localStorage still overrides, so users never type it (don't re-break this). Admin needs
+localStorage still overrides, so users never type it (don't re-break this). The user-facing
+Backend-URL + API-key fields were **removed from the "You" page** (inputs kept hidden in the DOM
+only so the proxy wiring resolves) — never re-surface API-key fields to users. Admin needs
 `ADMIN_USER_IDS` set on Render + one admin login; Supabase built-in email is rate-limited until
 custom SMTP (Gmail app password) is set — demo via "Continue as guest". `.claude/settings.json` sets
 `worktree.bgIsolation:none` so background agents edit this checkout directly (not a worktree).

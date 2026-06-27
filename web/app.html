@@ -500,17 +500,13 @@
       <div class="you-acct" id="acctId">—</div>
       <button class="btn soft" id="signBtn" style="width:auto">Sign out</button>
     </div>
-    <div class="you-sec glass card">
-      <h3>Settings — keys stay in this tab only</h3>
-      <p class="hint">Set a <b>Backend URL</b> to route through your secure proxy. Otherwise it runs standalone with the keys below.</p>
-      <div class="grid2">
-        <div><label class="fl">Backend URL</label><input type="text" id="beUrl" placeholder="https://your-backend.onrender.com"></div>
-        <div><label class="fl">Deepgram key (audio upload)</label><input type="text" id="dgKey" placeholder="Token …"></div>
-        <div><label class="fl">ElevenLabs key (voices)</label><input type="text" id="elKey" placeholder="xi-api-key …"></div>
-        <div><label class="fl">ElevenLabs voice A / B</label><div style="display:flex;gap:8px"><input type="text" id="elA" placeholder="voice A"><input type="text" id="elB" placeholder="voice B"></div></div>
-      </div>
+    <!-- Backend URL + API keys live server-side now. These inputs are kept HIDDEN (not user-facing)
+         only so the proxy wiring — be(), speak()/TTS, transcribe — resolves to the baked defaults.
+         Never surface API-key fields to users. -->
+    <div class="hide" aria-hidden="true">
+      <input type="text" id="beUrl"><input type="text" id="dgKey"><input type="text" id="elKey"><input type="text" id="elA"><input type="text" id="elB">
     </div>
-    <p class="hint" style="text-align:center;padding:0 6px">Phase 1 · standalone demo. Set a Backend URL to persist securely (encrypted, auto-delete, consent logged).</p>
+    <p class="hint" style="text-align:center;padding:0 6px">Your conversations are processed securely on our server and saved only to your account. Sign in to keep your history.</p>
   </section>
 
   </main>
