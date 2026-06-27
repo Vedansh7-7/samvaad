@@ -512,8 +512,8 @@ async function run(){
     if(!transcript||transcript.length<15)throw new Error('Need a little more to work with.');
     setProc(1);var data=await analyse(transcript,a,b);
     S.report=data;S.improved=data.improved||[];
-    S.sessions.unshift({ts:Date.now(),mode:S.mode,sub:S.sub,a:a,b:b,overall:(data.scores||{}).overall||0,pattern:(data.patterns&&data.patterns[0])?data.patterns[0].title:'—'});
-    renderResults(a,b);
+    S.sessions.unshift({ts:Date.now(),mode:S.mode,sub:S.sub,a:a,b:b,overall:(data.scores||{}).overall||0,pattern:(data.patterns&&data.patterns[0])?data.patterns[0].title:'—',full:data});
+    showWalkPrompt(a,b);
   }catch(err){screen('input');showErr(err.message||String(err));}
 }
 
@@ -541,10 +541,31 @@ function pj(t){try{return JSON.parse(t);}catch(e){var a=t.indexOf('{'),b=t.lastI
 /* ---------- dynamic results ---------- */
 function clr(label,v){if(label==='escalation_risk')return v<34?'var(--good)':v<67?'var(--warn)':'var(--risk)';return v<40?'var(--risk)':v<70?'var(--warn)':'var(--good)';}
 function esc(s){s=(s==null?'':String(s));return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+/* After analysis: show ONLY a centered walk-through prompt. The full report is reached later
+   from a dashboard tile (openSession). */
+function showWalkPrompt(a,b){
+  var sc=(S.report&&S.report.scores)||{},self=S.mode==='self';
+  $('resultsStack').innerHTML='<div class="rv in"><div class="glass section" style="text-align:center;padding:34px 24px;max-width:480px;margin:0 auto">'
+    +'<div class="slide-big" style="color:'+clr('overall',sc.overall||0)+'">'+(sc.overall||0)+'</div>'
+    +'<p class="hint" style="margin:2px 0 14px">'+(self?'wellbeing signal':'connection')+'</p>'
+    +'<h2 class="serif" style="font-weight:500;font-size:22px;margin:0 0 6px">Your reflection is ready</h2>'
+    +'<p class="hint" style="margin:0 0 18px">Take the guided walk-through — your strengths, where to grow, a one-minute reset, and a kinder replay. You’ll land on your dashboard after.</p>'
+    +'<button class="btn accent" onclick="openSlides()">✦ Walk me through it</button>'
+    +'</div></div>';
+  screen('results');
+}
+/* Open a saved session's FULL report (from a dashboard tile). */
+function openSession(i){
+  var s=S.sessions[i]; if(!s||!s.full) return;
+  S.mode=s.mode; S.sub=s.sub; document.body.setAttribute('data-mode',s.mode);
+  S.report=s.full; S.improved=s.full.improved||[];
+  view('analyse'); renderResults(s.a,s.b);
+}
 function renderResults(a,b){
   var r=S.report,sc=r.scores||{},risk=sc.escalation_risk||0;
   var stack=$('resultsStack');stack.innerHTML='';
   var cards=[];
+  cards.push('<button class="btn soft" onclick="renderDash();view(\'dash\')">← Back to dashboard</button>');
 
   // hero with ring
   cards.push('<div class="glass hero"><div class="ring"><svg width="120" height="120"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--hair)" stroke-width="9"/><circle id="ringArc" cx="60" cy="60" r="52" fill="none" stroke="'+clr('overall',sc.overall||0)+'" stroke-width="9" stroke-linecap="round" stroke-dasharray="327" stroke-dashoffset="327"/></svg><div class="val" id="ringVal" style="color:'+clr('overall',sc.overall||0)+'">0</div></div><div class="htxt"><div class="lab">'+(S.mode==='self'?'wellbeing signal':'connection')+'</div><h2>'+(S.mode==='self'?'How your words land':'How this exchange went')+'</h2><p class="dv">'+esc(r.summary||'')+'</p></div></div>');
@@ -679,7 +700,7 @@ function tick(){if(!BR||!BR.running)return;var s=Math.floor((Date.now()-BR.start
 var WALK={slides:[],i:0};
 function openSlides(){var a=($('nameA').value||'').trim()||'You';WALK.slides=buildSlides(a);WALK.i=0;$('slides').classList.add('show');renderSlide();}
 function closeSlides(){$('slides').classList.remove('show');}
-function walkNav(d){var n=WALK.i+d;if(n<0)return;if(n>=WALK.slides.length){closeSlides();return;}WALK.i=n;renderSlide();}
+function walkNav(d){var n=WALK.i+d;if(n<0)return;if(n>=WALK.slides.length){closeSlides();renderDash();view('dash');return;}WALK.i=n;renderSlide();}
 function renderSlide(){var s=WALK.slides[WALK.i],last=WALK.i===WALK.slides.length-1,first=WALK.i===0;
   $('slideEyebrow').textContent=s.eyebrow;$('slideH').innerHTML=s.h;$('slideBody').innerHTML=s.html;
   $('slideDots').innerHTML=WALK.slides.map(function(_,i){return '<i class="'+(i===WALK.i?'on':'')+'"></i>';}).join('');
@@ -711,7 +732,7 @@ function optinBlock(a){return '<p class="slide-p">One message a day, at the righ
   +'<div class="consent" style="margin-top:12px"><input type="checkbox" id="optConsent"><label for="optConsent">Yes, send me one gentle daily check-in on WhatsApp. I can stop anytime.</label></div>'
   +'<div class="row" style="justify-content:center"><button class="btn" onclick="submitOptin()">Keep me connected</button></div>'
   +'<div class="saved" id="optSaved" style="text-align:center"></div>';}
-function slideToReplay(){closeSlides();var p=$('playBtn');if(p){p.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){if(!S.playing)startPlay();},600);}}
+function slideToReplay(){closeSlides();openSession(0);setTimeout(function(){var p=$('playBtn');if(p){p.scrollIntoView({behavior:'smooth',block:'center'});if(!S.playing)startPlay();}},450);}
 function optMsg(m,ok){var el=$('optSaved');if(!el)return;el.textContent=m;el.style.color=ok?'var(--good)':'var(--risk)';el.style.display='block';}
 async function submitOptin(){
   var el=$('optPhone'),phone=el?el.value.trim():'',norm=phone.replace(/[\s-]/g,'');
@@ -733,7 +754,7 @@ function renderDash(){var list=$('dashList'),trend=$('trendCard');
   var d=pts.map(function(v,i){return (i===0?'M':'L')+(i*step).toFixed(1)+' '+(H-(v/100)*H+6).toFixed(1);}).join(' ');var dots=pts.map(function(v,i){return '<circle cx="'+(i*step).toFixed(1)+'" cy="'+(H-(v/100)*H+6).toFixed(1)+'" r="3.5" fill="var(--accent)"/>';}).join('');
   var freq={};S.sessions.forEach(function(s){freq[s.pattern]=(freq[s.pattern]||0)+1;});var common=Object.keys(freq).sort(function(a,b){return freq[b]-freq[a];})[0];
   trend.innerHTML='<div style="font-size:13px;color:var(--muted);margin-bottom:8px">Overall, oldest → newest</div><svg width="100%" viewBox="0 0 '+W+' '+(H+12)+'" preserveAspectRatio="none" style="max-width:100%"><path d="'+d+'" fill="none" stroke="var(--accent)" stroke-width="2"/>'+dots+'</svg><div style="margin-top:10px;font-size:13.5px">Most recurring: <b class="dv">'+esc(common)+'</b></div>';
-  list.innerHTML=S.sessions.map(function(s){var when=new Date(s.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});return '<div class="glass sess"><div class="sc" style="color:'+clr('overall',s.overall)+'">'+s.overall+'</div><div class="meta"><div class="ttl dv">'+esc(s.pattern)+'</div><div class="sub"><span class="badge">'+(s.mode==='self'?'Self · '+s.sub:'Relationship · '+s.sub)+'</span> · '+when+'</div></div></div>';}).join('');
+  list.innerHTML='<p class="hint" style="margin:0 0 10px">Tap a tile to revisit its full report.</p>'+S.sessions.map(function(s,i){var when=new Date(s.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});return '<div class="glass sess" style="cursor:pointer" onclick="openSession('+i+')"><div class="sc" style="color:'+clr('overall',s.overall)+'">'+s.overall+'</div><div class="meta"><div class="ttl dv">'+esc(s.pattern)+'</div><div class="sub"><span class="badge">'+(s.mode==='self'?'Self · '+s.sub:'Relationship · '+s.sub)+'</span> · '+when+'</div></div><div style="color:var(--muted);font-size:20px;padding-left:6px">›</div></div>';}).join('');
 }
 if('speechSynthesis' in window)window.speechSynthesis.onvoiceschanged=function(){window.speechSynthesis.getVoices();};
 </script>
