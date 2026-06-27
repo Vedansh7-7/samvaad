@@ -22,6 +22,8 @@ services:
         sync: false
       - key: ALLOWED_ORIGIN           # set to your Vercel URL, e.g. https://samvaad.vercel.app
         sync: false
+      - key: ADMIN_USER_IDS          # comma-separated Supabase auth user ids for /api/admin/*
+        sync: false
       - key: SUPABASE_URL
         value: https://bwcszkbtvbvwzioycxxp.supabase.co
       - key: ELEVEN_VOICE_A

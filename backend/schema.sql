@@ -74,4 +74,18 @@ create table if not exists public.nudge_subscriptions (
 alter table public.nudge_subscriptions enable row level security;
 create policy "own_nudge_subscriptions" on public.nudge_subscriptions for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- Founding pre-sell capture (E5-T1). Public endpoint inserts via the service role only —
+-- RLS is ON with NO policy, so anon/auth clients cannot read or write; only the backend
+-- service key (which bypasses RLS) can touch it.
+create table if not exists public.founding_members (
+  id          uuid primary key default gen_random_uuid(),
+  phone       text not null,
+  name        text,
+  txn_id      text,
+  plan        text default 'founding_199',
+  created_at  timestamptz not null default now()
+);
+alter table public.founding_members enable row level security;
+-- (intentionally no policy: service-role only)
+
 create index if not exists sessions_user_created on public.sessions (user_id, created_at desc);

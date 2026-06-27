@@ -1,0 +1,157 @@
+<!doctype html>
+<!--
+  Samvaad — Admin dashboard (E2-T2 KPIs + E3-T1 today's-nudges manual send list).
+  Auth-gated: only Supabase users whose id is in the backend's ADMIN_USER_IDS see data.
+  Backend URL is read from localStorage 'samvaad.beUrl' (set it once in the app → Settings),
+  or paste it into BACKEND_URL below.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Samvaad · Admin</title>
+<script src="auth.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Mulish:wght@400;500;600;700&display=swap');
+  :root{
+    --ink:#2E2024; --muted:#6E5258; --hair:rgba(46,32,36,.12);
+    --glass:rgba(255,255,255,.5); --glass-2:rgba(255,255,255,.66); --glass-brd:rgba(255,255,255,.72);
+    --cherry:#C8324B; --cherry-2:#A52741;
+    --good:#4F8A6B; --risk:#C0463C;
+    --accent:#C8324B; --accent-soft:#F8DDE0; --accent-ink:#9E2740;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--ink);font-family:'Mulish',system-ui,sans-serif;line-height:1.6;min-height:100vh;
+    background:radial-gradient(120% 90% at 12% 6%,#FDEEF0 0%,rgba(253,238,240,0) 46%),
+               radial-gradient(120% 100% at 92% 18%,#F8D6DD 0%,rgba(248,214,221,0) 50%),
+               linear-gradient(160deg,#FDF3F2 0%,#F9DEE3 48%,#F1DDE8 100%);}
+  .wrap{max-width:980px;margin:0 auto;padding:26px 18px 80px}
+  .serif{font-family:'Fraunces',serif}
+  .glass{background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(1.2);backdrop-filter:blur(20px) saturate(1.2);
+    border:1px solid var(--glass-brd);border-radius:20px;box-shadow:0 20px 50px -30px rgba(76,58,42,.4),inset 0 1px 0 rgba(255,255,255,.55)}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .word{font-family:'Fraunces',serif;font-weight:600;font-size:22px}.word .d{color:var(--cherry)}
+  .word .sub{font-size:13px;color:var(--muted);font-family:'Mulish';font-weight:600;margin-left:8px}
+  .btn{border:none;border-radius:12px;padding:10px 18px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;color:#fff;
+    background:linear-gradient(180deg,var(--cherry),var(--cherry-2));box-shadow:0 12px 24px -12px rgba(165,39,65,.55)}
+  .btn.soft{background:var(--glass);color:var(--ink);border:1px solid var(--glass-brd);box-shadow:none;font-weight:600}
+  .note{font-size:13.5px;color:var(--muted);margin:0}
+  .gate{padding:30px;text-align:center}
+  .gate h2{font-family:'Fraunces',serif;font-weight:500;margin:0 0 8px}
+  .gate a{color:var(--accent-ink);font-weight:700}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+  .kpi{padding:16px 18px}
+  .kpi .lab{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
+  .kpi .val{font-family:'Fraunces',serif;font-weight:600;font-size:34px;line-height:1.1;margin-top:4px}
+  .kpi .hint{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .kpi.hero .val{color:var(--cherry)}
+  .sec{padding:20px;margin-bottom:16px}
+  .sec h3{font-family:'Fraunces',serif;font-weight:500;font-size:18px;margin:0 0 4px}
+  .msgbox{background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin:10px 0;font-size:14px;color:var(--accent-ink);position:relative}
+  .nudge{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--glass-brd);background:var(--glass-2);border-radius:12px;margin-bottom:8px;flex-wrap:wrap}
+  .nudge .who{flex:1;min-width:140px}.nudge .who b{font-size:14px}.nudge .who .ph{font-size:12.5px;color:var(--muted)}
+  .nudge a.wa{text-decoration:none}
+  .mini{border:1px solid var(--glass-brd);background:var(--glass);border-radius:99px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
+  .mini.wa{background:#25D366;color:#fff;border-color:#25D366}
+  .err{color:var(--risk);font-weight:600}
+  .empty{color:var(--muted);text-align:center;padding:18px;font-size:14px}
+  footer{margin-top:24px;color:var(--muted);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="word serif">Samvaad<span class="d">.</span><span class="sub">Admin</span></div>
+    <div><button class="btn soft" id="refreshBtn">Refresh</button></div>
+  </header>
+
+  <div id="content"><div class="glass gate"><p class="note">Loading…</p></div></div>
+
+  <footer>Internal · KPIs read from your backend. Wellness awareness, not medical diagnosis.</footer>
+</div>
+
+<script>
+  var BACKEND_URL = (localStorage.getItem('samvaad.beUrl') || "").replace(/\/+$/, "");  // founder: or paste here
+  var $ = function(id){ return document.getElementById(id); };
+  var content = $('content');
+
+  function esc(s){ s=(s==null?'':String(s)); return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function gate(html){ content.innerHTML = '<div class="glass gate">'+html+'</div>'; }
+  function waNumber(p){ var d=String(p||'').replace(/\D/g,''); if(d.length===10) d='91'+d; return d; }
+
+  async function load(){
+    if (!(SamvaadAuth.readSession())) {
+      gate('<h2 class="serif">Admin sign-in needed</h2><p class="note">Please <a href="login.html">sign in</a> with an admin account.</p>');
+      return;
+    }
+    if (!BACKEND_URL) {
+      gate('<h2 class="serif">Set your Backend URL</h2><p class="note">Open the app → <b>Settings</b> → paste your Render backend URL. The admin dashboard reads KPIs from there.</p>');
+      return;
+    }
+    gate('<p class="note">Loading KPIs…</p>');
+    try {
+      var headers = Object.assign({ 'content-type':'application/json' }, SamvaadAuth.authHeaders());
+      var [kRes, nRes] = await Promise.all([
+        fetch(BACKEND_URL + '/api/admin/kpis', { headers: headers }),
+        fetch(BACKEND_URL + '/api/admin/nudges', { headers: headers })
+      ]);
+      if (kRes.status === 403 || nRes.status === 403) {
+        gate('<h2 class="serif">Not an admin</h2><p class="note">This account isn’t in the backend allowlist (<code>ADMIN_USER_IDS</code>). Ask the owner to add your Supabase user id.</p>');
+        return;
+      }
+      if (!kRes.ok) throw new Error('KPIs failed ('+kRes.status+')');
+      var k = await kRes.json();
+      var n = nRes.ok ? await nRes.json() : { count:0, nudges:[], suggestedMessage:'' };
+      render(k, n);
+    } catch (e) {
+      gate('<h2 class="serif">Couldn’t load</h2><p class="note err">'+esc(e.message||String(e))+'</p><p class="note">Check the Backend URL and that the server is awake (Render free tier sleeps).</p>');
+    }
+  }
+
+  function render(k, n){
+    var s = k.sessions||{}, bm = s.byMode||{}, bs = s.bySubmode||{};
+    var conv = k.soloToCouple||{}; var ratePct = Math.round((conv.rate||0)*100);
+    var cards = ''
+      + kpi('Founding members', (k.founding&&k.founding.total)||0, 'paid / reserved — willingness-to-pay', true)
+      + kpi('WhatsApp opt-ins', (k.optins&&k.optins.total)||0, 'consented daily check-ins')
+      + kpi('Solo → Couple', ratePct+'%', (conv.converted||0)+' converted')
+      + kpi('Sessions', s.total||0, (bm.relationship||0)+' rel · '+(bm.self||0)+' self')
+      + kpi('Users', (k.users&&k.users.total)||0, 'distinct, signed-in')
+      + kpi('Couple · Solo', (bs.couple||0)+' · '+(bs.solo||0), 'by submode');
+
+    var msg = n.suggestedMessage||'';
+    var list = (n.nudges&&n.nudges.length)
+      ? n.nudges.map(function(x){
+          var num = waNumber(x.phone);
+          var wa = 'https://wa.me/'+num+'?text='+encodeURIComponent(msg);
+          return '<div class="nudge"><div class="who"><b>'+esc(x.display_name||'—')+'</b><div class="ph">'+esc(x.phone)+(x.cadence?' · '+esc(x.cadence):'')+'</div></div>'
+            + '<a class="wa" href="'+wa+'" target="_blank" rel="noopener"><span class="mini wa">Send on WhatsApp</span></a>'
+            + '<button class="mini" data-copy="'+esc(x.phone)+'">Copy number</button></div>';
+        }).join('')
+      : '<div class="empty">No consented opt-ins yet.</div>';
+
+    content.innerHTML =
+      '<div class="grid">'+cards+'</div>'
+      + '<div class="glass sec"><h3>Today’s check-ins · '+((n&&n.count)||0)+'</h3>'
+      + '<p class="note">Manual send for now (consented users only — honor STOP). Tap “Send on WhatsApp”.</p>'
+      + (msg ? '<div class="msgbox" id="msgBox">'+esc(msg)+' <button class="mini" id="copyMsg" style="margin-left:8px">Copy message</button></div>' : '')
+      + list + '</div>';
+
+    var cm = $('copyMsg'); if (cm) cm.onclick = function(){ copy(msg, cm); };
+    Array.prototype.forEach.call(document.querySelectorAll('[data-copy]'), function(b){
+      b.onclick = function(){ copy(b.getAttribute('data-copy'), b); };
+    });
+  }
+
+  function kpi(lab, val, hint, hero){
+    return '<div class="glass kpi'+(hero?' hero':'')+'"><div class="lab">'+esc(lab)+'</div><div class="val">'+esc(val)+'</div><div class="hint">'+esc(hint)+'</div></div>';
+  }
+  function copy(text, btn){
+    try { navigator.clipboard.writeText(text); var t=btn.textContent; btn.textContent='Copied ✓'; setTimeout(function(){ btn.textContent=t; }, 1400); } catch(e){}
+  }
+
+  $('refreshBtn').onclick = load;
+  load();
+</script>
+</body>
+</html>

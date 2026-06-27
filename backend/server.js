@@ -157,5 +157,92 @@ app.post('/api/optin', async (req, res) => {
   } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
 });
 
+// ---- Admin gate: allowlist of Supabase auth user ids in env ADMIN_USER_IDS ----
+async function requireAdmin(req, res) {
+  const u = await getUser(req);
+  const ids = (process.env.ADMIN_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (!u || !ids.includes(u.id)) { res.status(403).json({ error: 'Admin only.' }); return null; }
+  return u;
+}
+
+// ---- Founding pre-sell capture (E5-T1) — PUBLIC, no auth ----
+app.post('/api/founding', async (req, res) => {
+  try {
+    const { phone, name = null, txn_id = null, plan = null } = req.body || {};
+    const norm = String(phone || '').replace(/[^\d+]/g, '');
+    if (!/^(\+?91)?[6-9]\d{9}$/.test(norm)) return res.status(400).json({ error: 'Enter a valid Indian mobile number.' });
+    if (admin) {
+      await admin.from('founding_members').insert({ phone: norm, name, txn_id, plan: plan || 'founding_199' });
+    }
+    res.json({ ok: true, message: txn_id ? 'Welcome, founding member! 🌼' : 'Saved — your founding spot is reserved.' });
+  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+});
+
+// ---- Admin: today's manual WhatsApp nudge list (E3-T1) — ADMIN only ----
+app.get('/api/admin/nudges', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+    const suggestedMessage = 'Hi! How was your day today? 🌿 Take a minute to reflect — open Samvaad, try "Just me", and let it help you unwind.';
+    let nudges = [];
+    if (admin) {
+      const { data } = await admin.from('nudge_subscriptions')
+        .select('phone, display_name, cadence, created_at')
+        .eq('consent', true).eq('active', true);
+      nudges = data || [];
+    }
+    res.json({ count: nudges.length, suggestedMessage, nudges });
+  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+});
+
+// ---- Admin: KPIs (E2-T2) — ADMIN only ----
+app.get('/api/admin/kpis', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+
+    let sessionRows = [], optinsTotal = 0, foundingTotal = 0;
+    if (admin) {
+      const [s, o, f] = await Promise.all([
+        admin.from('sessions').select('user_id, mode, submode'),
+        admin.from('nudge_subscriptions').select('user_id', { count: 'exact', head: true }).eq('consent', true).eq('active', true),
+        admin.from('founding_members').select('id', { count: 'exact', head: true })
+      ]);
+      sessionRows = s.data || [];
+      optinsTotal = o.count || 0;
+      foundingTotal = f.count || 0;
+    }
+
+    const byMode = { relationship: 0, self: 0 };
+    const bySubmode = { couple: 0, solo: 0 };
+    const users = new Set();
+    const coupleUsers = new Set();      // users with >=1 submode='couple' session
+    const selfSoloUsers = new Set();    // users with >=1 session where mode='self' OR submode='solo'
+
+    for (const r of sessionRows) {
+      if (r.mode === 'relationship') byMode.relationship++;
+      else if (r.mode === 'self') byMode.self++;
+      if (r.submode === 'couple') bySubmode.couple++;
+      else if (r.submode === 'solo') bySubmode.solo++;
+      if (r.user_id) {
+        users.add(r.user_id);
+        if (r.submode === 'couple') coupleUsers.add(r.user_id);
+        if (r.mode === 'self' || r.submode === 'solo') selfSoloUsers.add(r.user_id);
+      }
+    }
+
+    let converted = 0;
+    for (const id of selfSoloUsers) if (coupleUsers.has(id)) converted++;
+    const denom = Math.max(1, selfSoloUsers.size);
+    const rate = Math.round((converted / denom) * 100) / 100;
+
+    res.json({
+      sessions: { total: sessionRows.length, byMode, bySubmode },
+      users: { total: users.size },
+      optins: { total: optinsTotal },
+      founding: { total: foundingTotal },
+      soloToCouple: { converted, rate }
+    });
+  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+});
+
 app.get('/health', (_, res) => res.json({ ok: true }));
 app.listen(process.env.PORT || 8787, () => console.log('Samvaad backend on', process.env.PORT || 8787));
