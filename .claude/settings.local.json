@@ -27,7 +27,8 @@
       "Bash(git commit -m 'Add ROADMAP.md \\(validation-first plan from founder PDF\\) + CLAUDE.md thesis *)",
       "mcp__claude_ai_Supabase__execute_sql",
       "Bash(git commit -m 'Bake Render backend URL as fallback in founding.html + admin.html *)",
-      "Bash(git commit -m 'Fix magic-link redirect: send redirect_to=<origin>/app.html on OTP *)"
+      "Bash(git commit -m 'Fix magic-link redirect: send redirect_to=<origin>/app.html on OTP *)",
+      "Bash(git commit -m 'Restructure post-analysis flow + privacy page *)"
     ]
   },
   "hooks": {
