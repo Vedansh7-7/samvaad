@@ -48,7 +48,7 @@
   .amb svg{position:absolute}
   .amb .a1{top:-50px;right:-30px;opacity:.45}.amb .a2{bottom:8%;left:5%;opacity:.5}
 
-  .wrap{max-width:1080px;margin:0 auto;padding:20px 18px 90px}
+  .wrap{max-width:460px;margin:0 auto;padding:0 16px calc(104px + env(safe-area-inset-bottom,0px));min-height:100vh}
   .dv{font-family:'Noto Sans Devanagari','Mulish',sans-serif}
   .hide{display:none!important}
   .glass{background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(1.2);backdrop-filter:blur(20px) saturate(1.2);border:1px solid var(--glass-brd);border-radius:22px;box-shadow:0 20px 50px -30px rgba(76,58,42,.4),inset 0 1px 0 rgba(255,255,255,.55)}
@@ -285,6 +285,62 @@
   footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
   .stack{display:flex;flex-direction:column;gap:14px}
 
+  /* ===== app shell + home screen ===== */
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 4px 12px}
+  .topbar .hi{font-family:'Fraunces',serif;font-weight:600;font-size:21px;line-height:1.1}
+  .topbar .subhi{font-size:13px;color:var(--muted);margin-top:3px}
+  .avatar{display:flex;align-items:center;gap:8px;border:none;background:none;cursor:pointer;padding:0}
+  .avatar .streak{font-size:11.5px;font-weight:700;color:var(--accent-ink);background:var(--accent-soft);border-radius:99px;padding:4px 9px;white-space:nowrap}
+  .avatar .ava{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,var(--accent),var(--accent-ink));color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:16px;box-shadow:0 8px 18px -8px var(--accent)}
+
+  .screen{animation:screenIn .4s cubic-bezier(.22,1,.36,1) both}
+  @keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .bottomnav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:460px;display:flex;align-items:flex-end;justify-content:space-around;gap:6px;padding:9px 16px calc(9px + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,.6);-webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);border-top:1px solid var(--glass-brd);z-index:40}
+  .bottomnav button{flex:1;border:none;background:none;cursor:pointer;font:inherit;font-size:10.5px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0;transition:color .2s}
+  .bottomnav button svg{width:23px;height:23px}
+  .bottomnav button[aria-current="true"]{color:var(--accent-ink)}
+  .bottomnav .talk{flex:0 0 auto;color:var(--accent-ink)}
+  .bottomnav .talk .tk{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,var(--accent),var(--accent-ink));box-shadow:0 12px 24px -8px var(--accent);margin-top:-24px;border:3px solid rgba(255,255,255,.65)}
+  .bottomnav .talk .tk svg{width:25px;height:25px}
+
+  .hero{position:relative;overflow:hidden;border-radius:24px;padding:22px 20px;margin:4px 0 6px;background:linear-gradient(155deg,var(--accent-soft) 0%,rgba(255,255,255,.55) 78%);border:1px solid var(--glass-brd);box-shadow:0 22px 46px -30px rgba(76,40,52,.5)}
+  .hero h2{font-family:'Fraunces',serif;font-weight:500;font-size:23px;margin:0 0 5px;max-width:14ch}
+  .hero p{font-size:13.5px;color:var(--muted);margin:0 0 16px;max-width:30ch}
+  .hero .heroart{position:absolute;right:-14px;top:-10px;opacity:.4;pointer-events:none}
+  .hero .btn{width:auto;display:inline-flex}
+
+  .sec-h{display:flex;align-items:baseline;justify-content:space-between;font-family:'Fraunces',serif;font-weight:500;font-size:16.5px;margin:20px 2px 10px}
+  .sec-h a{font-family:'Mulish',sans-serif;font-size:13px;font-weight:600;color:var(--accent-ink);text-decoration:none;cursor:pointer}
+
+  .intent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .intent{display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:104px;border:1px solid var(--glass-brd);background:var(--glass);border-radius:18px;padding:13px 12px;cursor:pointer;font:inherit;text-align:left;transition:transform .2s,box-shadow .2s}
+  .intent:hover,.intent:focus-visible{transform:translateY(-3px);box-shadow:0 16px 28px -18px rgba(70,30,45,.5);outline:none}
+  .intent .ig{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink)}
+  .intent .ig svg{width:18px;height:18px}
+  .intent .it{font-weight:700;font-size:12.5px;color:var(--ink);line-height:1.25}
+
+  .carousel{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 6px;margin:0 -2px;scrollbar-width:none}
+  .carousel::-webkit-scrollbar{display:none}
+  .rcard{scroll-snap-align:start;flex:0 0 auto;width:144px;border:1px solid var(--glass-brd);background:var(--glass);border-radius:18px;padding:14px;cursor:pointer;font:inherit;text-align:left;display:flex;flex-direction:column;gap:6px;transition:transform .2s,box-shadow .2s}
+  .rcard:hover{transform:translateY(-3px);box-shadow:0 16px 28px -20px rgba(70,30,45,.5)}
+  .rcard .rsc{font-family:'Fraunces',serif;font-weight:600;font-size:27px;line-height:1}
+  .rcard .rpat{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:32px}
+  .rcard .rwhen{font-size:11px;color:var(--muted)}
+  .recent-empty{width:100%;font-size:13px;color:var(--muted);padding:18px;border:1px dashed var(--hair);border-radius:16px;text-align:center}
+
+  .checkin{display:flex;align-items:center;gap:13px;padding:15px 16px;border-radius:18px;margin:18px 0 4px;cursor:pointer;background:var(--glass);border:1px solid var(--glass-brd);transition:transform .2s;width:100%;text-align:left;font:inherit}
+  .checkin:hover{transform:translateY(-2px)}
+  .checkin .ci{width:40px;height:40px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;background:var(--accent-soft)}
+  .checkin .ct{flex:1}
+  .checkin .ct b{font-family:'Fraunces',serif;font-weight:500;font-size:15px}
+  .checkin .ct p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+  .checkin .cgo{color:var(--accent-ink);font-size:18px}
+
+  .you-sec{margin-bottom:14px}
+  .you-sec h3{font-family:'Fraunces',serif;font-weight:500;font-size:16px;margin:0 0 10px}
+  .you-acct{font-size:13.5px;color:var(--muted);margin-bottom:14px}
+
   /* a11y: keyboard focus visibility (inputs already have a focus ring) */
   :focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px;border-radius:6px}
   .pill:focus-visible,.tab:focus-visible,.seg button:focus-visible,.miniseg button:focus-visible,.btn:focus-visible,.mic:focus-visible,.ctrls button:focus-visible,.fbchip:focus-visible{outline:2px solid var(--accent-ink);outline-offset:3px}
@@ -305,35 +361,47 @@
 </div>
 
 <div class="wrap">
-  <header class="top">
-    <div class="word">Samvaad<span class="d">.</span></div>
-    <div class="navbtns">
-      <button class="pill" id="navAnalyse" aria-current="true">Analyse</button>
-      <button class="pill" id="navDash">Dashboard</button>
-      <button class="pill" id="gearBtn">Settings</button>
-      <div class="acctwrap">
-        <button class="pill" id="acctBtn" title="Account" aria-haspopup="true" aria-expanded="false">Account</button>
-        <div class="glass acctmenu hide" id="acctMenu" role="menu">
-          <div class="acctid" id="acctId">—</div>
-          <button class="btn soft" id="signBtn">Sign out</button>
-        </div>
-      </div>
+  <header class="topbar">
+    <div>
+      <div class="hi">Namaste, <span id="greetName">friend</span></div>
+      <div class="subhi">A quiet moment to check in.</div>
     </div>
+    <button class="avatar" id="acctBtn" title="You" aria-label="Your profile and settings">
+      <span class="streak" id="streakChip">New</span>
+      <span class="ava" id="avaInit">·</span>
+    </button>
   </header>
 
-  <div class="glass drawer" id="drawer">
-    <h3>Settings — keys stay in this tab only</h3>
-    <p class="hint">Set a <b>Backend URL</b> to route through your secure proxy. Otherwise it runs standalone with the keys below.</p>
-    <div class="grid2">
-      <div><label class="fl">Backend URL</label><input type="text" id="beUrl" placeholder="https://your-backend.onrender.com"></div>
-      <div><label class="fl">Deepgram key (audio upload)</label><input type="text" id="dgKey" placeholder="Token …"></div>
-      <div><label class="fl">ElevenLabs key (voices)</label><input type="text" id="elKey" placeholder="xi-api-key …"></div>
-      <div><label class="fl">ElevenLabs voice A / B</label><div style="display:flex;gap:8px"><input type="text" id="elA" placeholder="voice A"><input type="text" id="elB" placeholder="voice B"></div></div>
+  <main class="screens">
+
+  <!-- HOME -->
+  <section id="viewHome" class="screen">
+    <div class="hero">
+      <svg class="heroart" width="118" height="118" viewBox="0 0 120 90" fill="none" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round"><path d="M60 79 C44 56 38 40 32 30 C46 36 54 54 60 79"/><path d="M60 79 C76 56 82 40 88 30 C74 36 66 54 60 79"/><path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/><path d="M16 80 Q60 89 104 80"/></svg>
+      <h2>Talk something through</h2>
+      <p id="heroPrompt">A hard conversation, a quiet worry, or just your day — let’s look at it gently.</p>
+      <button class="btn" onclick="startSession()">Start a session →</button>
     </div>
-  </div>
+
+    <div class="sec-h">What are we looking at?</div>
+    <div class="intent-grid">
+      <button class="intent" onclick="startSession('relationship','couple')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="9" r="3"/><circle cx="16" cy="10" r="2.6"/><path d="M3.4 19c.4-3 2.7-4.7 5.1-4.7"/><path d="M13.2 19c.3-2.6 2.2-4 4.3-4"/></svg></span><span class="it">Us two</span></button>
+      <button class="intent" onclick="startSession('relationship','solo')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-9.1A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.9C19 15.6 12 20 12 20z"/></svg></span><span class="it">A relationship</span></button>
+      <button class="intent" onclick="startSession('self','solo')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.2"/><path d="M6 19c.4-3.3 3-5 6-5s5.6 1.7 6 5"/></svg></span><span class="it">Just me</span></button>
+    </div>
+
+    <div class="sec-h">Recent reflections <a onclick="view('dash')">See all →</a></div>
+    <div class="carousel" id="homeRecent"></div>
+
+    <button class="checkin" onclick="startSession('self','solo')">
+      <span class="ci"><svg width="22" height="16" viewBox="0 0 120 90" fill="none" stroke="var(--accent-ink)" stroke-width="3.4" stroke-linecap="round"><path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/><path d="M60 79 C44 56 38 40 32 30"/><path d="M60 79 C76 56 82 40 88 30"/></svg></span>
+      <span class="ct"><b>Today’s check-in</b><p>How was your day? Take a minute to reflect.</p></span>
+      <span class="cgo">→</span>
+    </button>
+  </section>
 
   <!-- ANALYSE -->
-  <div id="viewAnalyse">
+  <div id="viewAnalyse" class="screen hide">
     <div class="modebar">
       <span class="lbl">I want to look at</span>
       <div class="seg" id="intentSeg"><button data-m="relationship" data-s="couple" aria-selected="true">Us two</button><button data-m="relationship" data-s="solo" aria-selected="false">A relationship</button><button data-m="self" data-s="solo" aria-selected="false">Just me</button></div>
@@ -384,14 +452,41 @@
     </section>
   </div>
 
-  <!-- DASHBOARD -->
-  <div id="viewDash" class="hide">
+  <!-- INSIGHTS (dashboard) -->
+  <div id="viewDash" class="screen hide">
     <p class="lede serif" style="font-style:italic">Your patterns, gently tracked over time.</p>
     <div class="glass card" id="trendCard" style="margin-bottom:14px"></div>
     <div id="dashList"></div>
   </div>
 
-  <footer>Phase 1 · standalone demo, nothing stored here. Set a Backend URL to persist securely (encrypted, auto-delete, consent logged).</footer>
+  <!-- YOU -->
+  <section id="viewYou" class="screen hide">
+    <div class="you-sec glass card">
+      <h3>Your account</h3>
+      <div class="you-acct" id="acctId">—</div>
+      <button class="btn soft" id="signBtn" style="width:auto">Sign out</button>
+    </div>
+    <div class="you-sec glass card">
+      <h3>Settings — keys stay in this tab only</h3>
+      <p class="hint">Set a <b>Backend URL</b> to route through your secure proxy. Otherwise it runs standalone with the keys below.</p>
+      <div class="grid2">
+        <div><label class="fl">Backend URL</label><input type="text" id="beUrl" placeholder="https://your-backend.onrender.com"></div>
+        <div><label class="fl">Deepgram key (audio upload)</label><input type="text" id="dgKey" placeholder="Token …"></div>
+        <div><label class="fl">ElevenLabs key (voices)</label><input type="text" id="elKey" placeholder="xi-api-key …"></div>
+        <div><label class="fl">ElevenLabs voice A / B</label><div style="display:flex;gap:8px"><input type="text" id="elA" placeholder="voice A"><input type="text" id="elB" placeholder="voice B"></div></div>
+      </div>
+    </div>
+    <p class="hint" style="text-align:center;padding:0 6px">Phase 1 · standalone demo. Set a Backend URL to persist securely (encrypted, auto-delete, consent logged).</p>
+  </section>
+
+  </main>
+
+  <nav class="bottomnav" aria-label="Primary">
+    <button data-tab="home" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 9.5V20h14V9.5"/></svg>Home</button>
+    <button data-tab="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4"/><path d="M4 16l5-5 3 3 7-8"/><path d="M16 6h4v4"/></svg>Insights</button>
+    <button class="talk" data-tab="analyse"><span class="tk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12.5a5 5 0 0 1-5 5H9l-4.5 3v-8a5 5 0 0 1 5-5h5.5a5 5 0 0 1 5 5z"/></svg></span>Talk</button>
+    <button data-tab="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.6"/><path d="M5.5 20c.5-3.6 3.2-5.6 6.5-5.6s6 2 6.5 5.6"/></svg>You</button>
+  </nav>
 </div>
 
 <!-- BREATHING OVERLAY -->
@@ -433,12 +528,12 @@ document.body.setAttribute('data-mode','relationship');
 function renderAcct(){
   var sess=SamvaadAuth.readSession(), guest=SamvaadAuth.isGuest();
   var email=sess&&sess.user&&sess.user.email;
-  $('acctBtn').textContent=guest?'Guest':(email?email.split('@')[0]:'Account');
-  $('acctId').textContent=guest?'Browsing as a guest — sessions aren’t saved.':(email||'Signed in.');
-  $('signBtn').textContent=guest?'Sign in':'Sign out';
+  var nm=guest?'friend':(email?cap(email.split('@')[0]):'friend');
+  if($('greetName'))$('greetName').textContent=nm;
+  if($('avaInit'))$('avaInit').textContent=(guest?'G':(nm.charAt(0)||'·')).toUpperCase();
+  if($('acctId'))$('acctId').textContent=guest?'Browsing as a guest — sessions aren’t saved.':(email||'Signed in.');
+  if($('signBtn'))$('signBtn').textContent=guest?'Sign in':'Sign out';
 }
-$('acctBtn').onclick=function(e){e.stopPropagation();var hidden=$('acctMenu').classList.toggle('hide');$('acctBtn').setAttribute('aria-expanded',String(!hidden));};
-document.addEventListener('click',function(e){if(!$('acctMenu').classList.contains('hide')&&!e.target.closest('.acctwrap')){$('acctMenu').classList.add('hide');$('acctBtn').setAttribute('aria-expanded','false');}});
 $('signBtn').onclick=async function(){
   if(SamvaadAuth.isGuest()){location.href='login.html';return;}
   $('signBtn').disabled=true;$('signBtn').textContent='Signing out…';
@@ -452,11 +547,34 @@ renderAcct();
 /* validate/refresh the session in the background; if it can't be revived, return to login */
 if(!SamvaadAuth.isGuest()){SamvaadAuth.ensureValid().then(function(s){if(!s){location.replace('login.html');return;}renderAcct();});}
 
-/* nav */
-$('gearBtn').onclick=function(){$('drawer').classList.toggle('open');};
-$('navAnalyse').onclick=function(){view('analyse');};
-$('navDash').onclick=function(){renderDash();view('dash');};
-function view(v){$('viewAnalyse').classList.toggle('hide',v!=='analyse');$('viewDash').classList.toggle('hide',v!=='dash');$('navAnalyse').setAttribute('aria-current',v==='analyse');$('navDash').setAttribute('aria-current',v==='dash');window.scrollTo({top:0,behavior:'smooth'});}
+/* nav — bottom tab bar */
+function cap(s){s=(s||'')+'';return s.charAt(0).toUpperCase()+s.slice(1);}
+var VIEWS={home:'viewHome',analyse:'viewAnalyse',dash:'viewDash',you:'viewYou'};
+function view(v){
+  Object.keys(VIEWS).forEach(function(k){var el=$(VIEWS[k]);if(el)el.classList.toggle('hide',k!==v);});
+  document.querySelectorAll('.bottomnav button').forEach(function(b){b.setAttribute('aria-current',String(b.dataset.tab===v));});
+  if(v==='home')renderHome();
+  if(v==='dash')renderDash();
+  if(v==='you')renderAcct();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.bottomnav button').forEach(function(b){b.onclick=function(){view(b.dataset.tab);};});
+$('acctBtn').onclick=function(){view('you');};
+
+/* set the analysis intent from anywhere (home cards or the in-flow segment) */
+function setIntent(m,s){S.mode=m;S.sub=s;document.body.setAttribute('data-mode',m);document.querySelectorAll('#intentSeg button').forEach(function(x){x.setAttribute('aria-selected',String(x.dataset.m===m&&x.dataset.s===s));});syncMode();}
+/* start a fresh session from a home entry point: set intent, reset to the input form, open Talk */
+function startSession(m,s){if(m)setIntent(m,s);if(typeof screen==='function')screen('input');view('analyse');}
+
+/* home */
+function streakCount(){var d={};(S.sessions||[]).forEach(function(s){d[new Date(s.ts).toDateString()]=1;});return Object.keys(d).length;}
+function renderHome(){
+  var guest=SamvaadAuth.isGuest();
+  if($('streakChip')){var n=streakCount();$('streakChip').textContent=n>0?('🔥 '+n+(n>1?' days':' day')):'New';}
+  var c=$('homeRecent');if(!c)return;
+  if(!(S.sessions&&S.sessions.length)){c.innerHTML='<div class="recent-empty">'+(guest?'Sign in to keep your reflections here.':'No reflections yet — start your first session above.')+'</div>';return;}
+  c.innerHTML=S.sessions.slice(0,8).map(function(s){var when=new Date(s.ts).toLocaleDateString([],{month:'short',day:'numeric'});return '<button class="rcard" onclick="view(\'dash\')"><span class="rsc" style="color:'+clr('overall',s.overall||0)+'">'+(s.overall||0)+'</span><span class="rpat dv">'+esc(s.pattern||'—')+'</span><span class="rwhen">'+(s.mode==='self'?'Reflection':'Relationship')+' · '+when+'</span></button>';}).join('');
+}
 
 /* mode + submode (smooth cross-fade handled by CSS on data-mode) */
 document.querySelectorAll('#intentSeg button').forEach(function(b){b.onclick=function(){document.querySelectorAll('#intentSeg button').forEach(function(x){x.setAttribute('aria-selected','false');});b.setAttribute('aria-selected','true');S.mode=b.dataset.m;S.sub=b.dataset.s;document.body.setAttribute('data-mode',S.mode);syncMode();};});
@@ -757,4 +875,7 @@ function renderDash(){var list=$('dashList'),trend=$('trendCard');
   list.innerHTML='<p class="hint" style="margin:0 0 10px">Tap a tile to revisit its full report.</p>'+S.sessions.map(function(s,i){var when=new Date(s.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});return '<div class="glass sess" style="cursor:pointer" onclick="openSession('+i+')"><div class="sc" style="color:'+clr('overall',s.overall)+'">'+s.overall+'</div><div class="meta"><div class="ttl dv">'+esc(s.pattern)+'</div><div class="sub"><span class="badge">'+(s.mode==='self'?'Self · '+s.sub:'Relationship · '+s.sub)+'</span> · '+when+'</div></div><div style="color:var(--muted);font-size:20px;padding-left:6px">›</div></div>';}).join('');
 }
 if('speechSynthesis' in window)window.speechSynthesis.onvoiceschanged=function(){window.speechSynthesis.getVoices();};
+
+/* boot into the Home screen */
+view('home');
 </script>
