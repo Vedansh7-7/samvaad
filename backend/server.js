@@ -78,13 +78,13 @@ app.post('/api/analyze', async (req, res) => {
       `"strengths":[{"title":"","who":"","detail":""}],` +
       `"improvements":[{"pattern":"","suggestion":"","script":"verbatim line in their own language/Hinglish, <=2 sentences"}],` +
       `"kpis":{"talk_balance":"","question_ratio":"","repair_attempts":0,"self_reference":""}}. ` +
-      `Max 4 patterns, 4 strengths, 3 improvements. Neutral, non-blaming. KPIs are descriptive text awareness signals, not diagnoses.`;
+      `Be honest and dynamic, never pad: include ONLY genuine items. "patterns" (max 4) and "improvements" (max 3) ONLY where a real issue exists — if the exchange is healthy (high scores, low escalation), return [] for them rather than inventing weaknesses. Always surface real "strengths" (max 4). Neutral, non-blaming. KPIs are descriptive text awareness signals, not diagnoses.`;
     const rep = json(await claude(p1));
 
     let improved = [];
     if (mode === 'relationship') {
       const p2 = `Rewrite the SAME conversation between ${nameA} (A) and ${nameB} (B) applying: ${JSON.stringify(rep.improvements)}.\n${transcript}\n\n` +
-        `Return ONLY minified JSON: {"improved":[{"speaker":"A or B","display":"natural line (Hinglish/Devanagari ok)","speak":"clean Roman transliteration for TTS, no Devanagari","emotion":"sad|attentive|sorry|happy|warm|neutral"}]}. Max 8 short turns.`;
+        `Return ONLY minified JSON: {"improved":[{"speaker":"A or B","display":"natural line (Hinglish/Devanagari ok)","speak":"clean Roman transliteration for TTS, no Devanagari","emotion":"sad|attentive|sorry|happy|warm|neutral"}]}. Max 8 short turns. CRITICAL: set "speaker" to exactly "A" or "B" (never a name), and alternate turns as a real back-and-forth (A, B, A, B…) — never label every turn the same speaker. Give each turn a fitting, varied "emotion"; do not default everything to neutral.`;
       improved = (json(await claude(p2)).improved) || [];
     }
 
