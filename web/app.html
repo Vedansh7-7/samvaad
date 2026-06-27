@@ -600,9 +600,37 @@ function lotusMini(){return '<svg width="22" height="16" viewBox="0 0 120 90" fi
 /* ---------- avatars ---------- */
 var MOUTH={neutral:'M41 60 Q50 62 59 60',happy:'M37 57 Q50 73 63 57',warm:'M39 58 Q50 69 61 58',sad:'M40 64 Q50 55 60 64',sorry:'M43 62 Q50 65 57 62',attentive:'M41 60 Q50 65 59 60'};
 function face(side,name,skin,clothes,female){
-  var hair=female?'<path d="M20 54 Q20 18 50 18 Q80 18 80 54 Q72 34 50 34 Q28 34 20 54 Z" fill="#2a2030"/><rect x="18" y="48" width="9" height="40" rx="4.5" fill="#2a2030"/><rect x="73" y="48" width="9" height="40" rx="4.5" fill="#2a2030"/>':'<path d="M22 50 Q24 20 50 20 Q76 20 78 50 Q70 32 50 32 Q30 32 22 50 Z" fill="#241c2b"/>';
-  var bindi=female?'<circle cx="50" cy="30" r="2.6" fill="#AE3C72"/>':'';
-  return '<div class="ch '+side+'" id="ch-'+side+'"><div class="tag" id="tag-'+side+'"></div><svg width="100" height="128" viewBox="0 0 100 130"><ellipse cx="50" cy="126" rx="32" ry="4.5" fill="rgba(0,0,0,.06)"/><rect x="22" y="88" width="56" height="42" rx="20" fill="'+clothes+'"/><rect x="44" y="78" width="12" height="14" fill="'+skin+'"/><circle cx="50" cy="52" r="30" fill="'+skin+'"/>'+hair+bindi+'<ellipse class="blush" id="bl-'+side+'-l" cx="36" cy="58" rx="5" ry="3" fill="#E48AAE"/><ellipse class="blush" id="bl-'+side+'-r" cx="64" cy="58" rx="5" ry="3" fill="#E48AAE"/><ellipse class="eye" cx="40" cy="50" rx="3" ry="3.6" fill="#241c2b"/><ellipse class="eye" cx="60" cy="50" rx="3" ry="3.6" fill="#241c2b"/><path id="brow-'+side+'-l" d="M35 43 Q40 41 45 43" stroke="#241c2b" stroke-width="1.6" fill="none" stroke-linecap="round"/><path id="brow-'+side+'-r" d="M55 43 Q60 41 65 43" stroke="#241c2b" stroke-width="1.6" fill="none" stroke-linecap="round"/><path class="mouth" id="mouth-'+side+'" d="'+MOUTH.neutral+'" stroke="#9b3b5e" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg><div class="nm">'+esc(name)+'</div></div>';
+  var dark=female?'#2A2030':'#241C2B', hairHi=female?'#4A3447':'#3A2940';
+  var hair=female
+    ?'<path d="M50 13 C28 13 16 30 17 56 C18 74 21 88 23 96 L31 96 C29 80 30 54 30 50 C30 40 33 34 50 34 C67 34 70 40 70 50 C70 54 71 80 69 96 L77 96 C79 88 82 74 83 56 C84 30 72 13 50 13 Z" fill="'+dark+'"/><path d="M50 16 C34 16 24 28 23 44 C30 33 41 30 50 30 C59 30 70 33 77 44 C76 28 66 16 50 16 Z" fill="'+hairHi+'" opacity=".55"/>'
+    :'<path d="M22 52 C22 26 34 16 50 16 C66 16 78 26 78 52 C74 41 70 35 64 33 C58 30 56 31 50 31 C44 31 42 30 36 33 C30 35 26 41 22 52 Z" fill="'+dark+'"/><path d="M40 19 C33 21 28 28 27 38 C33 29 42 27 50 27 C55 27 59 27 63 29 C58 21 49 17 40 19 Z" fill="'+hairHi+'" opacity=".5"/>';
+  var bindi=female?'<circle cx="50" cy="40" r="2.4" fill="#C8324B"/>':'';
+  var ear=female?'<circle cx="24" cy="61" r="2" fill="#E7B24A"/><circle cx="76" cy="61" r="2" fill="#E7B24A"/>':'';
+  return '<div class="ch '+side+'" id="ch-'+side+'"><div class="tag" id="tag-'+side+'"></div>'+
+    '<svg width="100" height="132" viewBox="0 0 100 132">'+
+    '<defs><radialGradient id="gs-'+side+'" cx="42%" cy="34%" r="70%"><stop offset="0" stop-color="#ffffff" stop-opacity=".42"/><stop offset="44%" stop-color="'+skin+'"/><stop offset="100%" stop-color="'+skin+'"/></radialGradient>'+
+    '<linearGradient id="gc-'+side+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+clothes+'"/><stop offset="1" stop-color="rgba(0,0,0,.2)"/></linearGradient></defs>'+
+    '<ellipse cx="50" cy="128" rx="30" ry="4" fill="rgba(60,30,40,.10)"/>'+
+    '<path d="M14 132 C14 105 30 96 50 96 C70 96 86 105 86 132 Z" fill="url(#gc-'+side+')"/>'+
+    '<path d="M40 97 Q50 105 60 97 L60 101 Q50 109 40 101 Z" fill="rgba(0,0,0,.12)"/>'+
+    '<path d="M22 110 C30 101 40 98 50 98 C60 98 70 101 78 110" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="2" stroke-linecap="round"/>'+
+    '<rect x="44" y="78" width="12" height="20" rx="6" fill="'+skin+'"/>'+
+    '<path d="M43 83 Q50 91 57 83 L57 87 Q50 93 43 87 Z" fill="rgba(90,45,55,.16)"/>'+
+    '<ellipse cx="24" cy="54" rx="4.5" ry="6.5" fill="'+skin+'"/><ellipse cx="76" cy="54" rx="4.5" ry="6.5" fill="'+skin+'"/>'+ear+
+    '<path d="M50 20 C67 20 78 32 78 50 C78 69 66 84 50 84 C34 84 22 69 22 50 C22 32 33 20 50 20 Z" fill="url(#gs-'+side+')"/>'+
+    '<path d="M70 36 C78 46 77 66 64 80 C72 64 71 46 64 38 Z" fill="rgba(110,55,65,.08)"/>'+
+    hair+bindi+
+    '<path d="M50 51 Q53 58 48 59" fill="none" stroke="rgba(110,60,70,.32)" stroke-width="1.4" stroke-linecap="round"/>'+
+    '<ellipse class="blush" id="bl-'+side+'-l" cx="37" cy="58" rx="5.5" ry="3.2" fill="#E48AAE"/>'+
+    '<ellipse class="blush" id="bl-'+side+'-r" cx="63" cy="58" rx="5.5" ry="3.2" fill="#E48AAE"/>'+
+    '<path d="M34 47 Q40 44.5 46 47" fill="none" stroke="rgba(40,28,40,.4)" stroke-width="1.2" stroke-linecap="round"/>'+
+    '<path d="M54 47 Q60 44.5 66 47" fill="none" stroke="rgba(40,28,40,.4)" stroke-width="1.2" stroke-linecap="round"/>'+
+    '<g class="eye"><ellipse cx="40" cy="50" rx="3" ry="3.6" fill="#241c2b"/><circle cx="41" cy="48.7" r=".95" fill="#fff"/></g>'+
+    '<g class="eye"><ellipse cx="60" cy="50" rx="3" ry="3.6" fill="#241c2b"/><circle cx="61" cy="48.7" r=".95" fill="#fff"/></g>'+
+    '<path id="brow-'+side+'-l" d="M35 43 Q40 41 45 43" stroke="'+dark+'" stroke-width="1.8" fill="none" stroke-linecap="round"/>'+
+    '<path id="brow-'+side+'-r" d="M55 43 Q60 41 65 43" stroke="'+dark+'" stroke-width="1.8" fill="none" stroke-linecap="round"/>'+
+    '<path class="mouth" id="mouth-'+side+'" d="'+MOUTH.neutral+'" stroke="#B5566B" stroke-width="2.6" fill="none" stroke-linecap="round"/>'+
+    '</svg><div class="nm">'+esc(name)+'</div></div>';
 }
 var EMO={sad:'😔',attentive:'🙂',sorry:'🙏',happy:'😊',warm:'🤗',neutral:'😐'};
 function setNP(t){var s=$('stage');if(s)s.setAttribute('data-playing',t==='Now playing'?'true':'false');var l=$('npLive');if(l)l.textContent=t;}
