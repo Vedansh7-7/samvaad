@@ -16,7 +16,8 @@
       "Bash(git init *)",
       "Bash(git config *)",
       "Bash(git add *)",
-      "Bash(git commit -m 'Initial commit: Samvaad v3 — talk, reflect, breathe *)"
+      "Bash(git commit -m 'Initial commit: Samvaad v3 — talk, reflect, breathe *)",
+      "Bash(git commit -m 'Switch analysis brain from Anthropic to Groq \\(free tier, Mixtral-8x7B\\) *)"
     ]
   },
   "hooks": {

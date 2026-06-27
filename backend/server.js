@@ -11,7 +11,7 @@ app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*' }));
 app.use(express.json({ limit: '25mb' }));
 
 const {
-  ANTHROPIC_API_KEY, DEEPGRAM_KEY, ELEVENLABS_KEY,
+  GROQ_API_KEY, DEEPGRAM_KEY, ELEVENLABS_KEY,
   SUPABASE_URL, SUPABASE_SERVICE_KEY,
   ELEVEN_VOICE_A = 'EXAVITQu4vr4xnSDxMaL', ELEVEN_VOICE_B = 'onwK4e9ZLuTAKqWW03F9'
 } = process.env;
@@ -31,14 +31,14 @@ async function getUser(req) {
 const json = (s) => { try { return JSON.parse(s); } catch { const a = s.indexOf('{'), b = s.lastIndexOf('}'); return JSON.parse(s.slice(a, b + 1)); } };
 
 async function claude(prompt) {
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] })
+    headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + GROQ_API_KEY },
+    body: JSON.stringify({ model: 'mixtral-8x7b-32768', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] })
   });
-  if (!r.ok) throw new Error('claude ' + r.status + ' ' + (await r.text()).slice(0, 160));
+  if (!r.ok) throw new Error('groq ' + r.status + ' ' + (await r.text()).slice(0, 160));
   const d = await r.json();
-  return (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+  return (d.choices || []).map(c => c.message?.content || '').join('');
 }
 
 // ---- Transcribe (Deepgram, diarized) -> speaker-labelled transcript ----
