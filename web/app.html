@@ -576,7 +576,7 @@ $('signBtn').onclick=async function(){
 };
 renderAcct();
 /* remember the Backend URL so authenticated persistence keeps working across reloads */
-(function(){try{var u=localStorage.getItem('samvaad.beUrl');if(u)$('beUrl').value=u;}catch(e){}
+(function(){try{var u=localStorage.getItem('samvaad.beUrl');$('beUrl').value=u||'https://samvaad-backend-gyk9.onrender.com';}catch(e){}
   $('beUrl').addEventListener('change',function(){try{localStorage.setItem('samvaad.beUrl',be());}catch(e){}});})();
 /* validate/refresh the session in the background; if it can't be revived, return to login */
 if(!SamvaadAuth.isGuest()){SamvaadAuth.ensureValid().then(function(s){if(!s){location.replace('login.html');return;}renderAcct();});}
@@ -648,7 +648,7 @@ function setFile(f){S.audioFile=f;$('fileName').textContent=f.name+' · '+(f.siz
 $('goBtn').onclick=run;$('againBtn').onclick=function(){stopReplay();screen('input');};
 function screen(s){$('screenInput').classList.toggle('hide',s!=='input');$('screenProc').classList.toggle('hide',s!=='proc');$('screenResults').classList.toggle('hide',s!=='results');window.scrollTo({top:0,behavior:'smooth'});}
 function showErr(m){$('errBox').textContent=m;$('errBox').classList.add('show');}
-function be(){return $('beUrl').value.trim().replace(/\/$/,'');}
+function be(){return ($('beUrl').value.trim()||'https://samvaad-backend-gyk9.onrender.com').replace(/\/$/,'');}
 /* Backend calls carry the Supabase bearer token so the proxy can persist per-user (RLS). */
 function beHeaders(){return Object.assign({'content-type':'application/json'}, SamvaadAuth.authHeaders());}
 var PROC=['Reading it closely…','Finding the patterns underneath…','Noticing what went well…','Preparing a kinder replay…'];
