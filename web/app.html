@@ -528,7 +528,7 @@ function toB64(f){return new Promise(function(res,rej){var r=new FileReader();r.
 async function analyse(transcript,a,b){
   if(be()){var r=await fetch(be()+'/api/analyze',{method:'POST',headers:beHeaders(),body:JSON.stringify({transcript:transcript,mode:S.mode,submode:S.sub,nameA:a,nameB:b,consent:S.sub==='couple'?'both_partners':'self_only'})});var d=await r.json();if(!r.ok)throw new Error(d.error||'Analysis failed');setProc(2);return d;}
   var lens=S.mode==='self'?'This is one person reflecting on themselves. Analyse THEIR emotional regulation, self-talk, language and stress markers — not a relationship.':S.sub==='solo'?('Only '+a+' is present, describing a relationship situation. Analyse how '+a+' shows up; infer the absent partner where reasonable, marked as inference.'):('A conversation between '+a+' (A) and '+b+' (B). Analyse the dynamics.');
-  var p1='You are an expert communication analyst trained in the Gottman method. '+lens+'\n\n'+transcript+'\n\nReturn ONLY minified JSON: {"scores":{"connection":0-100,"empathy":0-100,"escalation_risk":0-100,"overall":0-100},"summary":"<=2 sentences","patterns":[{"title":"","who":"","detail":"<=1 sentence"}],"strengths":[{"title":"","who":"","detail":""}],"improvements":[{"pattern":"","suggestion":"","script":"verbatim line in their language/Hinglish <=2 sentences"}],"kpis":{"talk_balance":"","question_ratio":"","repair_attempts":0,"self_reference":""}}. Max 4 patterns, 4 strengths, 3 improvements. Neutral, non-blaming. KPIs are awareness signals, not diagnoses.';
+  var p1='You are an expert communication analyst trained in the Gottman method. '+lens+'\n\n'+transcript+'\n\nReturn ONLY minified JSON: {"scores":{"connection":0-100,"empathy":0-100,"escalation_risk":0-100,"overall":0-100},"summary":"<=2 sentences","speakers":{"A":{"name":"","gender":"female|male|unknown"},"B":{"name":"","gender":"female|male|unknown"}},"patterns":[{"title":"","who":"","detail":"<=1 sentence"}],"strengths":[{"title":"","who":"","detail":""}],"improvements":[{"pattern":"","suggestion":"","script":"verbatim line in their language/Hinglish <=2 sentences"}],"kpis":{"talk_balance":"","question_ratio":"","repair_attempts":0,"self_reference":""}}. Be honest and dynamic, never pad: include "patterns" (max 4) and "improvements" (max 3) ONLY where a real issue exists — if the exchange is healthy, return []. Always surface real "strengths" (max 4). For "speakers", infer each person’s gender from name/context ("unknown" only if unclear); A is the narrator. Neutral, non-blaming. KPIs are awareness signals, not diagnoses.';
   var rep=pj(await claude(p1));setProc(2);setProc(3);
   var improved=[];
   if(S.mode==='relationship'){var p2='Rewrite the SAME conversation between '+a+' (A) and '+b+' (B) applying: '+JSON.stringify(rep.improvements)+'.\n'+transcript+'\n\nReturn ONLY minified JSON: {"improved":[{"speaker":"A or B","display":"natural line (Hinglish/Devanagari ok)","speak":"clean Roman transliteration, no Devanagari","emotion":"sad|attentive|sorry|happy|warm|neutral"}]}. Max 8 short turns. CRITICAL: set "speaker" to exactly "A" or "B" (never a name), alternate turns A,B,A,B as a real back-and-forth — never label every turn the same. Give each turn a fitting, varied "emotion"; do not default to neutral.';improved=(pj(await claude(p2)).improved)||[];}
@@ -572,8 +572,9 @@ function renderResults(a,b){
   // scripts (intervene)
   if((r.improvements||[]).length){var selfM=S.mode==='self';cards.push('<div class="glass section"><h3>'+(selfM?'Say these out loud':'Try this next time')+'</h3>'+(selfM?'<p class="hint" style="margin:0 0 12px">Your words, in your own voice. Say each line aloud — hearing yourself say it is the practice. Express it your way; these are just a starting point.</p>':'')+scriptCards(r.improvements,selfM)+'</div>');}
 
-  // replay
-  cards.push('<div class="glass section"><h3>'+(S.mode==='self'?'Sathi reflects back':'A kinder replay')+'</h3><div class="stage" id="stage" data-playing="false"><div class="stage-bar"><span class="np-dot"></span><span class="np-label">'+(S.mode==='self'?'Sathi reflects back':'Kinder replay')+'</span><span class="np-live" id="npLive">Paused</span></div><div class="scene" id="scene"></div><div class="bubbles" id="bubbles"></div><div class="ctrls"><button id="playBtn" class="play" aria-label="Play replay">▶</button><div class="bar" id="bar"><i id="prog"></i></div><button id="muteBtn" class="ic" aria-label="Mute voices">🔊</button></div></div></div>');
+  // replay — only when substantial enough to watch (drops <2s clips)
+  var showReplay=replayWorth();
+  if(showReplay)cards.push('<div class="glass section"><h3>'+(S.mode==='self'?'Sathi reflects back':'A kinder replay')+'</h3><div class="stage" id="stage" data-playing="false"><div class="stage-bar"><span class="np-dot"></span><span class="np-label">'+(S.mode==='self'?'Sathi reflects back':'Kinder replay')+'</span><span class="np-live" id="npLive">Paused</span></div><div class="scene" id="scene"></div><div class="bubbles" id="bubbles"></div><div class="ctrls"><button id="playBtn" class="play" aria-label="Play replay">▶</button><div class="bar" id="bar"><i id="prog"></i></div><button id="muteBtn" class="ic" aria-label="Mute voices">🔊</button></div></div></div>');
 
   // feedback — only when there is a concrete suggestion to commit to
   var top=(r.improvements&&r.improvements[0])?r.improvements[0].suggestion:'';
@@ -583,7 +584,7 @@ function renderResults(a,b){
   screen('results');
 
   // wire + animate
-  buildScene(a,b);
+  if(showReplay)buildScene(a,b);
   document.querySelectorAll('#fbChips .fbchip').forEach(function(c){c.onclick=function(){document.querySelectorAll('#fbChips .fbchip').forEach(function(x){x.classList.remove('sel');});c.classList.add('sel');var payload={asked_at:Date.now(),will_try:c.dataset.v,top_suggestion:top,context:{escalation_risk:risk,mode:S.mode,submode:S.sub}};if(be())fetch(be()+'/api/feedback',{method:'POST',headers:beHeaders(),body:JSON.stringify(payload)}).catch(function(){});$('fbSaved').classList.add('show');};});
   document.querySelectorAll('#ms button').forEach(function(bt){bt.onclick=function(){document.querySelectorAll('#ms button').forEach(function(x){x.setAttribute('aria-selected','false');});bt.setAttribute('aria-selected','true');$('msGood').classList.toggle('hide',bt.dataset.v!=='good');$('msPat').classList.toggle('hide',bt.dataset.v!=='pat');};});
 
@@ -634,11 +635,15 @@ function face(side,name,skin,clothes,female){
 }
 var EMO={sad:'😔',attentive:'🙂',sorry:'🙏',happy:'😊',warm:'🤗',neutral:'😐'};
 function setNP(t){var s=$('stage');if(s)s.setAttribute('data-playing',t==='Now playing'?'true':'false');var l=$('npLive');if(l)l.textContent=t;}
-function buildScene(a,b){var solo=S.mode==='self'||S.sub==='solo';S._nm={a:a,b:b,solo:(S.mode==='self'?'Sathi':a)};
-  S._alt=(!solo)&&(S.improved||[]).length>1&&S.improved.every(function(x){return (((x.speaker||'')+'').trim().toUpperCase())===(((S.improved[0].speaker||'')+'').trim().toUpperCase());});
-  if(S.mode==='self')$('scene').innerHTML=face('a','Sathi','#E9C9A8','#9E6A86',false).replace('ch a','ch a solo');
-  else if(solo)$('scene').innerHTML=face('a',a,'#E8C4A0','#D07EA0',true).replace('ch a','ch a solo');
-  else $('scene').innerHTML=face('a',a,'#E8C4A0','#D07EA0',true)+face('b',b,'#E0AE86','#5DA8A0',false);
+/* is the kinder replay substantial enough to show? (skip near-empty <2s clips) */
+function replayWorth(){var im=S.improved||[];if(im.length<2)return false;var chars=im.reduce(function(n,t){return n+(((t.speak||t.display)||'')+'').length;},0);return chars>=30;}
+function buildScene(a,b){var single=S.mode==='self',couple=S.mode==='relationship'&&S.sub==='couple',sp=(S.report&&S.report.speakers)||{};
+  var gfem=function(v){var g=(v&&typeof v==='object')?v.gender:v;return /^f/i.test((g||'')+'');};
+  var bName=couple?(b||'Them'):((sp.B&&sp.B.name)||'Them');
+  S._nm={a:a,b:bName,solo:(single?'Sathi':a)};
+  S._alt=(!single)&&(S.improved||[]).length>1&&S.improved.every(function(x){return (((x.speaker||'')+'').trim().toUpperCase())===(((S.improved[0].speaker||'')+'').trim().toUpperCase());});
+  if(single)$('scene').innerHTML=face('a','Sathi','#E9C9A8','#9E6A86',false).replace('ch a','ch a solo');
+  else{var ga=('A' in sp)?gfem(sp.A):true,gb=('B' in sp)?gfem(sp.B):false;$('scene').innerHTML=face('a',a,'#E8C4A0','#D07EA0',ga)+face('b',bName,'#E0AE86','#5DA8A0',gb);}
   $('bubbles').innerHTML='';$('prog').style.transform='scaleX(0)';S.idx=0;S.playing=false;$('playBtn').textContent='▶';setNP('Paused');
   $('muteBtn').onclick=function(){S.mute=!S.mute;$('muteBtn').textContent=S.mute?'🔇':'🔊';if(S.mute){window.speechSynthesis.cancel();if(S._au)S._au.pause();}};
   $('playBtn').onclick=function(){if(S.playing)pausePlay();else startPlay();};
@@ -650,9 +655,9 @@ function stopTalk(){document.querySelectorAll('.mouth').forEach(function(m){m.cl
 /* resolve which side speaks: trust A/B or the name, but if the model labelled every turn the same, fall back to strict alternation */
 function spk(t,i){if(S._alt)return i%2?'b':'a';var s=(((t&&t.speaker)||'')+'').trim(),nb=(S._nm&&S._nm.b)||'',na=(S._nm&&S._nm.a)||'';if(/^b$/i.test(s)||(nb&&s.toLowerCase()===nb.toLowerCase()))return 'b';if(/^a$/i.test(s)||(na&&s.toLowerCase()===na.toLowerCase()))return 'a';return i%2?'b':'a';}
 function advance(){if(!S.playing)return;if(S.idx>=S.improved.length){S.playing=false;$('playBtn').textContent='▶';$('prog').style.transform='scaleX(1)';stopTalk();setNP('Ended');return;}
-  var t=S.improved[S.idx],solo=S.mode==='self'||S.sub==='solo',cls=solo?'a':spk(t,S.idx);
-  var who=solo?((S._nm&&S._nm.solo)||''):(cls==='b'?((S._nm&&S._nm.b)||'B'):((S._nm&&S._nm.a)||'A'));
-  var bub=document.createElement('div');bub.className='bub '+(solo?'solo':cls);bub.innerHTML=(who?'<span class="bub-who">'+esc(who)+'</span>':'')+'<span class="dv">'+esc(t.display)+'</span>';$('bubbles').appendChild(bub);$('bubbles').scrollTop=$('bubbles').scrollHeight;
+  var t=S.improved[S.idx],single=S.mode==='self',cls=single?'a':spk(t,S.idx);
+  var who=single?((S._nm&&S._nm.solo)||''):(cls==='b'?((S._nm&&S._nm.b)||'B'):((S._nm&&S._nm.a)||'A'));
+  var bub=document.createElement('div');bub.className='bub '+(single?'solo':cls);bub.innerHTML=(who?'<span class="bub-who">'+esc(who)+'</span>':'')+'<span class="dv">'+esc(t.display)+'</span>';$('bubbles').appendChild(bub);$('bubbles').scrollTop=$('bubbles').scrollHeight;
   stopTalk();var ch=$('ch-'+cls);if(ch)ch.classList.add('speaking');var tag=$('tag-'+cls);if(tag)tag.textContent=EMO[t.emotion]||'😐';setExpr(cls,t.emotion);var m=$('mouth-'+cls);if(m&&!S.mute)m.classList.add('talk');
   $('prog').style.transform='scaleX('+((S.idx+1)/S.improved.length)+')';
   speak(t.speak||t.display,cls,function(){if(m)m.classList.remove('talk');S.idx++;setTimeout(advance,260);});}
@@ -695,7 +700,7 @@ function buildSlides(a){
   if((r.strengths||[]).length)slides.push({eyebrow:'The good in you',h:self?'What’s working':'What you did well',html:sList(r.strengths,'good')});
   if((r.patterns||[]).length)slides.push({eyebrow:'Domains to grow',h:'Where it gets caught',html:sList(r.patterns,'pat')});
   if((r.improvements||[]).length)slides.push(self?{eyebrow:'Your words, out loud',h:'Say these out loud',html:'<p class="slide-p">Say each line aloud, your way — hearing your own voice is the practice.</p>'+scriptCards(r.improvements,true)}:{eyebrow:'How to improve',h:'Lines to try next time',html:scriptCards(r.improvements,false)});
-  slides.push({eyebrow:'See it play out',h:self?'Sathi reflects back':'A kinder replay',html:'<p class="slide-p">Watch a voiced, animated version of a kinder exchange — the same moment, softened.</p><div class="row" style="justify-content:center"><button class="btn accent" onclick="slideToReplay()">▶ Play the replay</button></div>'});
+  if(replayWorth())slides.push({eyebrow:'See it play out',h:self?'Sathi reflects back':'A kinder replay',html:'<p class="slide-p">Watch a voiced, animated version of a kinder exchange — the same moment, softened.</p><div class="row" style="justify-content:center"><button class="btn accent" onclick="slideToReplay()">▶ Play the replay</button></div>'});
   slides.push({eyebrow:'Stay with it',h:'A gentle daily check-in',html:optinBlock(a)});
   return slides;
 }

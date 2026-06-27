@@ -23,7 +23,8 @@
       "Bash(curl -s -m 10 -X POST http://localhost:8787/api/optin -H \"content-type: application/json\" -d '{\"phone\":\"+91 9876543210\",\"consent\":true,\"display_name\":\"Kavya\"}')",
       "Bash(curl -s -m 10 -X POST http://localhost:8787/api/optin -H \"content-type: application/json\" -d '{\"phone\":\"12345\",\"consent\":true}')",
       "Bash(curl -s -m 10 -X POST http://localhost:8787/api/optin -H \"content-type: application/json\" -d '{\"phone\":\"+919876543210\",\"consent\":false}')",
-      "Bash(git commit -m 'Self-mode '\\\\''say aloud'\\\\'' reframing + WhatsApp number cell on input *)"
+      "Bash(git commit -m 'Self-mode '\\\\''say aloud'\\\\'' reframing + WhatsApp number cell on input *)",
+      "Bash(git commit -m 'Add ROADMAP.md \\(validation-first plan from founder PDF\\) + CLAUDE.md thesis *)"
     ]
   },
   "hooks": {

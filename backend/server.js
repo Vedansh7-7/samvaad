@@ -74,11 +74,11 @@ app.post('/api/analyze', async (req, res) => {
 
     const p1 = `You are an expert communication analyst trained in the Gottman method. ${lens}\n\n${transcript}\n\n` +
       `Return ONLY minified JSON: {"scores":{"connection":0-100,"empathy":0-100,"escalation_risk":0-100,"overall":0-100},` +
-      `"summary":"<=2 sentences","patterns":[{"title":"","who":"","detail":"<=1 sentence"}],` +
+      `"summary":"<=2 sentences","speakers":{"A":{"name":"","gender":"female|male|unknown"},"B":{"name":"","gender":"female|male|unknown"}},"patterns":[{"title":"","who":"","detail":"<=1 sentence"}],` +
       `"strengths":[{"title":"","who":"","detail":""}],` +
       `"improvements":[{"pattern":"","suggestion":"","script":"verbatim line in their own language/Hinglish, <=2 sentences"}],` +
       `"kpis":{"talk_balance":"","question_ratio":"","repair_attempts":0,"self_reference":""}}. ` +
-      `Be honest and dynamic, never pad: include ONLY genuine items. "patterns" (max 4) and "improvements" (max 3) ONLY where a real issue exists — if the exchange is healthy (high scores, low escalation), return [] for them rather than inventing weaknesses. Always surface real "strengths" (max 4). Neutral, non-blaming. KPIs are descriptive text awareness signals, not diagnoses.`;
+      `Be honest and dynamic, never pad: include ONLY genuine items. "patterns" (max 4) and "improvements" (max 3) ONLY where a real issue exists — if the exchange is healthy (high scores, low escalation), return [] for them rather than inventing weaknesses. Always surface real "strengths" (max 4). Neutral, non-blaming. KPIs are descriptive text awareness signals, not diagnoses. For "speakers": infer each person's likely gender from their name and how they are addressed (use "unknown" only if genuinely unclear). "A" is ${nameA}; for a solo reflection "B" is the other person ${nameA} describes — give B's name if stated, else "".`;
     const rep = json(await claude(p1));
 
     let improved = [];
