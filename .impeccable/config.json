@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "fraunces",
+        "reason": "Locked design-system serif per CLAUDE.md; user explicitly asked to preserve Fraunces+Mulish",
+        "createdAt": "2026-06-26T23:44:18.580Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,635 @@
+<!--
+  Samvaad v3 — talk, reflect, breathe.
+  Aesthetic: soft wellness pastels + glassmorphism + Fraunces/Mulish + single-line lotus.
+  Modes cross-fade: Relationship (pink) <-> Self/Introspection (warm).
+  Intervene layer: scripts + voiced avatar replay + guided breathing exercise.
+  Standalone-capable; routes through a backend when a Backend URL is set.
+-->
+<script src="auth.js"></script>
+<script>
+  // Auth gate — runs before render. No session and not a guest -> back to login.
+  (function gate(){
+    if (SamvaadAuth.hashHasToken()) {            // magic link landed straight on the app
+      var s = SamvaadAuth.sessionFromHash(location.hash);
+      if (s) { SamvaadAuth.saveSession(s); history.replaceState(null, '', location.pathname + location.search); }
+    }
+    if (!SamvaadAuth.readSession() && !SamvaadAuth.isGuest()) location.replace('login.html');
+  })();
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Mulish:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500&display=swap');
+  :root{
+    --ink:#2E2024; --muted:#6E5258; --faint:#7A5E63; --hair:rgba(46,32,36,.12);
+    --glass:rgba(255,255,255,.46); --glass-2:rgba(255,255,255,.62); --glass-brd:rgba(255,255,255,.72);
+    /* cherry = the constant action colour across both modes; ambient --accent shifts per mode */
+    --cherry:#C8324B; --cherry-2:#A52741;
+    --good:#4F8A6B; --warn:#C0792E; --risk:#C0463C;
+    --accent:#C8324B; --accent-soft:#F8DDE0; --accent-ink:#9E2740;
+    --r:16px;
+  }
+  body[data-mode="relationship"]{ --accent:#C8324B; --accent-soft:#F8DDE0; --accent-ink:#9E2740; }
+  body[data-mode="self"]{ --accent:#9E6A86; --accent-soft:#EFE2EA; --accent-ink:#7C4D67; }
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--ink);font-family:'Mulish','Noto Sans Devanagari',system-ui,sans-serif;line-height:1.6;min-height:100vh}
+  .bg{position:fixed;inset:0;z-index:-2;transition:opacity .85s ease}
+  .bg-rel{background:
+    radial-gradient(120% 90% at 12% 6%, #FDEEF0 0%, rgba(253,238,240,0) 46%),
+    radial-gradient(120% 100% at 92% 18%, #F8D6DD 0%, rgba(248,214,221,0) 50%),
+    radial-gradient(140% 120% at 80% 100%, #F0DCE6 0%, rgba(240,220,230,0) 55%),
+    linear-gradient(160deg,#FDF3F2 0%,#F9DEE3 48%,#F1DDE8 100%);opacity:1}
+  .bg-self{background:
+    radial-gradient(120% 90% at 12% 6%, #F7EEF2 0%, rgba(247,238,242,0) 46%),
+    radial-gradient(120% 100% at 90% 16%, #E7D3E0 0%, rgba(231,211,224,0) 52%),
+    radial-gradient(140% 120% at 82% 100%, #DAD0E4 0%, rgba(218,208,228,0) 55%),
+    linear-gradient(160deg,#F6EEF3 0%,#E6D6E2 50%,#DCD2E6 100%);opacity:0}
+  body[data-mode="self"] .bg-rel{opacity:0}
+  body[data-mode="self"] .bg-self{opacity:1}
+  .amb{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+  .amb svg{position:absolute}
+  .amb .a1{top:-50px;right:-30px;opacity:.45}.amb .a2{bottom:8%;left:5%;opacity:.5}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 18px 90px}
+  .dv{font-family:'Noto Sans Devanagari','Mulish',sans-serif}
+  .hide{display:none!important}
+  .glass{background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(1.2);backdrop-filter:blur(20px) saturate(1.2);border:1px solid var(--glass-brd);border-radius:22px;box-shadow:0 20px 50px -30px rgba(76,58,42,.4),inset 0 1px 0 rgba(255,255,255,.55)}
+  .serif{font-family:'Fraunces',serif}
+
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .word{font-family:'Fraunces',serif;font-weight:600;font-size:22px}.word .d{color:var(--cherry)}
+  .navbtns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .pill{border:1px solid var(--glass-brd);background:var(--glass);border-radius:99px;padding:8px 15px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer;transition:.25s}
+  .pill:hover{border-color:var(--accent)}
+  .pill[aria-current="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .pill.breathe{color:var(--accent-ink);border-color:var(--accent)}
+  .pill.breathe:hover{background:var(--accent-soft)}
+  .acctwrap{position:relative}
+  .acctmenu{position:absolute;right:0;top:46px;z-index:50;min-width:208px;padding:13px;border-radius:14px;text-align:left}
+  .acctmenu .acctid{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:10px;word-break:break-word}
+  .acctmenu .btn{width:100%}
+
+  .modebar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .modebar .lbl{font-size:13px;color:var(--muted)}
+  .seg{display:inline-flex;background:var(--glass);border:1px solid var(--glass-brd);border-radius:99px;padding:4px;gap:3px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  .seg button{border:none;background:none;border-radius:99px;padding:8px 18px;font:inherit;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:.3s}
+  .seg button[aria-selected="true"]{background:var(--accent);color:#fff;box-shadow:0 6px 16px -8px var(--accent)}
+  .lede{color:var(--muted);font-size:15px;max-width:60ch;margin:2px 0 18px}
+
+  .card{padding:22px}
+  label.fl{display:block;font-size:12.5px;color:var(--faint);margin:0 0 6px;padding-left:3px}
+  .names{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  input[type=text],textarea{width:100%;font:inherit;color:var(--ink);background:var(--glass-2);border:1px solid var(--glass-brd);border-radius:13px;padding:12px 14px;transition:.2s}
+  input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft);background:#fff}
+  input::placeholder,textarea::placeholder{color:#6E5258;opacity:1}
+  textarea{min-height:170px;resize:vertical;line-height:1.7}
+  .hint{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+  .hint code{background:var(--accent-soft);color:var(--accent-ink);padding:1px 6px;border-radius:5px}
+
+  .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .tab{border:1px solid var(--glass-brd);background:var(--glass);border-radius:99px;padding:8px 15px;font:inherit;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:.2s}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tab .bonus{font-size:11px;opacity:.85;font-weight:400}
+
+  .btn{border:none;border-radius:13px;padding:13px 24px;font:inherit;font-weight:700;font-size:15px;cursor:pointer;color:#fff;background:linear-gradient(180deg,var(--cherry),var(--cherry-2));box-shadow:0 12px 24px -12px rgba(165,39,65,.55);transition:transform .15s,box-shadow .2s,opacity .2s}
+  .btn:hover{transform:translateY(-1px)} .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn.soft{background:var(--glass);color:var(--ink);border:1px solid var(--glass-brd);box-shadow:none;font-weight:600}
+  .btn.accent{background:linear-gradient(180deg,var(--accent),var(--accent-ink))}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+
+  .consent{border:1px solid var(--accent);background:var(--accent-soft);border-radius:13px;padding:12px 14px;margin:14px 0;display:flex;gap:10px;align-items:flex-start}
+  .consent input{margin-top:3px}.consent label{font-size:13.5px;color:var(--accent-ink)}
+
+  .drop{border:1.5px dashed var(--hair);border-radius:var(--r);padding:26px 18px;text-align:center;color:var(--muted);background:var(--glass);cursor:pointer}
+  .drop.over{border-color:var(--accent);background:var(--accent-soft)}.drop strong{color:var(--ink)}
+  .mic{width:78px;height:78px;border-radius:50%;border:none;cursor:pointer;background:var(--accent);color:#fff;font-size:26px;display:grid;place-items:center;margin:6px auto;box-shadow:0 12px 26px -12px var(--accent)}
+  .mic.rec{animation:pulse 1.3s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(200,50,75,.35)}50%{box-shadow:0 0 0 16px rgba(200,50,75,0)}}
+  .live{min-height:50px;background:var(--glass);border:1px solid var(--glass-brd);border-radius:12px;padding:10px 12px;color:var(--muted);font-size:14px;margin-top:12px}
+
+  /* processing */
+  .breath-loader{display:grid;place-items:center;padding:26px 0 8px}
+  .pulse-dot{width:64px;height:64px;border-radius:50%;background:var(--accent);opacity:.25;animation:bl 3.2s ease-in-out infinite}
+  @keyframes bl{0%,100%{transform:scale(.7);opacity:.18}50%{transform:scale(1.25);opacity:.4}}
+  .procmsg{text-align:center;color:var(--muted);font-size:14.5px;margin-top:8px}
+
+  /* reveal */
+  .rv{opacity:0;transform:translateY(12px);transition:opacity .6s ease,transform .6s ease}
+  .rv.in{opacity:1;transform:none}
+
+  /* hero score ring */
+  .hero{display:flex;align-items:center;gap:22px;padding:22px;flex-wrap:wrap}
+  .ring{position:relative;width:120px;height:120px;flex:0 0 auto}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .val{position:absolute;inset:0;display:grid;place-items:center;font-family:'Fraunces',serif;font-weight:600;font-size:34px}
+  .hero .htxt{flex:1;min-width:200px}
+  .hero .htxt .lab{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink)}
+  .hero .htxt h2{font-family:'Fraunces',serif;font-weight:500;font-size:23px;margin:4px 0 6px}
+  .hero .htxt p{margin:0;font-size:14.5px;color:var(--muted)}
+
+  .breathe-banner{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:18px;background:var(--accent-soft);border:1px solid var(--accent)}
+  .breathe-banner .bi{width:42px;height:42px;border-radius:50%;background:var(--accent);flex:0 0 auto;display:grid;place-items:center}
+  .breathe-banner .bt{flex:1}.breathe-banner .bt b{font-family:'Fraunces',serif;font-weight:500;font-size:16px;color:var(--accent-ink)}
+  .breathe-banner .bt p{margin:2px 0 0;font-size:13px;color:var(--accent-ink);opacity:.85}
+
+  .section{padding:20px}
+  .section h3{font-family:'Fraunces',serif;font-weight:500;font-size:18px;margin:0 0 12px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:var(--glass-2);border:1px solid var(--glass-brd);border-radius:99px;padding:6px 13px;font-size:12.5px;color:var(--muted)}.chip b{color:var(--ink)}
+  .miniseg{display:inline-flex;background:var(--glass);border:1px solid var(--glass-brd);border-radius:99px;padding:3px;gap:2px;margin-bottom:12px}
+  .miniseg button{border:none;background:none;border-radius:99px;padding:6px 14px;font:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+  .miniseg button[aria-selected="true"]{background:var(--ink);color:#fff}
+  .item{border:1px solid var(--glass-brd);background:var(--glass);border-radius:13px;padding:11px 13px;margin-bottom:9px}
+  .item.good{border-color:rgba(92,138,111,.55);background:linear-gradient(0deg,rgba(92,138,111,.07),rgba(92,138,111,.07)),var(--glass)}
+  .item.pat{border-color:rgba(192,70,60,.5);background:linear-gradient(0deg,rgba(192,70,60,.07),rgba(192,70,60,.07)),var(--glass)}
+  .item.good .t,.item.pat .t{display:inline-flex;align-items:center;gap:7px;vertical-align:baseline}
+  .item.good .t::before,.item.pat .t::before{content:"";width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+  .item.good .t::before{background:var(--good)}.item.pat .t::before{background:var(--risk)}
+  .item .t{font-weight:700;font-size:14px}.item .who{font-size:12px;color:var(--muted)}.item .d{font-size:13.5px;color:var(--muted);margin-top:2px}
+  .imp{border:1px solid var(--glass-brd);background:var(--glass);border-radius:13px;padding:13px;margin-bottom:10px}
+  .imp .p{font-size:12.5px;color:var(--risk);font-weight:600}.imp .s{font-size:14px;margin:4px 0 8px}
+  .imp .script{background:var(--accent-soft);border-radius:9px;padding:10px 12px;font-size:14px;color:var(--accent-ink)}
+  .imp .script .lab{font-size:11px;letter-spacing:.05em;text-transform:uppercase;display:block;margin-bottom:3px;opacity:.8}
+  .summary{font-size:14.5px;background:var(--glass-2);border:1px solid var(--glass-brd);border-radius:12px;padding:12px 14px;margin:0 0 6px}
+
+  /* replay stage */
+  .stage{position:relative;border-radius:18px;overflow:hidden;padding:14px;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.2));border:1px solid var(--glass-brd)}
+  .scene{height:176px;position:relative}
+  .ch{position:absolute;bottom:0;width:124px;text-align:center;transition:transform .3s}.ch.a{left:6%}.ch.b{right:6%}.ch.solo{left:50%;transform:translateX(-50%)}
+  .ch.speaking{transform:translateY(-5px)}.ch.solo.speaking{transform:translateX(-50%) translateY(-5px)}
+  .nm{font-size:12px;color:var(--muted)}.tag{font-size:18px;height:22px;opacity:0;transition:.25s}.ch.speaking .tag{opacity:1}
+  .eye{transform-box:fill-box;transform-origin:center;animation:blink 4.2s infinite}.ch.b .eye{animation-delay:1.1s}
+  @keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+  .mouth{transform-box:fill-box;transform-origin:center}.mouth.talk{animation:talk .19s linear infinite}
+  @keyframes talk{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1.25)}}
+  .blush{opacity:0;transition:.3s}.blush.on{opacity:.5}
+  .bubbles{max-height:140px;overflow:auto;margin-top:10px;display:flex;flex-direction:column;gap:7px}
+  .bub{max-width:80%;padding:8px 12px;border-radius:14px;font-size:14px;line-height:1.5}
+  .bub.a{align-self:flex-start;background:#FBE4EC;color:#9A4E6E}.bub.b{align-self:flex-end;background:#E1EFEC;color:#3E7C73}
+  .bub.solo{align-self:center;background:var(--accent-soft);color:var(--accent-ink);max-width:92%}
+  .ctrls{display:flex;align-items:center;gap:10px;margin-top:12px}
+  .ctrls button{border:1px solid var(--glass-brd);background:var(--glass);border-radius:99px;width:42px;height:42px;cursor:pointer;font-size:16px;display:grid;place-items:center}
+  .ctrls button:hover{border-color:var(--accent);color:var(--accent-ink)}
+  .bar{flex:1;height:5px;background:var(--hair);border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;width:100%;transform:scaleX(0);transform-origin:left;background:var(--accent);transition:transform .3s ease-out}
+
+  .fb h3{font-family:'Fraunces',serif;font-weight:500;font-size:17px;margin:0 0 4px}
+  .fb p{margin:0 0 12px;font-size:13.5px;color:var(--muted)}
+  .fbchip{border:1px solid var(--accent);background:var(--glass);color:var(--accent-ink);border-radius:99px;padding:8px 16px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+  .fbchip:hover,.fbchip.sel{background:var(--accent);color:#fff}
+  .saved{font-size:13px;color:var(--good);margin-top:10px;display:none}.saved.show{display:block}
+
+  /* dashboard */
+  .sess{display:flex;align-items:center;gap:13px;padding:12px 14px;margin-bottom:9px}
+  .sess .sc{font-family:'Fraunces',serif;font-weight:600;font-size:22px;width:44px;text-align:center}
+  .sess .meta{flex:1}.sess .meta .ttl{font-weight:700;font-size:14px}.sess .meta .sub{font-size:12.5px;color:var(--muted)}
+  .badge{font-size:11px;padding:2px 10px;border-radius:99px;font-weight:600;background:var(--accent-soft);color:var(--accent-ink)}
+  .empty{color:var(--muted);text-align:center;padding:30px;font-size:14px}
+
+  /* breathing overlay */
+  .breath{position:fixed;inset:0;z-index:70;display:none;place-items:center;background:rgba(44,38,34,.28);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .breath.show{display:grid}
+  .breath-inner{text-align:center;padding:30px;max-width:420px}
+  .breath-circle{width:200px;height:200px;border-radius:50%;margin:0 auto 4px;display:grid;place-items:center;
+    background:radial-gradient(circle at 50% 40%, rgba(255,255,255,.85), var(--accent-soft));
+    border:1px solid var(--glass-brd);box-shadow:0 20px 50px -20px var(--accent);
+    transform:scale(1);transition:transform 4s ease-in-out}
+  .breath-circle svg path{fill:none;stroke:var(--accent-ink);stroke-width:1.4;stroke-linecap:round}
+  .breath-phase{font-family:'Fraunces',serif;font-weight:500;font-size:28px;color:#fff;margin:22px 0 4px;text-shadow:0 2px 12px rgba(0,0,0,.25)}
+  .breath-time{font-family:'Fraunces',serif;font-size:22px;color:#fff;opacity:.9}
+  .breath-stop{margin-top:22px;border:1px solid rgba(255,255,255,.6);background:rgba(255,255,255,.2);color:#fff;border-radius:99px;padding:10px 22px;font:inherit;font-weight:600;cursor:pointer}
+
+  /* guided walk-through (the step-3 sequence) */
+  .walk-cta{display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;padding:18px 20px}
+  .walk-cta .wt{flex:1;min-width:200px}
+  .walk-cta .wt b{font-family:'Fraunces',serif;font-weight:500;font-size:17px}
+  .walk-cta .wt p{margin:3px 0 0;font-size:13.5px;color:var(--muted)}
+  .walk-cta.hot{border:1px solid var(--accent);background:var(--accent-soft)}
+  .slides{position:fixed;inset:0;z-index:60;display:none;place-items:center;padding:18px;background:rgba(46,32,36,.34);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  .slides.show{display:grid}
+  .slide-card{position:relative;width:min(560px,95vw);max-height:92vh;overflow:auto;padding:30px 26px 22px}
+  .slide-x{position:absolute;top:12px;right:14px;border:none;background:none;font-size:20px;color:var(--muted);cursor:pointer;line-height:1}
+  .slide-dots{display:flex;gap:6px;justify-content:center;margin:2px 0 18px}
+  .slide-dots i{width:7px;height:7px;border-radius:50%;background:var(--hair);transition:.3s}
+  .slide-dots i.on{background:var(--accent);width:20px;border-radius:99px}
+  .slide-eyebrow{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-ink);text-align:center}
+  .slide-h{font-family:'Fraunces',serif;font-weight:500;font-size:25px;text-align:center;margin:6px 0 14px}
+  .slide-body{min-height:182px}
+  .slide-p{font-size:14.5px;color:var(--muted);text-align:center;margin:0 0 14px}
+  .slide-big{font-family:'Fraunces',serif;font-weight:600;font-size:56px;text-align:center;line-height:1.05}
+  .slide-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px}
+  .slide-nav .btn{padding:11px 22px}
+  .vidgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:520px){.vidgrid{grid-template-columns:1fr}}
+  .vidcard{border:1px solid var(--glass-brd);background:var(--glass);border-radius:13px;padding:12px;position:relative;overflow:hidden}
+  .vidcard .thumb{height:74px;border-radius:9px;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.4));display:grid;place-items:center;color:var(--accent-ink);font-size:22px;margin-bottom:8px}
+  .vidcard .vt{font-weight:700;font-size:13.5px}.vidcard .vmeta{font-size:12px;color:var(--muted)}
+  .vidcard .soon{position:absolute;top:8px;right:8px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;background:var(--ink);color:#fff;border-radius:99px;padding:2px 8px;opacity:.85}
+  .drawer{padding:16px;margin-bottom:14px;display:none}.drawer.open{display:block}
+  .drawer h3{margin:0 0 4px;font-family:'Fraunces',serif;font-weight:500;font-size:15px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  @media(max-width:640px){.grid2,.names{grid-template-columns:1fr}}
+  .err{background:rgba(192,70,60,.12);border:1px solid var(--risk);color:#9c463d;border-radius:12px;padding:11px 13px;font-size:14px;margin-top:14px;display:none}.err.show{display:block}
+  footer{margin-top:28px;color:var(--faint);font-size:12px;text-align:center}
+  .stack{display:flex;flex-direction:column;gap:14px}
+
+  /* a11y: keyboard focus visibility (inputs already have a focus ring) */
+  :focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px;border-radius:6px}
+  .pill:focus-visible,.tab:focus-visible,.seg button:focus-visible,.miniseg button:focus-visible,.btn:focus-visible,.mic:focus-visible,.ctrls button:focus-visible,.fbchip:focus-visible{outline:2px solid var(--accent-ink);outline-offset:3px}
+  /* larger touch targets on coarse pointers */
+  @media (pointer:coarse){.pill,.tab{padding-top:11px;padding-bottom:11px}}
+
+  /* a11y: honour reduced-motion across the app's animations + staggered reveal */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+    .rv{opacity:1!important;transform:none!important}
+  }
+</style>
+
+<div class="bg bg-rel"></div><div class="bg bg-self"></div>
+<div class="amb" aria-hidden="true">
+  <svg class="a1" width="240" height="240" viewBox="0 0 240 240" fill="none"><path d="M230 12 A170 170 0 0 0 60 182" stroke="#D49AA6" stroke-width="1.1" opacity=".6"/><path d="M230 44 A140 140 0 0 0 92 182" stroke="#D49AA6" stroke-width="1.1" opacity=".4"/></svg>
+  <svg class="a2" width="110" height="56" viewBox="0 0 110 56" fill="none" stroke="#C86B7E" stroke-width="2" stroke-linecap="round"><path d="M8 26 q8 -9 16 0"/><path d="M30 16 q9 -10 18 0"/><circle cx="62" cy="12" r="2.2" fill="#C86B7E" stroke="none"/></svg>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="word">Samvaad<span class="d">.</span></div>
+    <div class="navbtns">
+      <button class="pill" id="navAnalyse" aria-current="true">Analyse</button>
+      <button class="pill" id="navDash">Dashboard</button>
+      <button class="pill" id="gearBtn">Settings</button>
+      <div class="acctwrap">
+        <button class="pill" id="acctBtn" title="Account" aria-haspopup="true" aria-expanded="false">Account</button>
+        <div class="glass acctmenu hide" id="acctMenu" role="menu">
+          <div class="acctid" id="acctId">—</div>
+          <button class="btn soft" id="signBtn">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="glass drawer" id="drawer">
+    <h3>Settings — keys stay in this tab only</h3>
+    <p class="hint">Set a <b>Backend URL</b> to route through your secure proxy. Otherwise it runs standalone with the keys below.</p>
+    <div class="grid2">
+      <div><label class="fl">Backend URL</label><input type="text" id="beUrl" placeholder="https://your-backend.onrender.com"></div>
+      <div><label class="fl">Deepgram key (audio upload)</label><input type="text" id="dgKey" placeholder="Token …"></div>
+      <div><label class="fl">ElevenLabs key (voices)</label><input type="text" id="elKey" placeholder="xi-api-key …"></div>
+      <div><label class="fl">ElevenLabs voice A / B</label><div style="display:flex;gap:8px"><input type="text" id="elA" placeholder="voice A"><input type="text" id="elB" placeholder="voice B"></div></div>
+    </div>
+  </div>
+
+  <!-- ANALYSE -->
+  <div id="viewAnalyse">
+    <div class="modebar">
+      <span class="lbl">I want to look at</span>
+      <div class="seg" id="intentSeg"><button data-m="relationship" data-s="couple" aria-selected="true">Us two</button><button data-m="relationship" data-s="solo" aria-selected="false">A relationship</button><button data-m="self" data-s="solo" aria-selected="false">Just me</button></div>
+    </div>
+    <p class="lede serif" id="lede" style="font-style:italic"></p>
+
+    <section class="glass card" id="screenInput">
+      <div class="names" id="namesWrap">
+        <div><label class="fl" id="lblA">Your name</label><input type="text" id="nameA" value="Kavya"></div>
+        <div id="nameBWrap"><label class="fl">Partner's name</label><input type="text" id="nameB" value="Rohit"></div>
+      </div>
+      <div class="tabs">
+        <button class="tab" data-tab="text" aria-selected="true">Paste transcript</button>
+        <button class="tab" data-tab="rec" aria-selected="false">Record <span class="bonus">· Chrome/Edge</span></button>
+        <button class="tab" data-tab="up" aria-selected="false">Upload audio</button>
+      </div>
+      <div id="tab-text">
+        <label class="fl" id="taLbl">Conversation</label>
+        <textarea id="transcript"></textarea>
+        <p class="hint" id="taHint">Format each line as <code>Name: what they said</code>. Hinglish and Devanagari welcome.</p>
+        <div class="row"><button class="btn soft" id="sampleBtn">Load a sample</button></div>
+      </div>
+      <div id="tab-rec" class="hide" style="text-align:center">
+        <button class="mic" id="micBtn">●</button>
+        <div class="hint" id="micHint">Tap to record, then speak. In-browser, nothing uploaded.</div>
+        <div class="live" id="liveT">Live transcript appears here…</div>
+      </div>
+      <div id="tab-up" class="hide">
+        <div class="drop" id="drop"><strong>Drop an audio file</strong> or click to browse<br><span class="hint">MP3, WAV, M4A · via your backend or Deepgram key</span><input type="file" id="file" accept="audio/*" class="hide"></div>
+        <div class="hint" id="fileName"></div>
+      </div>
+      <div class="consent" id="consentBox"><input type="checkbox" id="consentChk"><label for="consentChk">This includes another person. I confirm I have their consent to analyse it.</label></div>
+      <div class="row"><button class="btn" id="goBtn">Analyse with care</button></div>
+      <div class="err" id="errBox"></div>
+    </section>
+
+    <section class="glass card hide" id="screenProc">
+      <div class="breath-loader"><div class="pulse-dot"></div></div>
+      <div class="procmsg serif" id="procMsg" style="font-style:italic">Reading it closely…</div>
+    </section>
+
+    <section id="screenResults" class="hide"><div class="stack" id="resultsStack"></div>
+      <div class="row" style="justify-content:center;margin-top:18px"><button class="btn soft" id="againBtn">Analyse another</button></div>
+    </section>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="viewDash" class="hide">
+    <p class="lede serif" style="font-style:italic">Your patterns, gently tracked over time.</p>
+    <div class="glass card" id="trendCard" style="margin-bottom:14px"></div>
+    <div id="dashList"></div>
+  </div>
+
+  <footer>Phase 1 · standalone demo, nothing stored here. Set a Backend URL to persist securely (encrypted, auto-delete, consent logged).</footer>
+</div>
+
+<!-- BREATHING OVERLAY -->
+<div class="breath" id="breath">
+  <div class="breath-inner">
+    <div class="breath-circle" id="breathCircle">
+      <svg width="90" height="64" viewBox="0 0 120 90" aria-hidden="true">
+        <path d="M60 79 C44 56 38 40 32 30 C46 36 54 54 60 79"/><path d="M60 79 C76 56 82 40 88 30 C74 36 66 54 60 79"/>
+        <path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/><path d="M16 80 Q60 89 104 80"/>
+      </svg>
+    </div>
+    <div class="breath-phase" id="breathPhase">Get comfortable</div>
+    <div class="breath-time" id="breathTime">0:00</div>
+    <button class="breath-stop" id="breathStop">I feel calmer</button>
+  </div>
+</div>
+
+<!-- GUIDED WALK-THROUGH OVERLAY (step-3 sequence) -->
+<div class="slides" id="slides" role="dialog" aria-modal="true" aria-label="Guided walk-through">
+  <div class="glass slide-card">
+    <button class="slide-x" id="slideX" aria-label="Close walk-through">✕</button>
+    <div class="slide-dots" id="slideDots"></div>
+    <div class="slide-eyebrow" id="slideEyebrow"></div>
+    <h2 class="slide-h" id="slideH"></h2>
+    <div class="slide-body" id="slideBody"></div>
+    <div class="slide-nav">
+      <button class="btn soft" id="slidePrev">Back</button>
+      <button class="btn" id="slideNext">Next ›</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var S={mode:'relationship',sub:'couple',tab:'text',audioFile:null,recT:'',recording:false,report:null,improved:[],mute:false,playing:false,idx:0,sessions:[]};
+var $=function(id){return document.getElementById(id);};
+document.body.setAttribute('data-mode','relationship');
+
+/* account + session handoff (set up by login.html via auth.js) */
+function renderAcct(){
+  var sess=SamvaadAuth.readSession(), guest=SamvaadAuth.isGuest();
+  var email=sess&&sess.user&&sess.user.email;
+  $('acctBtn').textContent=guest?'Guest':(email?email.split('@')[0]:'Account');
+  $('acctId').textContent=guest?'Browsing as a guest — sessions aren’t saved.':(email||'Signed in.');
+  $('signBtn').textContent=guest?'Sign in':'Sign out';
+}
+$('acctBtn').onclick=function(e){e.stopPropagation();var hidden=$('acctMenu').classList.toggle('hide');$('acctBtn').setAttribute('aria-expanded',String(!hidden));};
+document.addEventListener('click',function(e){if(!$('acctMenu').classList.contains('hide')&&!e.target.closest('.acctwrap')){$('acctMenu').classList.add('hide');$('acctBtn').setAttribute('aria-expanded','false');}});
+$('signBtn').onclick=async function(){
+  if(SamvaadAuth.isGuest()){location.href='login.html';return;}
+  $('signBtn').disabled=true;$('signBtn').textContent='Signing out…';
+  await SamvaadAuth.signOut();
+  location.replace('login.html');
+};
+renderAcct();
+/* remember the Backend URL so authenticated persistence keeps working across reloads */
+(function(){try{var u=localStorage.getItem('samvaad.beUrl');if(u)$('beUrl').value=u;}catch(e){}
+  $('beUrl').addEventListener('change',function(){try{localStorage.setItem('samvaad.beUrl',be());}catch(e){}});})();
+/* validate/refresh the session in the background; if it can't be revived, return to login */
+if(!SamvaadAuth.isGuest()){SamvaadAuth.ensureValid().then(function(s){if(!s){location.replace('login.html');return;}renderAcct();});}
+
+/* nav */
+$('gearBtn').onclick=function(){$('drawer').classList.toggle('open');};
+$('navAnalyse').onclick=function(){view('analyse');};
+$('navDash').onclick=function(){renderDash();view('dash');};
+function view(v){$('viewAnalyse').classList.toggle('hide',v!=='analyse');$('viewDash').classList.toggle('hide',v!=='dash');$('navAnalyse').setAttribute('aria-current',v==='analyse');$('navDash').setAttribute('aria-current',v==='dash');window.scrollTo({top:0,behavior:'smooth'});}
+
+/* mode + submode (smooth cross-fade handled by CSS on data-mode) */
+document.querySelectorAll('#intentSeg button').forEach(function(b){b.onclick=function(){document.querySelectorAll('#intentSeg button').forEach(function(x){x.setAttribute('aria-selected','false');});b.setAttribute('aria-selected','true');S.mode=b.dataset.m;S.sub=b.dataset.s;document.body.setAttribute('data-mode',S.mode);syncMode();};});
+function syncMode(){
+  var couple=S.mode==='relationship'&&S.sub==='couple';$('nameBWrap').classList.toggle('hide',!couple);$('consentBox').classList.toggle('hide',!couple);
+  var L={'relationship|couple':["A conversation between the two of you — scores, the patterns underneath, what you each did well, exact lines to try, and a kinder replay.","Conversation","Paste both sides as Name: line."],
+         'relationship|solo':["Just you. Describe a situation or speak a voice-journal — we read how you show up and gently infer the other side.","Your reflection","Speak or write freely about what happened."],
+         'self|solo':["The introspection space — your own words. A commute debrief or a journal entry; we surface your stress, self-talk and language, and help you cool down.","Your words","A debrief, a journal entry, a call transcript."]};
+  var c=L[S.mode+'|'+S.sub]||L['relationship|couple'];$('lede').textContent=c[0];$('taLbl').textContent=c[1];$('taHint').innerHTML=c[2];
+}
+syncMode();
+
+/* tabs */
+document.querySelectorAll('.tabs .tab').forEach(function(t){t.onclick=function(){document.querySelectorAll('.tabs .tab').forEach(function(x){x.setAttribute('aria-selected','false');});t.setAttribute('aria-selected','true');S.tab=t.dataset.tab;$('tab-text').classList.toggle('hide',S.tab!=='text');$('tab-rec').classList.toggle('hide',S.tab!=='rec');$('tab-up').classList.toggle('hide',S.tab!=='up');};});
+
+$('sampleBtn').onclick=function(){
+  if(S.mode==='self'){$('nameA').value='Aarav';$('transcript').value="Aarav: Aaj ka din bahut heavy tha. Subah se lag raha tha sab pile up ho raha hai. Meeting mein awaaz kaanp rahi thi. Ghar aaya toh chhoti baat pe irritate ho gaya. Lately I feel like I'm running but not moving.";}
+  else{$('nameA').value='Kavya';$('nameB').value='Rohit';$('transcript').value="Kavya: Rohit, aaj phir tumne mummy ko call nahi kiya. Unhe bura laga.\nRohit: Yaar office mein kaam tha. Tum samajhti kyun nahi?\nKavya: Samajhti hoon, but yeh daily ho raha hai. Hamesha koi excuse.\nRohit: Excuse? Main hamare future ke liye kaam kar raha hoon.\nKavya: Main yeh nahi keh rahi kaam mat karo. Mujhe akela feel hota hai.\nRohit: ...Shayad main sach mein kuch miss kar raha hoon.\nKavya: Aaj meri promotion ki last date thi. Tumhe pata bhi nahi tha.\nRohit: Mujhe nahi pata tha. I'm sorry. Aaj ki baat karo — kya hua?";}
+};
+
+/* record */
+(function(){var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('micHint').textContent='Live recording needs Chrome or Edge. Use Paste transcript instead.';$('micBtn').disabled=true;return;}
+ $('micBtn').onclick=function(){if(S.recording){S._r.stop();return;}var r=new SR();S._r=r;r.lang='en-IN';r.continuous=true;r.interimResults=true;r.onresult=function(e){var t='';for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;S.recT=t;$('liveT').textContent=t;};r.onend=function(){S.recording=false;$('micBtn').classList.remove('rec');$('micBtn').textContent='●';$('micHint').textContent='Recorded. Hit Analyse, or tap to redo.';};r.onerror=function(){S.recording=false;$('micBtn').classList.remove('rec');};r.start();S.recording=true;$('micBtn').classList.add('rec');$('micBtn').textContent='■';$('micHint').textContent='Listening… tap to stop.';};
+})();
+
+/* upload */
+$('drop').onclick=function(){$('file').click();};
+['dragover','dragenter'].forEach(function(e){$('drop').addEventListener(e,function(ev){ev.preventDefault();$('drop').classList.add('over');});});
+['dragleave','drop'].forEach(function(e){$('drop').addEventListener(e,function(ev){ev.preventDefault();$('drop').classList.remove('over');});});
+$('drop').addEventListener('drop',function(e){if(e.dataTransfer.files[0])setFile(e.dataTransfer.files[0]);});
+$('file').onchange=function(e){if(e.target.files[0])setFile(e.target.files[0]);};
+function setFile(f){S.audioFile=f;$('fileName').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB';}
+
+$('goBtn').onclick=run;$('againBtn').onclick=function(){screen('input');};
+function screen(s){$('screenInput').classList.toggle('hide',s!=='input');$('screenProc').classList.toggle('hide',s!=='proc');$('screenResults').classList.toggle('hide',s!=='results');window.scrollTo({top:0,behavior:'smooth'});}
+function showErr(m){$('errBox').textContent=m;$('errBox').classList.add('show');}
+function be(){return $('beUrl').value.trim().replace(/\/$/,'');}
+/* Backend calls carry the Supabase bearer token so the proxy can persist per-user (RLS). */
+function beHeaders(){return Object.assign({'content-type':'application/json'}, SamvaadAuth.authHeaders());}
+var PROC=['Reading it closely…','Finding the patterns underneath…','Noticing what went well…','Preparing a kinder replay…'];
+function setProc(i){$('procMsg').textContent=PROC[i]||PROC[0];}
+
+async function run(){
+  $('errBox').classList.remove('show');
+  var couple=S.mode==='relationship'&&S.sub==='couple';
+  if(couple&&!$('consentChk').checked){return showErr('Please confirm consent — this includes another person.');}
+  var a=$('nameA').value.trim()||'A',b=$('nameB').value.trim()||'B';
+  try{
+    var transcript=(S.tab==='text')?$('transcript').value.trim():(S.tab==='rec')?S.recT.trim():null;
+    screen('proc');setProc(0);
+    if(S.tab==='up'){if(!S.audioFile)throw new Error('Choose an audio file first.');transcript=await transcribe(a,b);}
+    if(!transcript||transcript.length<15)throw new Error('Need a little more to work with.');
+    setProc(1);var data=await analyse(transcript,a,b);
+    S.report=data;S.improved=data.improved||[];
+    S.sessions.unshift({ts:Date.now(),mode:S.mode,sub:S.sub,a:a,b:b,overall:(data.scores||{}).overall||0,pattern:(data.patterns&&data.patterns[0])?data.patterns[0].title:'—'});
+    renderResults(a,b);
+  }catch(err){screen('input');showErr(err.message||String(err));}
+}
+
+async function transcribe(a,b){var f=S.audioFile;
+  if(be()){var b64=await toB64(f);var r=await fetch(be()+'/api/transcribe',{method:'POST',headers:beHeaders(),body:JSON.stringify({audioBase64:b64,mime:f.type,nameA:a,nameB:b})});var d=await r.json();if(!r.ok)throw new Error(d.error||'Transcription failed');return d.transcript;}
+  var key=$('dgKey').value.trim();if(!key)throw new Error('Add a Deepgram key (or Backend URL) to transcribe audio.');
+  var buf=await f.arrayBuffer();var res=await fetch('https://api.deepgram.com/v1/listen?model=nova-2&diarize=true&punctuate=true&smart_format=true',{method:'POST',headers:{Authorization:'Token '+key,'Content-Type':f.type||'audio/mpeg'},body:buf});
+  if(!res.ok)throw new Error('Transcription failed ('+res.status+').');var d=await res.json();var w=d.results.channels[0].alternatives[0].words||[];if(!w.length)throw new Error('No speech detected.');
+  var out='',cur=null,line='';w.forEach(function(x){var sp=x.speaker==null?0:x.speaker;if(sp!==cur){if(line)out+=(cur===0?a:b)+': '+line.trim()+'\n';cur=sp;line='';}line+=(x.punctuated_word||x.word)+' ';});if(line)out+=(cur===0?a:b)+': '+line.trim()+'\n';return out;}
+function toB64(f){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result.split(',')[1]);};r.onerror=rej;r.readAsDataURL(f);});}
+
+async function analyse(transcript,a,b){
+  if(be()){var r=await fetch(be()+'/api/analyze',{method:'POST',headers:beHeaders(),body:JSON.stringify({transcript:transcript,mode:S.mode,submode:S.sub,nameA:a,nameB:b,consent:S.sub==='couple'?'both_partners':'self_only'})});var d=await r.json();if(!r.ok)throw new Error(d.error||'Analysis failed');setProc(2);return d;}
+  var lens=S.mode==='self'?'This is one person reflecting on themselves. Analyse THEIR emotional regulation, self-talk, language and stress markers — not a relationship.':S.sub==='solo'?('Only '+a+' is present, describing a relationship situation. Analyse how '+a+' shows up; infer the absent partner where reasonable, marked as inference.'):('A conversation between '+a+' (A) and '+b+' (B). Analyse the dynamics.');
+  var p1='You are an expert communication analyst trained in the Gottman method. '+lens+'\n\n'+transcript+'\n\nReturn ONLY minified JSON: {"scores":{"connection":0-100,"empathy":0-100,"escalation_risk":0-100,"overall":0-100},"summary":"<=2 sentences","patterns":[{"title":"","who":"","detail":"<=1 sentence"}],"strengths":[{"title":"","who":"","detail":""}],"improvements":[{"pattern":"","suggestion":"","script":"verbatim line in their language/Hinglish <=2 sentences"}],"kpis":{"talk_balance":"","question_ratio":"","repair_attempts":0,"self_reference":""}}. Max 4 patterns, 4 strengths, 3 improvements. Neutral, non-blaming. KPIs are awareness signals, not diagnoses.';
+  var rep=pj(await claude(p1));setProc(2);setProc(3);
+  var improved=[];
+  if(S.mode==='relationship'){var p2='Rewrite the SAME conversation between '+a+' (A) and '+b+' (B) applying: '+JSON.stringify(rep.improvements)+'.\n'+transcript+'\n\nReturn ONLY minified JSON: {"improved":[{"speaker":"A or B","display":"natural line (Hinglish/Devanagari ok)","speak":"clean Roman transliteration, no Devanagari","emotion":"sad|attentive|sorry|happy|warm|neutral"}]}. Max 8 short turns.';improved=(pj(await claude(p2)).improved)||[];}
+  else{var p3='As a warm reflective companion (Sathi), reply to this self-reflection in 2-3 short spoken sentences naming one feeling, one strength, one gentle suggestion. Return ONLY minified JSON: {"improved":[{"speaker":"A","display":"the line (Hinglish/Devanagari ok)","speak":"clean Roman transliteration","emotion":"warm|attentive|happy"}]}.';improved=(pj(await claude('Reflection:\n'+transcript+'\n\n'+p3)).improved)||[];}
+  return Object.assign(rep,{improved:improved});
+}
+async function claude(prompt){var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})});if(!res.ok)throw new Error('Analysis error ('+res.status+').');var d=await res.json();return (d.content||[]).filter(function(x){return x.type==='text';}).map(function(x){return x.text;}).join('');}
+function pj(t){try{return JSON.parse(t);}catch(e){var a=t.indexOf('{'),b=t.lastIndexOf('}');if(a>-1)return JSON.parse(t.slice(a,b+1));throw new Error('Could not read the analysis. Please try again.');}}
+
+/* ---------- dynamic results ---------- */
+function clr(label,v){if(label==='escalation_risk')return v<34?'var(--good)':v<67?'var(--warn)':'var(--risk)';return v<40?'var(--risk)':v<70?'var(--warn)':'var(--good)';}
+function esc(s){s=(s==null?'':String(s));return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderResults(a,b){
+  var r=S.report,sc=r.scores||{},risk=sc.escalation_risk||0;
+  var stack=$('resultsStack');stack.innerHTML='';
+  var cards=[];
+
+  // hero with ring
+  cards.push('<div class="glass hero"><div class="ring"><svg width="120" height="120"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--hair)" stroke-width="9"/><circle id="ringArc" cx="60" cy="60" r="52" fill="none" stroke="'+clr('overall',sc.overall||0)+'" stroke-width="9" stroke-linecap="round" stroke-dasharray="327" stroke-dashoffset="327"/></svg><div class="val" id="ringVal" style="color:'+clr('overall',sc.overall||0)+'">0</div></div><div class="htxt"><div class="lab">'+(S.mode==='self'?'wellbeing signal':'connection')+'</div><h2>'+(S.mode==='self'?'How your words land':'How this exchange went')+'</h2><p class="dv">'+esc(r.summary||'')+'</p></div></div>');
+
+  // guided walk-through CTA + breathe intervention (both escalate when risk is high)
+  var hot=risk>=60;
+  cards.push('<div class="glass section walk-cta'+(hot?' hot':'')+'" id="walkCta"><div class="wt"><b>'+(hot?'There was real heat here — let’s walk through it together':'Prefer a guided walk-through?')+'</b><p>A calm, paced version: what you did well, where to grow, a one-minute reset, and a kinder replay'+(hot?'. It starts with a breath.':'.')+'</p></div><button class="btn'+(hot?'':' accent')+'" onclick="openSlides()">✦ Walk me through it</button></div>');
+  cards.push('<div class="glass section"><div class="breathe-banner"><div class="bi">'+lotusMini()+'</div><div class="bt"><b>'+(hot?'There was real heat here. Breathe first.':'Take a minute for yourself.')+'</b><p>'+(hot?'Regulating before you talk changes how the next conversation goes.':'A short breathing reset before you read on, or before you talk again.')+'</p></div><button class="btn accent" onclick="openBreath()">Breathe</button></div></div>');
+
+  // signals
+  var k=r.kpis||{},kp=[];if(k.talk_balance)kp.push('Talk balance <b>'+esc(k.talk_balance)+'</b>');if(k.question_ratio)kp.push('Questions <b>'+esc(k.question_ratio)+'</b>');if(k.repair_attempts!=null)kp.push('Repair attempts <b>'+esc(k.repair_attempts)+'</b>');if(k.self_reference)kp.push('Self-reference <b>'+esc(k.self_reference)+'</b>');
+  var sig='<div class="chips">'+[scoreChip('Connection',sc.connection),scoreChip('Empathy',sc.empathy),scoreChip('Escalation',sc.escalation_risk,'escalation_risk')].join('')+kp.map(function(x){return '<span class="chip">'+x+'</span>';}).join('')+'</div>';
+  cards.push('<div class="glass section"><h3>Signals</h3>'+sig+'<p class="hint">Awareness, not diagnosis. Voice pitch &amp; pace KPIs arrive with audio analysis.</p></div>');
+
+  // strengths/patterns toggle
+  var st=(r.strengths||[]).map(function(s){return '<div class="item good"><span class="t dv">'+esc(s.title)+'</span> <span class="who">'+esc(s.who||'')+'</span><div class="d dv">'+esc(s.detail||'')+'</div></div>';}).join('')||'<p class="hint">—</p>';
+  var pt=(r.patterns||[]).map(function(s){return '<div class="item pat"><span class="t dv">'+esc(s.title)+'</span> <span class="who">'+esc(s.who||'')+'</span><div class="d dv">'+esc(s.detail||'')+'</div></div>';}).join('')||'<p class="hint">—</p>';
+  cards.push('<div class="glass section"><div class="miniseg" id="ms"><button data-v="good" aria-selected="true">What went well</button><button data-v="pat" aria-selected="false">Watch for</button></div><div id="msGood">'+st+'</div><div id="msPat" class="hide">'+pt+'</div></div>');
+
+  // scripts (intervene)
+  if((r.improvements||[]).length){var imp=r.improvements.map(function(s){return '<div class="imp"><div class="p dv">'+esc(s.pattern||'')+'</div><div class="s dv">'+esc(s.suggestion||'')+'</div><div class="script dv"><span class="lab">try saying</span>'+esc(s.script||'')+'</div></div>';}).join('');cards.push('<div class="glass section"><h3>Try this next time</h3>'+imp+'</div>');}
+
+  // replay
+  cards.push('<div class="glass section"><h3>'+(S.mode==='self'?'Sathi reflects back':'A kinder replay')+'</h3><div class="stage"><div class="scene" id="scene"></div><div class="bubbles" id="bubbles"></div><div class="ctrls"><button id="playBtn">▶</button><button id="muteBtn">🔊</button><div class="bar"><i id="prog"></i></div></div></div></div>');
+
+  // feedback
+  var top=(r.improvements&&r.improvements[0])?r.improvements[0].suggestion:'the suggestion above';
+  cards.push('<div class="glass section fb"><h3>One quick thing</h3><p>Will you try this — “'+esc(top)+'”?</p><div class="chips" id="fbChips"><button class="fbchip" data-v="yes">Yes, this week</button><button class="fbchip" data-v="maybe">Maybe</button><button class="fbchip" data-v="no">Not now</button></div><div class="saved" id="fbSaved">Saved. This is the signal a recommender learns from — which nudge fits whom, and when.</div></div>');
+
+  stack.innerHTML=cards.map(function(c){return '<div class="rv">'+c+'</div>';}).join('');
+  screen('results');
+
+  // wire + animate
+  buildScene(a,b);
+  document.querySelectorAll('#fbChips .fbchip').forEach(function(c){c.onclick=function(){document.querySelectorAll('#fbChips .fbchip').forEach(function(x){x.classList.remove('sel');});c.classList.add('sel');var payload={asked_at:Date.now(),will_try:c.dataset.v,top_suggestion:top,context:{escalation_risk:risk,mode:S.mode,submode:S.sub}};if(be())fetch(be()+'/api/feedback',{method:'POST',headers:beHeaders(),body:JSON.stringify(payload)}).catch(function(){});$('fbSaved').classList.add('show');};});
+  document.querySelectorAll('#ms button').forEach(function(bt){bt.onclick=function(){document.querySelectorAll('#ms button').forEach(function(x){x.setAttribute('aria-selected','false');});bt.setAttribute('aria-selected','true');$('msGood').classList.toggle('hide',bt.dataset.v!=='good');$('msPat').classList.toggle('hide',bt.dataset.v!=='pat');};});
+
+  // staggered reveal
+  var rvs=document.querySelectorAll('#resultsStack .rv');rvs.forEach(function(el,i){setTimeout(function(){el.classList.add('in');},120+i*130);});
+  // ring + count up
+  setTimeout(function(){animateRing(sc.overall||0);},400);
+  if(hot)setTimeout(function(){var w=$('walkCta');if(w&&w.animate)w.animate([{transform:'scale(1)'},{transform:'scale(1.02)'},{transform:'scale(1)'}],{duration:900,iterations:2});},800);
+}
+function scoreChip(l,v,k){v=v||0;return '<span class="chip" style="border-color:'+clr(k||l,v)+'">'+l+' <b style="color:'+clr(k||l,v)+'">'+v+'</b></span>';}
+function animateRing(target){var arc=$('ringArc'),val=$('ringVal');if(!arc)return;var C=327,off=C-(target/100)*C;arc.style.transition='stroke-dashoffset 1.1s ease';arc.style.strokeDashoffset=off;var t0=null;function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/1100,1);val.textContent=Math.round(p*target);if(p<1)requestAnimationFrame(step);}requestAnimationFrame(step);}
+function lotusMini(){return '<svg width="22" height="16" viewBox="0 0 120 90" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/><path d="M60 79 C44 56 38 40 32 30"/><path d="M60 79 C76 56 82 40 88 30"/></svg>';}
+
+/* ---------- avatars ---------- */
+var MOUTH={neutral:'M40 60 Q50 62 60 60',happy:'M39 58 Q50 70 61 58',warm:'M40 59 Q50 67 60 59',sad:'M40 63 Q50 56 60 63',sorry:'M44 61 Q50 63 56 61',attentive:'M41 60 Q50 63 59 60'};
+function face(side,name,skin,clothes,female){
+  var hair=female?'<path d="M31 52 Q31 17 65 17 Q99 17 99 52 Q90 34 65 34 Q40 34 31 52 Z" fill="#2a2030"/><rect x="30" y="46" width="9" height="42" rx="4.5" fill="#2a2030"/><rect x="91" y="46" width="9" height="42" rx="4.5" fill="#2a2030"/>':'<path d="M34 49 Q36 21 65 21 Q94 21 96 49 Q90 31 65 31 Q40 31 34 49 Z" fill="#241c2b"/>';
+  var bindi=female?'<circle cx="65" cy="30" r="2.6" fill="#AE3C72"/>':'';
+  return '<div class="ch '+side+'" id="ch-'+side+'"><div class="tag" id="tag-'+side+'"></div><svg width="100" height="128" viewBox="0 0 100 130"><ellipse cx="50" cy="126" rx="32" ry="4.5" fill="rgba(0,0,0,.06)"/><rect x="22" y="88" width="56" height="42" rx="20" fill="'+clothes+'"/><rect x="44" y="78" width="12" height="14" fill="'+skin+'"/><circle cx="50" cy="52" r="30" fill="'+skin+'"/>'+hair+bindi+'<ellipse class="blush" id="bl-'+side+'-l" cx="36" cy="58" rx="5" ry="3" fill="#E48AAE"/><ellipse class="blush" id="bl-'+side+'-r" cx="64" cy="58" rx="5" ry="3" fill="#E48AAE"/><ellipse class="eye" cx="40" cy="50" rx="3" ry="3.6" fill="#241c2b"/><ellipse class="eye" cx="60" cy="50" rx="3" ry="3.6" fill="#241c2b"/><path id="brow-'+side+'-l" d="M35 43 Q40 41 45 43" stroke="#241c2b" stroke-width="1.6" fill="none" stroke-linecap="round"/><path id="brow-'+side+'-r" d="M55 43 Q60 41 65 43" stroke="#241c2b" stroke-width="1.6" fill="none" stroke-linecap="round"/><path class="mouth" id="mouth-'+side+'" d="'+MOUTH.neutral+'" stroke="#9b3b5e" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg><div class="nm">'+esc(name)+'</div></div>';
+}
+var EMO={sad:'😔',attentive:'🙂',sorry:'🙏',happy:'😊',warm:'🤗',neutral:'😐'};
+function buildScene(a,b){var solo=S.mode==='self'||S.sub==='solo';
+  if(S.mode==='self')$('scene').innerHTML=face('a','Sathi','#E9C9A8','#9E6A86',false).replace('ch a','ch a solo');
+  else if(solo)$('scene').innerHTML=face('a',a,'#E8C4A0','#D07EA0',true).replace('ch a','ch a solo');
+  else $('scene').innerHTML=face('a',a,'#E8C4A0','#D07EA0',true)+face('b',b,'#E0AE86','#5DA8A0',false);
+  $('bubbles').innerHTML='';$('prog').style.transform='scaleX(0)';S.idx=0;S.playing=false;$('playBtn').textContent='▶';
+  $('muteBtn').onclick=function(){S.mute=!S.mute;$('muteBtn').textContent=S.mute?'🔇':'🔊';if(S.mute){window.speechSynthesis.cancel();if(S._au)S._au.pause();}};
+  $('playBtn').onclick=function(){if(S.playing)pausePlay();else startPlay();};
+}
+function setExpr(side,emo){var m=$('mouth-'+side);if(m)m.setAttribute('d',MOUTH[emo]||MOUTH.neutral);var on=(emo==='happy'||emo==='warm');['l','r'].forEach(function(s){var bl=$('bl-'+side+'-'+s);if(bl)bl.classList.toggle('on',on);});var up=(emo==='sad'||emo==='sorry');var bl=$('brow-'+side+'-l'),br=$('brow-'+side+'-r');if(bl)bl.setAttribute('d',up?'M35 44 Q41 39 45 42':'M35 43 Q40 41 45 43');if(br)br.setAttribute('d',up?'M55 42 Q59 39 65 44':'M55 43 Q60 41 65 43');}
+function pausePlay(){S.playing=false;$('playBtn').textContent='▶';window.speechSynthesis.cancel();if(S._au)S._au.pause();stopTalk();}
+function startPlay(){if(S.idx>=S.improved.length){S.idx=0;$('bubbles').innerHTML='';}S.playing=true;$('playBtn').textContent='⏸';advance();}
+function stopTalk(){document.querySelectorAll('.mouth').forEach(function(m){m.classList.remove('talk');});document.querySelectorAll('.ch').forEach(function(c){c.classList.remove('speaking');});}
+function advance(){if(!S.playing)return;if(S.idx>=S.improved.length){S.playing=false;$('playBtn').textContent='▶';$('prog').style.transform='scaleX(1)';stopTalk();return;}
+  var t=S.improved[S.idx],solo=S.mode==='self'||S.sub==='solo',cls=solo?'a':(t.speaker==='A'?'a':'b');
+  var bub=document.createElement('div');bub.className='bub '+(solo?'solo':cls);bub.innerHTML='<span class="dv">'+esc(t.display)+'</span>';$('bubbles').appendChild(bub);$('bubbles').scrollTop=$('bubbles').scrollHeight;
+  stopTalk();var ch=$('ch-'+cls);if(ch)ch.classList.add('speaking');var tag=$('tag-'+cls);if(tag)tag.textContent=EMO[t.emotion]||'😐';setExpr(cls,t.emotion);var m=$('mouth-'+cls);if(m&&!S.mute)m.classList.add('talk');
+  $('prog').style.transform='scaleX('+((S.idx+1)/S.improved.length)+')';
+  speak(t.speak||t.display,cls,function(){if(m)m.classList.remove('talk');S.idx++;setTimeout(advance,260);});}
+function speak(text,cls,done){if(S.mute){setTimeout(done,700);return;}if(be())return speakBackend(text,cls,done,function(){browser(text,cls,done);});var k=$('elKey').value.trim();if(k)return speakEleven(text,cls,k,done,function(){browser(text,cls,done);});browser(text,cls,done);}
+function browser(text,cls,done){try{window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);var vs=window.speechSynthesis.getVoices();var p=vs.filter(function(v){return /en-IN|hi-IN/i.test(v.lang);});if(!p.length)p=vs.filter(function(v){return /en-/i.test(v.lang);});if(p.length)u.voice=cls==='a'?(p.find(function(v){return /female|heera|aria|kalpana/i.test(v.name);})||p[0]):(p.find(function(v){return /male|ravi|prabhat/i.test(v.name);})||p[p.length-1]);u.lang='en-IN';u.pitch=cls==='a'?1.18:0.85;u.rate=0.95;u.onend=done;u.onerror=done;window.speechSynthesis.speak(u);}catch(e){setTimeout(done,900);}}
+async function speakEleven(text,cls,key,done,fb){try{var vid=cls==='a'?($('elA').value.trim()||'EXAVITQu4vr4xnSDxMaL'):($('elB').value.trim()||'onwK4e9ZLuTAKqWW03F9');var r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid,{method:'POST',headers:{'xi-api-key':key,'content-type':'application/json'},body:JSON.stringify({text:text,model_id:'eleven_multilingual_v2',voice_settings:{stability:0.4,similarity_boost:0.7}})});if(!r.ok)throw 0;var u=URL.createObjectURL(await r.blob());var au=new Audio(u);S._au=au;au.onended=function(){URL.revokeObjectURL(u);done();};au.onerror=done;au.play();}catch(e){fb();}}
+async function speakBackend(text,cls,done,fb){try{var r=await fetch(be()+'/api/tts',{method:'POST',headers:beHeaders(),body:JSON.stringify({text:text,speaker:cls==='a'?'A':'B'})});if(!r.ok)throw 0;var u=URL.createObjectURL(await r.blob());var au=new Audio(u);S._au=au;au.onended=function(){URL.revokeObjectURL(u);done();};au.onerror=done;au.play();}catch(e){fb();}}
+
+/* ---------- breathing exercise (the intervene layer) ---------- */
+var BR=null;
+var PHASES=[{l:'Breathe in',d:4000,s:1.5},{l:'Hold',d:4000,s:1.5},{l:'Breathe out',d:6000,s:1},{l:'Soften',d:2000,s:1}];
+$('breathStop').onclick=closeBreath;
+function openBreath(){$('breath').classList.add('show');BR={running:true,start:Date.now(),i:0};tick();cyclePhase();}
+function closeBreath(){if(BR)BR.running=false;BR=null;$('breath').classList.remove('show');$('breathCircle').style.transform='scale(1)';}
+function cyclePhase(){if(!BR||!BR.running)return;var ph=PHASES[BR.i%PHASES.length];$('breathPhase').textContent=ph.l;var c=$('breathCircle');c.style.transitionDuration=(ph.d/1000)+'s';c.style.transform='scale('+ph.s+')';BR.i++;setTimeout(cyclePhase,ph.d);}
+function tick(){if(!BR||!BR.running)return;var s=Math.floor((Date.now()-BR.start)/1000);$('breathTime').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');setTimeout(tick,250);}
+
+/* ---------- guided walk-through (step-3 sequence) ---------- */
+var WALK={slides:[],i:0};
+function openSlides(){var a=($('nameA').value||'').trim()||'You';WALK.slides=buildSlides(a);WALK.i=0;$('slides').classList.add('show');renderSlide();}
+function closeSlides(){$('slides').classList.remove('show');}
+function walkNav(d){var n=WALK.i+d;if(n<0)return;if(n>=WALK.slides.length){closeSlides();return;}WALK.i=n;renderSlide();}
+function renderSlide(){var s=WALK.slides[WALK.i],last=WALK.i===WALK.slides.length-1,first=WALK.i===0;
+  $('slideEyebrow').textContent=s.eyebrow;$('slideH').innerHTML=s.h;$('slideBody').innerHTML=s.html;
+  $('slideDots').innerHTML=WALK.slides.map(function(_,i){return '<i class="'+(i===WALK.i?'on':'')+'"></i>';}).join('');
+  $('slidePrev').style.visibility=first?'hidden':'visible';
+  $('slideNext').textContent=last?'Done':'Next ›';
+  var card=$('slides').querySelector('.slide-card');if(card)card.scrollTop=0;
+}
+function buildSlides(a){
+  var r=S.report||{},sc=r.scores||{},risk=sc.escalation_risk||0,hot=risk>=60,self=S.mode==='self',overall=sc.overall||0;
+  var sList=function(arr,kind){arr=arr||[];if(!arr.length)return '<p class="hint">—</p>';return arr.map(function(s){return '<div class="item '+kind+'"><span class="t dv">'+esc(s.title)+'</span> <span class="who">'+esc(s.who||'')+'</span><div class="d dv">'+esc(s.detail||'')+'</div></div>';}).join('');};
+  var scriptList=function(arr){arr=arr||[];if(!arr.length)return '<p class="hint">—</p>';return arr.map(function(s){return '<div class="imp"><div class="p dv">'+esc(s.pattern||'')+'</div><div class="s dv">'+esc(s.suggestion||'')+'</div><div class="script dv"><span class="lab">try saying</span>'+esc(s.script||'')+'</div></div>';}).join('');};
+  var breatheSlide={eyebrow:'One minute for you',h:hot?'There was real heat — let’s breathe':'A small reset',html:'<p class="slide-p">Before anything else, one minute. Inhale, hold, exhale, soften — the circle will guide you. This is the whole point: regulate first, talk second.</p><div class="row" style="justify-content:center"><button class="btn accent" onclick="openBreath()">Take a minute</button></div>'};
+  var slides=[];
+  slides.push({eyebrow:'A gentle walk-through',h:'Let’s look at this together, '+esc(a),html:'<div class="slide-big" style="color:'+clr('overall',overall)+'">'+overall+'</div><p class="slide-p" style="margin-top:2px">'+(self?'wellbeing signal':'connection')+'</p><p class="slide-p dv">'+esc(r.summary||'')+'</p>'});
+  if(hot)slides.push(breatheSlide);
+  slides.push({eyebrow:'The good in you',h:self?'What’s working':'What you did well',html:sList(r.strengths,'good')});
+  slides.push({eyebrow:'Domains to grow',h:'Where it gets caught',html:sList(r.patterns,'pat')});
+  if(!hot)slides.push(breatheSlide);
+  slides.push({eyebrow:'How to improve',h:'Lines to try next time',html:scriptList(r.improvements)});
+  slides.push({eyebrow:'See it play out',h:self?'Sathi reflects back':'A kinder replay',html:'<p class="slide-p">Watch a voiced, animated version of a kinder exchange — the same moment, softened.</p><div class="row" style="justify-content:center"><button class="btn accent" onclick="slideToReplay()">▶ Play the replay</button></div>'});
+  slides.push({eyebrow:'Practice, in minutes',h:'Short technique videos',html:'<p class="slide-p">Bite-size guided practices. Coming soon — we’ll surface the one that fits your pattern.</p><div class="vidgrid">'+vidCard('Softened start-up','2 min')+vidCard('Repair attempts','90 sec')+vidCard('Listening to understand','2 min')+vidCard('Box breathing','1 min')+'</div>'});
+  slides.push({eyebrow:'Stay with it',h:'A gentle daily check-in',html:optinBlock(a)});
+  return slides;
+}
+function vidCard(t,m){return '<div class="vidcard"><span class="soon">Soon</span><div class="thumb">▶</div><div class="vt dv">'+esc(t)+'</div><div class="vmeta">'+esc(m)+'</div></div>';}
+function optinBlock(a){return '<p class="slide-p">One message a day, at the right moment — “how was your day?”, or a nudge to journal in introspection mode. Your number only, never your partner’s. Stop anytime by replying STOP.</p>'
+  +'<label class="fl">Your WhatsApp number</label><input type="text" id="optPhone" placeholder="+91 98765 43210" inputmode="tel" autocomplete="tel">'
+  +'<div class="consent" style="margin-top:12px"><input type="checkbox" id="optConsent"><label for="optConsent">Yes, send me one gentle daily check-in on WhatsApp. I can stop anytime.</label></div>'
+  +'<div class="row" style="justify-content:center"><button class="btn" onclick="submitOptin()">Keep me connected</button></div>'
+  +'<div class="saved" id="optSaved" style="text-align:center"></div>';}
+function slideToReplay(){closeSlides();var p=$('playBtn');if(p){p.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){if(!S.playing)startPlay();},600);}}
+function optMsg(m,ok){var el=$('optSaved');if(!el)return;el.textContent=m;el.style.color=ok?'var(--good)':'var(--risk)';el.style.display='block';}
+async function submitOptin(){
+  var el=$('optPhone'),phone=el?el.value.trim():'',norm=phone.replace(/[\s-]/g,'');
+  if(!$('optConsent')||!$('optConsent').checked)return optMsg('Please tick the box so we have your consent to message you.',false);
+  if(!/^(\+?91)?[6-9]\d{9}$/.test(norm))return optMsg('Enter a valid Indian mobile number.',false);
+  if(!be())return optMsg('Demo mode — set a Backend URL in Settings to enable live check-ins.',false);
+  try{var r=await fetch(be()+'/api/optin',{method:'POST',headers:beHeaders(),body:JSON.stringify({phone:norm,display_name:($('nameA').value||'').trim(),cadence:'daily',consent:true})});
+    var d=await r.json();if(!r.ok)throw new Error(d.error||'Could not save right now.');
+    optMsg(d.message||'Saved — talk soon. 🌼',true);}
+  catch(e){optMsg(e.message||String(e),false);}
+}
+$('slideX').onclick=closeSlides;$('slidePrev').onclick=function(){walkNav(-1);};$('slideNext').onclick=function(){walkNav(1);};
+document.addEventListener('keydown',function(e){if(!$('slides').classList.contains('show'))return;if(e.key==='Escape')closeSlides();else if(e.key==='ArrowRight')walkNav(1);else if(e.key==='ArrowLeft')walkNav(-1);});
+
+/* ---------- dashboard ---------- */
+function renderDash(){var list=$('dashList'),trend=$('trendCard');
+  if(!S.sessions.length){list.innerHTML='<div class="glass card empty">No sessions yet. Run an analysis and it appears here.</div>';trend.innerHTML='<div class="empty">Your trend will draw here.</div>';return;}
+  var pts=S.sessions.slice().reverse().map(function(s){return s.overall;});var W=Math.max(280,pts.length*46),H=70,step=pts.length>1?W/(pts.length-1):0;
+  var d=pts.map(function(v,i){return (i===0?'M':'L')+(i*step).toFixed(1)+' '+(H-(v/100)*H+6).toFixed(1);}).join(' ');var dots=pts.map(function(v,i){return '<circle cx="'+(i*step).toFixed(1)+'" cy="'+(H-(v/100)*H+6).toFixed(1)+'" r="3.5" fill="var(--accent)"/>';}).join('');
+  var freq={};S.sessions.forEach(function(s){freq[s.pattern]=(freq[s.pattern]||0)+1;});var common=Object.keys(freq).sort(function(a,b){return freq[b]-freq[a];})[0];
+  trend.innerHTML='<div style="font-size:13px;color:var(--muted);margin-bottom:8px">Overall, oldest → newest</div><svg width="100%" viewBox="0 0 '+W+' '+(H+12)+'" preserveAspectRatio="none" style="max-width:100%"><path d="'+d+'" fill="none" stroke="var(--accent)" stroke-width="2"/>'+dots+'</svg><div style="margin-top:10px;font-size:13.5px">Most recurring: <b class="dv">'+esc(common)+'</b></div>';
+  list.innerHTML=S.sessions.map(function(s){var when=new Date(s.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});return '<div class="glass sess"><div class="sc" style="color:'+clr('overall',s.overall)+'">'+s.overall+'</div><div class="meta"><div class="ttl dv">'+esc(s.pattern)+'</div><div class="sub"><span class="badge">'+(s.mode==='self'?'Self · '+s.sub:'Relationship · '+s.sub)+'</span> · '+when+'</div></div></div>';}).join('');
+}
+if('speechSynthesis' in window)window.speechSynthesis.onvoiceschanged=function(){window.speechSynthesis.getVoices();};
+</script>

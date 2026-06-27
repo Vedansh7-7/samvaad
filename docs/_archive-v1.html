@@ -1,0 +1,545 @@
+<!--
+  Samvaad — conversation replay (Phase 1 demo)
+  Working name; rename anytime. Runs fully client-side.
+  - Inputs: paste transcript / live record (browser) / upload audio (Deepgram key)
+  - Analysis: Claude (claude-sonnet-4-6), two focused calls -> report + improved conversation
+  - Output: text report + animated, voiced replay (browser voice, or ElevenLabs if key set)
+  - Feedback loop seed: captures "did this help / will you try it" — the signal a recommender will later learn from
+  No backend, no localStorage. State lives in memory only.
+-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&family=Inter:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500&display=swap');
+
+  :root{
+    --bg:#F2F0F6; --surface:#FFFFFF; --surface-2:#FBFAFD;
+    --ink:#211F2A; --muted:#6E6A7A; --hair:#E5E1EC;
+    --a:#AE3C72; --a-soft:#F7E6EF; --a-ink:#7A2650;      /* partner A — plum */
+    --b:#1F7E78; --b-soft:#E1F0EE; --b-ink:#125450;      /* partner B — teal */
+    --act:#574A93; --act-soft:#ECE8F7;                    /* action — indigo */
+    --good:#2E7D5B; --warn:#B07514; --risk:#B23B3B;
+    --r:12px; --rs:8px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Inter','Noto Sans Devanagari',system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 18px 80px}
+  .dv{font-family:'Noto Sans Devanagari','Inter',sans-serif}
+
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.02em;margin:0}
+  .brand .tag{color:var(--muted);font-size:13px}
+  .gear{border:1px solid var(--hair);background:var(--surface);color:var(--muted);
+    border-radius:99px;padding:7px 13px;font-size:13px;cursor:pointer}
+  .gear:hover{border-color:var(--act);color:var(--act)}
+
+  .lede{color:var(--muted);font-size:15px;max-width:62ch;margin:0 0 22px}
+
+  .card{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r);padding:20px}
+  .tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+  .tab{border:1px solid var(--hair);background:var(--surface-2);color:var(--muted);
+    border-radius:99px;padding:8px 16px;font-size:14px;font-weight:500;cursor:pointer}
+  .tab[aria-selected="true"]{background:var(--act);border-color:var(--act);color:#fff}
+
+  label.fl{display:block;font-size:13px;font-weight:500;color:var(--muted);margin:0 0 6px}
+  .names{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  input[type=text],textarea{width:100%;border:1px solid var(--hair);border-radius:var(--rs);
+    padding:11px 12px;font:inherit;color:var(--ink);background:var(--surface-2)}
+  input:focus,textarea:focus{outline:2px solid var(--act-soft);border-color:var(--act)}
+  textarea{min-height:190px;resize:vertical;line-height:1.7}
+  .hint{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+  .hint code{background:var(--act-soft);color:var(--act);padding:1px 6px;border-radius:5px;font-size:12px}
+
+  .btn{border:none;border-radius:var(--rs);padding:12px 22px;font:inherit;font-weight:600;
+    font-size:15px;cursor:pointer;background:var(--act);color:#fff}
+  .btn:hover{filter:brightness(1.06)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.ghost{background:var(--surface);color:var(--act);border:1px solid var(--hair)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+
+  .drop{border:1.5px dashed var(--hair);border-radius:var(--r);padding:30px 18px;text-align:center;
+    color:var(--muted);background:var(--surface-2);cursor:pointer}
+  .drop.over{border-color:var(--act);background:var(--act-soft)}
+  .drop strong{color:var(--ink)}
+
+  .mic{width:84px;height:84px;border-radius:50%;border:none;cursor:pointer;background:var(--a);color:#fff;
+    font-size:30px;display:grid;place-items:center;margin:6px auto}
+  .mic.rec{animation:pulse 1.3s ease-in-out infinite;background:var(--risk)}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(178,59,59,.4)}50%{box-shadow:0 0 0 16px rgba(178,59,59,0)}}
+  .live{min-height:54px;background:var(--surface-2);border:1px solid var(--hair);border-radius:var(--rs);
+    padding:10px 12px;color:var(--muted);font-size:14px;margin-top:12px}
+
+  /* settings drawer */
+  .drawer{border:1px solid var(--hair);border-radius:var(--r);background:var(--surface-2);
+    padding:16px;margin-bottom:18px;display:none}
+  .drawer.open{display:block}
+  .drawer h3{margin:0 0 4px;font-size:15px;font-family:'Bricolage Grotesque',sans-serif;font-weight:600}
+  .drawer .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  @media(max-width:640px){.drawer .grid,.names{grid-template-columns:1fr}}
+
+  /* processing */
+  .steps{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:10px}
+  .steps li{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:15px}
+  .dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--hair);flex:0 0 auto;display:grid;place-items:center;font-size:13px}
+  .steps li.done .dot{background:var(--good);border-color:var(--good);color:#fff}
+  .steps li.active .dot{border-color:var(--act);border-top-color:transparent;animation:spin .8s linear infinite}
+  .steps li.done,.steps li.active{color:var(--ink)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* results */
+  .results{display:grid;grid-template-columns:1.05fr 1fr;gap:18px;align-items:start}
+  @media(max-width:880px){.results{grid-template-columns:1fr}}
+  .panel{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r);padding:18px}
+  .panel h2{font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:18px;margin:0 0 14px;letter-spacing:-.01em}
+
+  .scores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:8px}
+  .score{border:1px solid var(--hair);border-radius:var(--rs);padding:12px;text-align:center}
+  .score .n{font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:26px;line-height:1}
+  .score .l{font-size:12px;color:var(--muted);margin-top:5px}
+  .overall{display:flex;align-items:center;gap:12px;margin:14px 0 4px}
+  .overall .big{font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:40px;line-height:1}
+  .overall .lbl{font-size:13px;color:var(--muted)}
+
+  .summary{font-size:14.5px;color:var(--ink);background:var(--surface-2);border-left:3px solid var(--act);
+    border-radius:0 var(--rs) var(--rs) 0;padding:11px 13px;margin:14px 0}
+  .block{margin-top:16px}
+  .block h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 8px;font-weight:600}
+  .item{border:1px solid var(--hair);border-radius:var(--rs);padding:11px 12px;margin-bottom:8px}
+  .item.good{border-left:3px solid var(--good)}
+  .item.pat{border-left:3px solid var(--risk)}
+  .item .t{font-weight:600;font-size:14px}
+  .item .who{font-size:12px;color:var(--muted);font-weight:500}
+  .item .d{font-size:13.5px;color:var(--muted);margin-top:3px}
+
+  .imp{border:1px solid var(--hair);border-radius:var(--rs);padding:12px;margin-bottom:10px}
+  .imp .p{font-size:12.5px;color:var(--risk);font-weight:500}
+  .imp .s{font-size:14px;margin:4px 0 8px}
+  .imp .script{background:var(--act-soft);border-radius:6px;padding:9px 11px;font-size:14px;color:var(--act-ink,#3c3470)}
+  .imp .script .lab{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--act);display:block;margin-bottom:3px}
+
+  /* animation stage */
+  .stage{background:linear-gradient(180deg,#F8F5FB,#F1ECF6);border:1px solid var(--hair);
+    border-radius:var(--r);padding:14px;position:relative;overflow:hidden}
+  .scene{height:172px;position:relative}
+  .ch{position:absolute;bottom:0;width:120px;text-align:center;transition:transform .25s}
+  .ch.a{left:8%}.ch.b{right:8%}
+  .ch.speaking{transform:translateY(-4px)}
+  .emoji{font-size:20px;height:24px;opacity:0;transition:opacity .2s}
+  .ch.speaking .emoji{opacity:1}
+  .nm{font-size:12px;color:var(--muted);margin-top:2px}
+  .bubbles{max-height:150px;overflow:auto;margin-top:10px;display:flex;flex-direction:column;gap:7px;padding:2px}
+  .bub{max-width:78%;padding:8px 11px;border-radius:13px;font-size:14px;line-height:1.5}
+  .bub .tr{display:block;font-size:12px;color:var(--muted);font-style:italic;margin-top:3px}
+  .bub.a{align-self:flex-start;background:var(--a-soft);color:var(--a-ink);border-bottom-left-radius:4px}
+  .bub.b{align-self:flex-end;background:var(--b-soft);color:var(--b-ink);border-bottom-right-radius:4px}
+  .ctrls{display:flex;align-items:center;gap:10px;margin-top:12px}
+  .ctrls button{border:1px solid var(--hair);background:var(--surface);border-radius:99px;width:40px;height:40px;
+    cursor:pointer;font-size:16px;display:grid;place-items:center}
+  .ctrls button:hover{border-color:var(--act);color:var(--act)}
+  .bar{flex:1;height:5px;background:var(--hair);border-radius:99px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--act);transition:width .3s}
+
+  /* feedback loop */
+  .fb{margin-top:18px;background:var(--act-soft);border:1px solid var(--hair);border-radius:var(--r);padding:16px}
+  .fb h3{margin:0 0 4px;font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:16px}
+  .fb p{margin:0 0 12px;font-size:13.5px;color:var(--muted)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{border:1px solid var(--act);background:var(--surface);color:var(--act);border-radius:99px;
+    padding:8px 16px;font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+  .chip:hover,.chip.sel{background:var(--act);color:#fff}
+  .saved{font-size:13px;color:var(--good);margin-top:10px;display:none}
+  .saved.show{display:block}
+
+  .err{background:#FCEEEE;border:1px solid #F1C9C9;color:var(--risk);border-radius:var(--rs);
+    padding:11px 13px;font-size:14px;margin-top:14px;display:none}
+  .err.show{display:block}
+  .hide{display:none}
+  footer{margin-top:30px;color:var(--muted);font-size:12.5px;text-align:center}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Samvaad</h1><span class="tag">conversation replay · Phase 1</span>
+    </div>
+    <button class="gear" id="gearBtn">API keys</button>
+  </header>
+  <p class="lede">Paste or record one conversation. Get an honest report — what's driving the friction, what you each did well, and exact lines to try next time — plus a voiced replay of a kinder version of the same exchange.</p>
+
+  <div class="drawer" id="drawer">
+    <h3>Optional keys — stored only in this tab, never sent anywhere except the service itself</h3>
+    <p class="hint">Leave blank to use the built-in browser voice and transcript/record inputs. Add keys to upgrade.</p>
+    <div class="grid">
+      <div><label class="fl">Deepgram key — enables audio file upload (diarized)</label><input type="text" id="dgKey" placeholder="Token …"></div>
+      <div><label class="fl">ElevenLabs key — natural Indian voices in the replay</label><input type="text" id="elKey" placeholder="xi-api-key …"></div>
+      <div><label class="fl">ElevenLabs voice — partner A (female)</label><input type="text" id="elA" placeholder="EXAVITQu4vr4xnSDxMaL"></div>
+      <div><label class="fl">ElevenLabs voice — partner B (male)</label><input type="text" id="elB" placeholder="onwK4e9ZLuTAKqWW03F9"></div>
+    </div>
+  </div>
+
+  <!-- INPUT -->
+  <section id="screenInput" class="card">
+    <div class="names">
+      <div><label class="fl">Partner A name</label><input type="text" id="nameA" value="Kavya"></div>
+      <div><label class="fl">Partner B name</label><input type="text" id="nameB" value="Rohit"></div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="text">Paste transcript</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="rec">Record</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="up">Upload audio</button>
+    </div>
+
+    <div id="tab-text">
+      <label class="fl">Conversation</label>
+      <textarea id="transcript" placeholder="Kavya: You're late again...&#10;Rohit: There was a client call, I couldn't hang up...&#10;Kavya: It's every night though."></textarea>
+      <p class="hint">Format each line as <code>Name: what they said</code>. Hinglish and Devanagari both welcome.</p>
+      <div class="row">
+        <button class="btn ghost" id="sampleBtn">Load a sample</button>
+        <button class="btn" id="go1">Analyse conversation</button>
+      </div>
+    </div>
+
+    <div id="tab-rec" class="hide" style="text-align:center">
+      <button class="mic" id="micBtn" aria-label="Start recording">●</button>
+      <div class="hint" id="micHint">Tap to record. Speak the conversation aloud — say each name before their line.</div>
+      <div class="live" id="liveT">Live transcript will appear here…</div>
+      <div class="row" style="justify-content:center">
+        <button class="btn" id="go2" disabled>Analyse conversation</button>
+      </div>
+      <p class="hint">Browser speech recognition works in Chrome and Edge. Safari doesn't support it.</p>
+    </div>
+
+    <div id="tab-up" class="hide">
+      <div class="drop" id="drop">
+        <strong>Drop an audio file</strong> or click to browse<br>
+        <span class="hint">MP3, WAV, M4A, OGG · needs a Deepgram key (set it under “API keys”)</span>
+        <input type="file" id="file" accept="audio/*" class="hide">
+      </div>
+      <div class="hint" id="fileName"></div>
+      <div class="row"><button class="btn" id="go3" disabled>Transcribe &amp; analyse</button></div>
+    </div>
+
+    <div class="err" id="errBox"></div>
+  </section>
+
+  <!-- PROCESSING -->
+  <section id="screenProc" class="card hide">
+    <h2 style="font-family:'Bricolage Grotesque';font-weight:600;font-size:18px;margin:0">Working through it</h2>
+    <ul class="steps" id="steps">
+      <li data-s="0"><span class="dot"></span>Reading the conversation</li>
+      <li data-s="1"><span class="dot"></span>Finding the patterns underneath</li>
+      <li data-s="2"><span class="dot"></span>Writing what each of you did well</li>
+      <li data-s="3"><span class="dot"></span>Drafting a kinder version to replay</li>
+    </ul>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="screenResults" class="hide">
+    <div class="results">
+      <div class="panel" id="reportPanel"></div>
+      <div class="panel">
+        <h2>A kinder replay</h2>
+        <div class="stage">
+          <div class="scene" id="scene"></div>
+          <div class="bubbles" id="bubbles"></div>
+          <div class="ctrls">
+            <button id="playBtn" aria-label="Play">▶</button>
+            <button id="muteBtn" aria-label="Mute">🔊</button>
+            <div class="bar"><i id="prog"></i></div>
+          </div>
+        </div>
+        <div class="block" style="margin-top:16px">
+          <h3>The improved conversation, in text</h3>
+          <div id="improvedText" style="font-size:14px"></div>
+        </div>
+
+        <div class="fb" id="fbCard">
+          <h3>One quick thing</h3>
+          <p id="fbQ">Will you try the top suggestion this week?</p>
+          <div class="chips" id="fbChips">
+            <button class="chip" data-v="yes">Yes, this week</button>
+            <button class="chip" data-v="maybe">Maybe</button>
+            <button class="chip" data-v="no">Not for us</button>
+          </div>
+          <div class="saved" id="fbSaved">Saved. This is exactly the signal a recommender will learn from — which nudge fits whom, and when.</div>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="justify-content:center;margin-top:18px">
+      <button class="btn ghost" id="againBtn">Analyse another conversation</button>
+    </div>
+  </section>
+
+  <footer>Phase 1 demo · runs in your browser · no data is stored. Production target: backend-held keys, encrypted audio with auto-delete, consent-first.</footer>
+</div>
+
+<script>
+/* ---------- state ---------- */
+var S = { tab:'text', audioFile:null, recT:'', recog:null, recording:false,
+          report:null, improved:[], mute:false, playing:false, idx:0, feedback:[] };
+var $ = function(id){ return document.getElementById(id); };
+
+/* ---------- settings drawer ---------- */
+$('gearBtn').onclick = function(){ $('drawer').classList.toggle('open'); };
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tab').forEach(function(t){
+  t.onclick = function(){
+    document.querySelectorAll('.tab').forEach(function(x){ x.setAttribute('aria-selected','false'); });
+    t.setAttribute('aria-selected','true');
+    S.tab = t.dataset.tab;
+    $('tab-text').classList.toggle('hide', S.tab!=='text');
+    $('tab-rec').classList.toggle('hide', S.tab!=='rec');
+    $('tab-up').classList.toggle('hide', S.tab!=='up');
+  };
+});
+
+/* ---------- sample ---------- */
+$('sampleBtn').onclick = function(){
+  $('nameA').value='Kavya'; $('nameB').value='Rohit';
+  $('transcript').value =
+    "Kavya: Rohit, aaj phir tumne mummy ko call nahi kiya. Unhe bahut bura laga.\n"+
+    "Rohit: Yaar, office mein itna kaam tha. Ek minute bhi free nahi tha. Tum samajhti kyun nahi?\n"+
+    "Kavya: Main samajhti hoon — but yeh daily ho raha hai. Hamesha koi excuse hota hai.\n"+
+    "Rohit: Excuse? Main kaam kar raha hoon, hamare future ke liye. Yeh excuse nahi hai.\n"+
+    "Kavya: Main yeh nahi keh rahi ki kaam mat karo. Mujhe akela feel hota hai is sab mein.\n"+
+    "Rohit: ...Kavya, main itni mehnat karta hoon aur tum—\n"+
+    "Kavya: Main jaanti hoon tum mehnat karte ho. But emotional availability bhi kuch hoti hai na?\n"+
+    "Rohit: ...Shayad main sach mein kuch miss kar raha hoon.\n"+
+    "Kavya: Aaj meri promotion ki last date thi. Aur tumhe pata bhi nahi tha.\n"+
+    "Rohit: Mujhe nahi pata tha. Yeh toh bata deti. I'm sorry. Aaj ki baat karo — kya hua?";
+};
+
+/* ---------- record (Web Speech) ---------- */
+(function(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ $('micHint').textContent='Live recording is not supported in this browser. Use Chrome or Edge, or paste a transcript.'; $('micBtn').disabled=true; return; }
+  $('micBtn').onclick = function(){
+    if(S.recording){ S.recog.stop(); return; }
+    var r = new SR(); S.recog=r; r.lang='en-IN'; r.continuous=true; r.interimResults=true;
+    S.recT=''; r.onresult=function(e){
+      var t='';
+      for(var i=0;i<e.results.length;i++){ t += e.results[i][0].transcript; }
+      S.recT=t; $('liveT').textContent=t; $('go2').disabled = t.trim().length<10;
+    };
+    r.onend=function(){ S.recording=false; $('micBtn').classList.remove('rec'); $('micBtn').textContent='●'; $('micHint').textContent='Recorded. Tap Analyse, or tap the mic to redo.'; };
+    r.onerror=function(){ S.recording=false; $('micBtn').classList.remove('rec'); };
+    r.start(); S.recording=true; $('micBtn').classList.add('rec'); $('micBtn').textContent='■'; $('micHint').textContent='Listening… tap again to stop.';
+  };
+})();
+
+/* ---------- upload ---------- */
+$('drop').onclick=function(){ $('file').click(); };
+['dragover','dragenter'].forEach(function(ev){ $('drop').addEventListener(ev,function(e){ e.preventDefault(); $('drop').classList.add('over'); }); });
+['dragleave','drop'].forEach(function(ev){ $('drop').addEventListener(ev,function(e){ e.preventDefault(); $('drop').classList.remove('over'); }); });
+$('drop').addEventListener('drop',function(e){ if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
+$('file').onchange=function(e){ if(e.target.files[0]) setFile(e.target.files[0]); };
+function setFile(f){ S.audioFile=f; $('fileName').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB';
+  $('go3').disabled = !($('dgKey').value.trim()); if(!$('dgKey').value.trim()) showErr('Add a Deepgram key under “API keys” to transcribe an audio file.'); }
+
+/* ---------- buttons ---------- */
+$('go1').onclick=function(){ var t=$('transcript').value.trim(); if(t.length<15){ return showErr('Paste a bit more of the conversation first.'); } run(t); };
+$('go2').onclick=function(){ var t=labelFromRaw(S.recT); run(t); };
+$('go3').onclick=async function(){ try{ hideErr(); showProc(); setStep(0,'active','Transcribing audio'); var t=await deepgram(S.audioFile); run(t,true); }catch(err){ backToInput(); showErr(err.message||String(err)); } };
+$('againBtn').onclick=backToInput;
+
+function backToInput(){ $('screenResults').classList.add('hide'); $('screenProc').classList.add('hide'); $('screenInput').classList.remove('hide'); window.scrollTo(0,0); }
+function showErr(m){ $('errBox').textContent=m; $('errBox').classList.add('show'); }
+function hideErr(){ $('errBox').classList.remove('show'); }
+
+/* turn raw recorded stream into A:/B: lines using the two names */
+function labelFromRaw(raw){
+  var a=$('nameA').value.trim(), b=$('nameB').value.trim();
+  // best-effort: if names already present, keep; else hand whole thing to Claude to split
+  return raw;
+}
+
+/* ---------- screens ---------- */
+function showProc(){ $('screenInput').classList.add('hide'); $('screenResults').classList.add('hide'); $('screenProc').classList.remove('hide'); resetSteps(); }
+function resetSteps(){ document.querySelectorAll('#steps li').forEach(function(li){ li.className=''; }); }
+function setStep(i,cls,label){ var li=document.querySelector('#steps li[data-s="'+i+'"]'); if(!li)return; if(label) li.childNodes[1].nodeValue=label;
+  for(var k=0;k<i;k++){ var p=document.querySelector('#steps li[data-s="'+k+'"]'); if(p) p.className='done'; }
+  li.className=cls; }
+
+/* ---------- Deepgram STT ---------- */
+async function deepgram(file){
+  var key=$('dgKey').value.trim(); if(!key) throw new Error('Missing Deepgram key.');
+  var buf=await file.arrayBuffer();
+  var res=await fetch('https://api.deepgram.com/v1/listen?model=nova-2&diarize=true&punctuate=true&smart_format=true',{
+    method:'POST', headers:{'Authorization':'Token '+key,'Content-Type':file.type||'audio/mpeg'}, body:buf });
+  if(!res.ok){ throw new Error('Transcription failed ('+res.status+'). Check the key or file.'); }
+  var data=await res.json();
+  var words=(((data.results||{}).channels||[])[0]||{}).alternatives; words=words&&words[0]?words[0].words:null;
+  if(!words||!words.length) throw new Error('No speech detected in that file.');
+  var a=$('nameA').value.trim()||'A', b=$('nameB').value.trim()||'B';
+  var out='', cur=null, line='';
+  words.forEach(function(w){ var sp=(w.speaker===undefined?0:w.speaker);
+    if(sp!==cur){ if(line) out+=( (cur===0?a:b)+': '+line.trim()+'\n'); cur=sp; line=''; }
+    line+=(w.punctuated_word||w.word)+' '; });
+  if(line) out+=((cur===0?a:b)+': '+line.trim()+'\n');
+  return out;
+}
+
+/* ---------- Claude ---------- */
+async function callClaude(prompt){
+  var res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1000, messages:[{role:'user',content:prompt}] }) });
+  if(!res.ok){ var tx=await res.text(); throw new Error('Analysis error ('+res.status+'). '+tx.slice(0,140)); }
+  var data=await res.json();
+  return (data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+}
+function parseJSON(t){ try{ return JSON.parse(t); }catch(e){ var a=t.indexOf('{'), b=t.lastIndexOf('}'); if(a>-1&&b>-1){ return JSON.parse(t.slice(a,b+1)); } throw new Error('Could not read the analysis. Try again.'); } }
+
+async function run(transcript, fromAudio){
+  hideErr(); showProc();
+  var a=$('nameA').value.trim()||'Partner A', b=$('nameB').value.trim()||'Partner B';
+  try{
+    setStep(1,'active');
+    var p1='You are an expert couples-communication analyst trained in the Gottman method. '+
+      'Analyse this conversation between '+a+' (A) and '+b+' (B).\n\n'+transcript+'\n\n'+
+      'Return ONLY minified JSON, no markdown, no preamble. Schema:'+
+      '{"scores":{"connection":0-100,"empathy":0-100,"escalation_risk":0-100,"overall":0-100},'+
+      '"summary":"<=2 sentences, what really happened emotionally",'+
+      '"patterns":[{"title":"short","who":"'+a+'/'+b+'/both","detail":"<=1 sentence, grounded in their words"}],'+
+      '"strengths":[{"title":"short","who":"name","detail":"<=1 sentence"}],'+
+      '"improvements":[{"pattern":"the issue","suggestion":"the skill","script":"a verbatim line they could say next time, in their own language/Hinglish, <=2 sentences"}]}'+
+      ' Max 4 patterns, 4 strengths, 3 improvements. Neutral and non-blaming.';
+    var rep=parseJSON(await callClaude(p1));
+    setStep(2,'done'); setStep(3,'active');
+
+    var p2='Rewrite the SAME conversation between '+a+' (A) and '+b+' (B) as a healthier version applying these fixes: '+
+      JSON.stringify(rep.improvements)+'.\nOriginal:\n'+transcript+'\n\n'+
+      'Return ONLY minified JSON: {"improved":[{"speaker":"A or B","display":"natural line they speak (Hinglish/Devanagari ok)","speak":"clean Roman/Latin transliteration of display for text-to-speech, NO Devanagari","emotion":"sad|attentive|sorry|happy|warm|neutral"}]}. Max 8 short turns.';
+    var imp=parseJSON(await callClaude(p2));
+    setStep(3,'done');
+
+    S.report=rep; S.improved=(imp.improved||[]);
+    renderResults(a,b);
+  }catch(err){ backToInput(); showErr(err.message||String(err)); }
+}
+
+/* ---------- render report ---------- */
+function colorFor(label,v){ if(label==='escalation_risk'){ return v<34?'var(--good)':v<67?'var(--warn)':'var(--risk)'; } return v<40?'var(--risk)':v<70?'var(--warn)':'var(--good)'; }
+function renderResults(a,b){
+  var r=S.report;
+  var sc=r.scores||{};
+  var html='<h2>What this conversation shows</h2>';
+  html+='<div class="overall"><span class="big" style="color:'+colorFor('overall',sc.overall||0)+'">'+(sc.overall||0)+'</span><span class="lbl">overall connection score<br>out of 100</span></div>';
+  html+='<div class="scores">'+
+    scoreCell('Connection',sc.connection)+
+    scoreCell('Empathy',sc.empathy)+
+    scoreCell('Escalation risk',sc.escalation_risk,'escalation_risk')+'</div>';
+  if(r.summary) html+='<div class="summary dv">'+esc(r.summary)+'</div>';
+  if((r.strengths||[]).length){ html+='<div class="block"><h3>What you did well</h3>';
+    r.strengths.forEach(function(s){ html+='<div class="item good"><span class="t dv">'+esc(s.title)+'</span> <span class="who">'+esc(s.who||'')+'</span><div class="d dv">'+esc(s.detail||'')+'</div></div>'; }); html+='</div>'; }
+  if((r.patterns||[]).length){ html+='<div class="block"><h3>Patterns to watch</h3>';
+    r.patterns.forEach(function(s){ html+='<div class="item pat"><span class="t dv">'+esc(s.title)+'</span> <span class="who">'+esc(s.who||'')+'</span><div class="d dv">'+esc(s.detail||'')+'</div></div>'; }); html+='</div>'; }
+  if((r.improvements||[]).length){ html+='<div class="block"><h3>Try this next time</h3>';
+    r.improvements.forEach(function(s){ html+='<div class="imp"><div class="p dv">'+esc(s.pattern||'')+'</div><div class="s dv">'+esc(s.suggestion||'')+'</div><div class="script dv"><span class="lab">say something like</span>'+esc(s.script||'')+'</div></div>'; }); html+='</div>'; }
+  $('reportPanel').innerHTML=html;
+
+  // improved text
+  $('improvedText').innerHTML = S.improved.map(function(t){
+    var nm=(t.speaker==='A'?a:b); var cls=(t.speaker==='A'?'a':'b');
+    return '<div style="margin-bottom:7px"><strong style="color:var(--'+cls+')">'+esc(nm)+':</strong> <span class="dv">'+esc(t.display)+'</span></div>';
+  }).join('');
+
+  buildScene(a,b);
+  $('fbQ').textContent = (r.improvements&&r.improvements[0]) ? ('Will you try this: “'+ (r.improvements[0].suggestion||'the top suggestion') +'”?') : 'Will you try the top suggestion this week?';
+
+  $('screenProc').classList.add('hide'); $('screenResults').classList.remove('hide'); window.scrollTo(0,0);
+}
+function scoreCell(label,v,key){ v=v||0; return '<div class="score"><div class="n" style="color:'+colorFor(key||label,v)+'">'+v+'</div><div class="l">'+label+'</div></div>'; }
+function esc(s){ s=(s==null?'':String(s)); return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ---------- scene characters ---------- */
+function person(cls,name,clothes){
+  return '<div class="ch '+cls+'" id="ch-'+cls+'"><div class="emoji" id="em-'+cls+'"></div>'+
+    '<svg width="92" height="120" viewBox="0 0 92 120"><ellipse cx="46" cy="116" rx="30" ry="5" fill="rgba(0,0,0,.06)"/>'+
+    '<rect x="20" y="62" width="52" height="52" rx="16" fill="'+clothes+'"/>'+
+    '<circle cx="46" cy="40" r="22" fill="#E8C4A0"/>'+
+    (cls==='a'?'<circle cx="46" cy="20" r="3" fill="#AE3C72"/><path d="M24 38 Q46 8 68 38" fill="#2b2330"/>':'<path d="M26 34 Q46 14 66 34 L66 30 Q46 12 26 30 Z" fill="#2b2330"/>')+
+    '<circle cx="39" cy="40" r="2.4" fill="#2b2330"/><circle cx="53" cy="40" r="2.4" fill="#2b2330"/>'+
+    '<path d="M40 49 Q46 53 52 49" stroke="#a06b4a" stroke-width="2" fill="none" stroke-linecap="round"/></svg>'+
+    '<div class="nm">'+esc(name)+'</div></div>';
+}
+function buildScene(a,b){
+  $('scene').innerHTML = person('a',a,'#C25E86') + person('b',b,'#2C8D86');
+  $('bubbles').innerHTML=''; $('prog').style.width='0%'; S.idx=0; S.playing=false; $('playBtn').textContent='▶';
+}
+var EMO={sad:'😔',attentive:'🙂',sorry:'🙏',happy:'😊',warm:'🤗',neutral:'😐'};
+
+/* ---------- playback + TTS ---------- */
+$('muteBtn').onclick=function(){ S.mute=!S.mute; $('muteBtn').textContent=S.mute?'🔇':'🔊'; if(S.mute){ window.speechSynthesis.cancel(); if(S._audio)S._audio.pause(); } };
+$('playBtn').onclick=function(){ if(S.playing){ pausePlay(); } else { startPlay(); } };
+function pausePlay(){ S.playing=false; $('playBtn').textContent='▶'; window.speechSynthesis.cancel(); if(S._audio)S._audio.pause(); }
+function startPlay(){ if(S.idx>=S.improved.length){ S.idx=0; $('bubbles').innerHTML=''; } S.playing=true; $('playBtn').textContent='⏸'; advance(); }
+
+function advance(){
+  if(!S.playing) return;
+  if(S.idx>=S.improved.length){ S.playing=false; $('playBtn').textContent='▶'; $('prog').style.width='100%'; return; }
+  var turn=S.improved[S.idx];
+  var cls=(turn.speaker==='A'?'a':'b');
+  // bubble
+  var nameA=$('nameA').value.trim(), nameB=$('nameB').value.trim();
+  var bub=document.createElement('div'); bub.className='bub '+cls;
+  bub.innerHTML='<span class="dv">'+esc(turn.display)+'</span>';
+  $('bubbles').appendChild(bub); $('bubbles').scrollTop=$('bubbles').scrollHeight;
+  // character
+  document.querySelectorAll('.ch').forEach(function(c){ c.classList.remove('speaking'); });
+  var ch=$('ch-'+cls); if(ch){ ch.classList.add('speaking'); var em=$('em-'+cls); if(em) em.textContent=EMO[turn.emotion]||'😐'; }
+  $('prog').style.width=Math.round((S.idx+1)/S.improved.length*100)+'%';
+  // speak then advance
+  speak(turn.speak||turn.display, cls, function(){ S.idx++; setTimeout(advance, 280); });
+}
+
+function speak(text, cls, done){
+  if(S.mute){ setTimeout(done, 700); return; }
+  var elKey=$('elKey').value.trim();
+  if(elKey){ return speakEleven(text, cls, elKey, done, function(){ speakBrowser(text,cls,done); }); }
+  speakBrowser(text, cls, done);
+}
+function speakBrowser(text, cls, done){
+  try{
+    window.speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(text);
+    var vs=window.speechSynthesis.getVoices();
+    var pick=vs.filter(function(v){return /en-IN|hi-IN/i.test(v.lang);});
+    if(!pick.length) pick=vs.filter(function(v){return /en-/i.test(v.lang);});
+    if(pick.length){ u.voice = cls==='a' ? (pick.find(function(v){return /female|heera|kalpana|aria/i.test(v.name);})||pick[0]) : (pick.find(function(v){return /male|ravi|prabhat/i.test(v.name);})||pick[pick.length-1]); }
+    u.lang='en-IN'; u.pitch = cls==='a'?1.18:0.85; u.rate=0.94;
+    u.onend=function(){ done(); }; u.onerror=function(){ done(); };
+    window.speechSynthesis.speak(u);
+  }catch(e){ setTimeout(done, 900); }
+}
+async function speakEleven(text, cls, key, done, fallback){
+  try{
+    var vid = cls==='a' ? ($('elA').value.trim()||'EXAVITQu4vr4xnSDxMaL') : ($('elB').value.trim()||'onwK4e9ZLuTAKqWW03F9');
+    var res=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid,{
+      method:'POST', headers:{'xi-api-key':key,'Content-Type':'application/json'},
+      body:JSON.stringify({text:text, model_id:'eleven_multilingual_v2', voice_settings:{stability:0.4,similarity_boost:0.7}}) });
+    if(!res.ok) throw new Error('el');
+    var blob=await res.blob(); var url=URL.createObjectURL(blob);
+    var au=new Audio(url); S._audio=au; au.onended=function(){ URL.revokeObjectURL(url); done(); }; au.onerror=function(){ done(); };
+    au.play();
+  }catch(e){ fallback(); }
+}
+
+/* ---------- feedback loop seed ---------- */
+document.querySelectorAll('#fbChips .chip').forEach(function(c){
+  c.onclick=function(){
+    document.querySelectorAll('#fbChips .chip').forEach(function(x){x.classList.remove('sel');});
+    c.classList.add('sel');
+    // the record a recommender would learn from later
+    S.feedback.push({ ts:Date.now(), willTry:c.dataset.v,
+      topSuggestion:(S.report&&S.report.improvements&&S.report.improvements[0])?S.report.improvements[0].suggestion:null,
+      escalationRisk:(S.report&&S.report.scores)?S.report.scores.escalation_risk:null });
+    $('fbSaved').classList.add('show');
+  };
+});
+
+/* warm up voices */
+if('speechSynthesis' in window){ window.speechSynthesis.onvoiceschanged=function(){ window.speechSynthesis.getVoices(); }; }
+</script>

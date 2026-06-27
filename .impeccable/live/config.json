@@ -1,0 +1,6 @@
+{
+  "files": ["web/**/*.html"],
+  "insertAfter": "</script>",
+  "commentSyntax": "html",
+  "cspChecked": true
+}

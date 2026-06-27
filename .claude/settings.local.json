@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node \"C:\\\\Users\\\\HP\\\\.claude\\\\skills\\\\impeccable\\\\scripts\\\\detect-csp.mjs\")",
+      "Bash(npm install *)",
+      "Bash(npm start *)",
+      "Bash(node \"C:\\\\Users\\\\HP\\\\.claude\\\\skills\\\\impeccable\\\\scripts\\\\hook-admin.mjs\" ignore-value overused-font Fraunces --shared --reason \"Locked design-system serif per CLAUDE.md; user explicitly asked to preserve Fraunces+Mulish\")",
+      "Bash(node --check web/auth.js)",
+      "Bash(node \"C:\\\\Users\\\\HP\\\\.claude\\\\skills\\\\impeccable\\\\scripts\\\\detect.mjs\" --json web/login.html)",
+      "Bash(node \"C:\\\\Users\\\\HP\\\\.claude\\\\skills\\\\impeccable\\\\scripts\\\\detect.mjs\" --json web/app.html)",
+      "Bash(node --check server.js)",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "mcp__claude_ai_Supabase__list_tables",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('backend/package.json','utf8'\\)\\); console.log\\('package.json OK'\\)\")",
+      "Bash(node -e \"const y=require\\('fs'\\).readFileSync\\('render.yaml','utf8'\\); if\\(!/services:/.test\\(y\\)\\) throw new Error\\('render.yaml malformed'\\); console.log\\('render.yaml present + has services'\\)\")",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Initial commit: Samvaad v3 — talk, reflect, breathe *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"C:\\\\Users\\\\HP\\\\.claude\\\\skills\\\\impeccable\\\\scripts\\\\hook.mjs\"",
+            "timeout": 5,
+            "statusMessage": "Checking UI changes"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Impeccable design detector: runs after Edit/Write/MultiEdit on UI files and surfaces findings as system reminders."
+}

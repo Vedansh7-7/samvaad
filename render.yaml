@@ -1,0 +1,30 @@
+# Render Blueprint for the Samvaad backend (the secret-holding Express proxy).
+# Deploy: push this repo to GitHub → Render dashboard → New → Blueprint → pick this repo.
+# Render auto-provides PORT; server.js already reads process.env.PORT.
+# Secrets (sync:false) are entered in the Render dashboard, NEVER committed.
+services:
+  - type: web
+    name: samvaad-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY        # analysis brain (report + replay) — required
+        sync: false
+      - key: DEEPGRAM_KEY             # audio → transcript
+        sync: false
+      - key: ELEVENLABS_KEY           # voiced replay
+        sync: false
+      - key: SUPABASE_SERVICE_KEY     # persistence under RLS — required to save sessions/opt-ins
+        sync: false
+      - key: ALLOWED_ORIGIN           # set to your Vercel URL, e.g. https://samvaad.vercel.app
+        sync: false
+      - key: SUPABASE_URL
+        value: https://bwcszkbtvbvwzioycxxp.supabase.co
+      - key: ELEVEN_VOICE_A
+        value: EXAVITQu4vr4xnSDxMaL
+      - key: ELEVEN_VOICE_B
+        value: onwK4e9ZLuTAKqWW03F9
