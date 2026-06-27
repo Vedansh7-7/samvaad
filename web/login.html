@@ -223,6 +223,12 @@
     return data;
   }
 
+  // The magic link in the OTP email must return to THIS deployment, not Supabase's default
+  // Site URL (which is localhost:3000 until set). Must also be allow-listed in Supabase →
+  // Authentication → URL Configuration → Redirect URLs.
+  var EMAIL_REDIRECT = (String(location.origin).indexOf('http') === 0) ? location.origin + '/app.html' : '';
+  function otpPath(){ return '/otp' + (EMAIL_REDIRECT ? '?redirect_to=' + encodeURIComponent(EMAIL_REDIRECT) : ''); }
+
   // send magic link / OTP
   $('sendBtn').onclick = async function(){
     var email = $('email').value.trim();
@@ -230,7 +236,7 @@
     if(!validEmail(email)){ m.className='msg err'; m.textContent='Please enter a valid email address.'; return; }
     busy($('sendBtn'), true, 'Sending…');
     try{
-      await sbAuth('/otp', { email: email, create_user: true });
+      await sbAuth(otpPath(), { email: email, create_user: true });
       currentEmail = email; $('emailEcho').textContent = email;
       show('code');
     }catch(err){
@@ -257,7 +263,7 @@
 
   $('resendBtn').onclick = async function(){
     var m = $('msg2'); m.className='msg'; m.textContent='';
-    try{ await sbAuth('/otp', { email: currentEmail, create_user: true }); m.className='msg ok'; m.textContent='Sent again — check your inbox.'; }
+    try{ await sbAuth(otpPath(), { email: currentEmail, create_user: true }); m.className='msg ok'; m.textContent='Sent again — check your inbox.'; }
     catch(err){ m.className='msg err'; m.textContent = err.message; }
   };
   $('backBtn').onclick = function(){ show('email'); $('msg1').textContent=''; };
