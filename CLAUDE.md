@@ -93,6 +93,22 @@ biomarker KPIs (pitch/jitter/rate) are staged for later, not implemented.
 6. Later: dashboard "patterns over time" visualization; smarter breathing (4-7-8 vs box);
    feedback → contextual-bandit recommender ({context → intervention → outcome}); Razorpay.
 
+## Roadmap & validation thesis (2026-06-27) — see ROADMAP.md
+The product is already feature-rich; the #1 risk is **whether real strangers will pay and return**,
+not more features. Plan is **validation-first**: instrument → small paid cohort → prove a retention
+loop → then scale. The always-on voice-biomarker **wearable is parked** (Series-A later).
+Full agent-executable task briefs live in **`ROADMAP.md`** (epics E1–E6, each Goal·Files·Approach·
+Done-when). Current phase = **A (validate)**: founding pre-sell (₹199, Razorpay/UPI), explicit
+guest-vs-paid, and a manual consented WhatsApp daily check-in for ~10 founding users → goal: 10
+paying strangers + a daily loop. North-star KPI = **solo→couple conversion** (PDF's core Phase-1
+metric); also track willingness-to-pay, D7 retention.
+Founder directives folded into ROADMAP: (1) data transparency — a user-openable, **append-only**
+"Your data" file they can **view or delete only, never edit** (E1); (2) event logging + Admin KPI
+dashboard (E2); (3) manual WhatsApp loop — only for **consented opt-in users, own number, honor
+STOP** (consent-based = not a breach) (E3). Execute with one subagent per task, **one agent per
+file** (app.html collisions are real). `/agents` manages custom subagent definitions in
+`.claude/agents/`.
+
 ## Guardrails for the agent
 - NEVER commit secrets. Keys live in `backend/.env` (git-ignored). The publishable/anon
   Supabase key is public by design and may appear in frontend code; the service_role key
