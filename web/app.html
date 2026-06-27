@@ -290,6 +290,10 @@
         <div><label class="fl" id="lblA">Your name</label><input type="text" id="nameA" value="Kavya"></div>
         <div id="nameBWrap"><label class="fl">Partner's name</label><input type="text" id="nameB" value="Rohit"></div>
       </div>
+      <div id="waWrap" style="margin-bottom:14px">
+        <label class="fl">WhatsApp number <span style="opacity:.65">· optional — for gentle daily check-ins (you can opt in later too)</span></label>
+        <input type="text" id="waNumber" placeholder="+91 98765 43210" inputmode="tel" autocomplete="tel">
+      </div>
       <div class="tabs">
         <button class="tab" data-tab="text" aria-selected="true">Paste transcript</button>
         <button class="tab" data-tab="rec" aria-selected="false">Record <span class="bonus">· Chrome/Edge</span></button>
@@ -445,6 +449,7 @@ async function run(){
   var couple=S.mode==='relationship'&&S.sub==='couple';
   if(couple&&!$('consentChk').checked){return showErr('Please confirm consent — this includes another person.');}
   var a=$('nameA').value.trim()||'A',b=$('nameB').value.trim()||'B';
+  S.wa=($('waNumber')?$('waNumber').value.trim():'');
   try{
     var transcript=(S.tab==='text')?$('transcript').value.trim():(S.tab==='rec')?S.recT.trim():null;
     screen('proc');setProc(0);
@@ -505,7 +510,7 @@ function renderResults(a,b){
   cards.push('<div class="glass section"><div class="miniseg" id="ms"><button data-v="good" aria-selected="true">What went well</button><button data-v="pat" aria-selected="false">Watch for</button></div><div id="msGood">'+st+'</div><div id="msPat" class="hide">'+pt+'</div></div>');
 
   // scripts (intervene)
-  if((r.improvements||[]).length){var imp=r.improvements.map(function(s){return '<div class="imp"><div class="p dv">'+esc(s.pattern||'')+'</div><div class="s dv">'+esc(s.suggestion||'')+'</div><div class="script dv"><span class="lab">try saying</span>'+esc(s.script||'')+'</div></div>';}).join('');cards.push('<div class="glass section"><h3>Try this next time</h3>'+imp+'</div>');}
+  if((r.improvements||[]).length){var selfM=S.mode==='self';cards.push('<div class="glass section"><h3>'+(selfM?'Say these out loud':'Try this next time')+'</h3>'+(selfM?'<p class="hint" style="margin:0 0 12px">Your words, in your own voice. Say each line aloud — hearing yourself say it is the practice. Express it your way; these are just a starting point.</p>':'')+scriptCards(r.improvements,selfM)+'</div>');}
 
   // replay
   cards.push('<div class="glass section"><h3>'+(S.mode==='self'?'Sathi reflects back':'A kinder replay')+'</h3><div class="stage"><div class="scene" id="scene"></div><div class="bubbles" id="bubbles"></div><div class="ctrls"><button id="playBtn">▶</button><button id="muteBtn">🔊</button><div class="bar"><i id="prog"></i></div></div></div></div>');
@@ -584,10 +589,12 @@ function renderSlide(){var s=WALK.slides[WALK.i],last=WALK.i===WALK.slides.lengt
   $('slideNext').textContent=last?'Done':'Next ›';
   var card=$('slides').querySelector('.slide-card');if(card)card.scrollTop=0;
 }
+function scriptCards(arr,self){arr=arr||[];if(!arr.length)return '<p class="hint">—</p>';return arr.map(function(s){return self
+  ? '<div class="imp"><div class="p dv">'+esc(s.pattern||'')+'</div><div class="script dv"><span class="lab">🔊 say this out loud</span>'+esc(s.script||'')+'</div></div>'
+  : '<div class="imp"><div class="p dv">'+esc(s.pattern||'')+'</div><div class="s dv">'+esc(s.suggestion||'')+'</div><div class="script dv"><span class="lab">try saying</span>'+esc(s.script||'')+'</div></div>';}).join('');}
 function buildSlides(a){
   var r=S.report||{},sc=r.scores||{},risk=sc.escalation_risk||0,hot=risk>=60,self=S.mode==='self',overall=sc.overall||0;
   var sList=function(arr,kind){arr=arr||[];if(!arr.length)return '<p class="hint">—</p>';return arr.map(function(s){return '<div class="item '+kind+'"><span class="t dv">'+esc(s.title)+'</span> <span class="who">'+esc(s.who||'')+'</span><div class="d dv">'+esc(s.detail||'')+'</div></div>';}).join('');};
-  var scriptList=function(arr){arr=arr||[];if(!arr.length)return '<p class="hint">—</p>';return arr.map(function(s){return '<div class="imp"><div class="p dv">'+esc(s.pattern||'')+'</div><div class="s dv">'+esc(s.suggestion||'')+'</div><div class="script dv"><span class="lab">try saying</span>'+esc(s.script||'')+'</div></div>';}).join('');};
   var breatheSlide={eyebrow:'One minute for you',h:hot?'There was real heat — let’s breathe':'A small reset',html:'<p class="slide-p">Before anything else, one minute. Inhale, hold, exhale, soften — the circle will guide you. This is the whole point: regulate first, talk second.</p><div class="row" style="justify-content:center"><button class="btn accent" onclick="openBreath()">Take a minute</button></div>'};
   var slides=[];
   slides.push({eyebrow:'A gentle walk-through',h:'Let’s look at this together, '+esc(a),html:'<div class="slide-big" style="color:'+clr('overall',overall)+'">'+overall+'</div><p class="slide-p" style="margin-top:2px">'+(self?'wellbeing signal':'connection')+'</p><p class="slide-p dv">'+esc(r.summary||'')+'</p>'});
@@ -595,7 +602,7 @@ function buildSlides(a){
   slides.push({eyebrow:'The good in you',h:self?'What’s working':'What you did well',html:sList(r.strengths,'good')});
   slides.push({eyebrow:'Domains to grow',h:'Where it gets caught',html:sList(r.patterns,'pat')});
   if(!hot)slides.push(breatheSlide);
-  slides.push({eyebrow:'How to improve',h:'Lines to try next time',html:scriptList(r.improvements)});
+  slides.push(self?{eyebrow:'Your words, out loud',h:'Say these out loud',html:'<p class="slide-p">Say each line aloud, your way — hearing your own voice is the practice.</p>'+scriptCards(r.improvements,true)}:{eyebrow:'How to improve',h:'Lines to try next time',html:scriptCards(r.improvements,false)});
   slides.push({eyebrow:'See it play out',h:self?'Sathi reflects back':'A kinder replay',html:'<p class="slide-p">Watch a voiced, animated version of a kinder exchange — the same moment, softened.</p><div class="row" style="justify-content:center"><button class="btn accent" onclick="slideToReplay()">▶ Play the replay</button></div>'});
   slides.push({eyebrow:'Practice, in minutes',h:'Short technique videos',html:'<p class="slide-p">Bite-size guided practices. Coming soon — we’ll surface the one that fits your pattern.</p><div class="vidgrid">'+vidCard('Softened start-up','2 min')+vidCard('Repair attempts','90 sec')+vidCard('Listening to understand','2 min')+vidCard('Box breathing','1 min')+'</div>'});
   slides.push({eyebrow:'Stay with it',h:'A gentle daily check-in',html:optinBlock(a)});
@@ -603,7 +610,7 @@ function buildSlides(a){
 }
 function vidCard(t,m){return '<div class="vidcard"><span class="soon">Soon</span><div class="thumb">▶</div><div class="vt dv">'+esc(t)+'</div><div class="vmeta">'+esc(m)+'</div></div>';}
 function optinBlock(a){return '<p class="slide-p">One message a day, at the right moment — “how was your day?”, or a nudge to journal in introspection mode. Your number only, never your partner’s. Stop anytime by replying STOP.</p>'
-  +'<label class="fl">Your WhatsApp number</label><input type="text" id="optPhone" placeholder="+91 98765 43210" inputmode="tel" autocomplete="tel">'
+  +'<label class="fl">Your WhatsApp number</label><input type="text" id="optPhone" value="'+esc(S.wa||'')+'" placeholder="+91 98765 43210" inputmode="tel" autocomplete="tel">'
   +'<div class="consent" style="margin-top:12px"><input type="checkbox" id="optConsent"><label for="optConsent">Yes, send me one gentle daily check-in on WhatsApp. I can stop anytime.</label></div>'
   +'<div class="row" style="justify-content:center"><button class="btn" onclick="submitOptin()">Keep me connected</button></div>'
   +'<div class="saved" id="optSaved" style="text-align:center"></div>';}

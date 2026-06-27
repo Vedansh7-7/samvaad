@@ -22,7 +22,8 @@
       "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('/tmp/sv_resp.json','utf8'\\)\\); console.log\\('scores:', !!d.scores, '| patterns:', \\(d.patterns||[]\\).length, '| strengths:', \\(d.strengths||[]\\).length, '| improvements:', \\(d.improvements||[]\\).length, '| improved\\(replay turns\\):', \\(d.improved||[]\\).length\\); if\\(\\(d.improved||[]\\).length\\) console.log\\('sample replay turn:', JSON.stringify\\(d.improved[0]\\)\\);\")",
       "Bash(curl -s -m 10 -X POST http://localhost:8787/api/optin -H \"content-type: application/json\" -d '{\"phone\":\"+91 9876543210\",\"consent\":true,\"display_name\":\"Kavya\"}')",
       "Bash(curl -s -m 10 -X POST http://localhost:8787/api/optin -H \"content-type: application/json\" -d '{\"phone\":\"12345\",\"consent\":true}')",
-      "Bash(curl -s -m 10 -X POST http://localhost:8787/api/optin -H \"content-type: application/json\" -d '{\"phone\":\"+919876543210\",\"consent\":false}')"
+      "Bash(curl -s -m 10 -X POST http://localhost:8787/api/optin -H \"content-type: application/json\" -d '{\"phone\":\"+919876543210\",\"consent\":false}')",
+      "Bash(git commit -m 'Self-mode '\\\\''say aloud'\\\\'' reframing + WhatsApp number cell on input *)"
     ]
   },
   "hooks": {
