@@ -111,11 +111,15 @@ file** (app.html collisions are real). `/agents` manages custom subagent definit
 
 ## Current build state (2026-06-27 EOD) — read this if you're the UI / impeccable agent
 Pages in `web/` and polish status:
-- `login.html` — canonical design reference (polished). `app.html` — main app (polished; an
-  aesthetics agent has been doing a premium pass on the replay/video — **`git pull` before editing**).
+- `login.html` — canonical design reference (polished, mobile viewport added). `app.html` — main app:
+  the impeccable agent shipped a **new UI + full responsiveness pass** (commits "new UI" / "Finalised
+  responsiveness" / "meta viewport") on top of the replay/video work — it's current + mobile-ready.
+  **`git pull` before editing.**
 - `founding.html` — NEW ₹199 pre-sell landing (functional, **needs a design-polish pass**).
 - `admin.html` — NEW internal KPI + WhatsApp-nudge dashboard (functional, lower-priority polish).
 - `privacy.html` — NEW privacy notice (simple, fine). `index.html` — Vercel redirect (ignore).
+- `docs/Samvaad-Board-Brief.html` + `docs/Samvaad-Technical-Overview.html` — NEW generated reference
+  decks (currently untracked), not part of the app.
 
 Intentional flows — do NOT "fix" these, they are by design:
 - After analysis the results screen shows ONLY a centered score + "✦ Walk me through it". Finishing
@@ -129,9 +133,12 @@ animation JS wiring — ids/classes: `mouth-a`, `eye`, `bl-a-l/-r`, `brow-a-l/-r
 `tag-a`, and `#playBtn`/`#muteBtn`/`#prog`/`#scene`/`#bubbles` + the buildScene/advance/speak flow.
 Also polish the new `founding.html` / `admin.html` to the design system. **One agent per file.**
 
-Ops facts (not UI): backend live on Render (URL baked into founding/admin as a fallback); admin
-needs `ADMIN_USER_IDS` set on Render + one admin login; Supabase built-in email is rate-limited
-until custom SMTP (Gmail app password) is set — demo via "Continue as guest".
+Ops facts (not UI): backend live on Render; the Render URL is now the **default Backend URL baked
+into `app.html`, `founding.html`, `admin.html`** — the Settings field is pre-filled + optional and
+localStorage still overrides, so users never type it (don't re-break this). Admin needs
+`ADMIN_USER_IDS` set on Render + one admin login; Supabase built-in email is rate-limited until
+custom SMTP (Gmail app password) is set — demo via "Continue as guest". `.claude/settings.json` sets
+`worktree.bgIsolation:none` so background agents edit this checkout directly (not a worktree).
 
 ## Guardrails for the agent
 - NEVER commit secrets. Keys live in `backend/.env` (git-ignored). The publishable/anon

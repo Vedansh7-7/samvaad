@@ -27,6 +27,9 @@ flow restructured: centered "Walk me through it" → finish redirects to Dashboa
 open full reports (`openSession`). Self-mode "say aloud" reframing. Magic-link redirect fixed.
 **Remaining for Phase A:** founder sets `ADMIN_USER_IDS` + Razorpay link + custom SMTP; then share
 `founding.html` for paying strangers. **Next focus = UI polish (E6-T1) via impeccable.**
+**Update (later 2026-06-27):** impeccable shipped a new UI + full responsiveness pass on `app.html`
+(+ mobile viewport on `app`/`login`); `app.html` Backend URL now defaults to the Render backend
+(pre-filled + optional). Don't re-break the baked URL or the responsiveness.
 
 ## 2. Epics (each task is written to be handed to a subagent)
 IDs: E#-T# . Each task lists **Goal · Files · Approach · Done-when**. Backend = `backend/`,
