@@ -1,0 +1,2 @@
+# Rive rig binaries — never apply text/EOL filters (would corrupt the file)
+*.riv binary
