@@ -840,9 +840,9 @@ function riveChar(side,name,gender,flip){
 function riveMount(side,cid,gender){
   var cv=document.getElementById(cid);if(!cv)return;
   try{
-    // rigs are exported with the character filling the artboard, base at the bottom;
-    // contain shows the whole figure, BottomCenter stands it on the floor line
-    var lay;try{lay=new rive.Layout({fit:rive.Fit.Contain,alignment:rive.Alignment.BottomCenter});}catch(e){lay=undefined;}
+    // tight rigs: cover-fit fills the frame (artboard is wider than the canvas, so it fills
+    // height and trims side padding — heads stay safe); BottomCenter stands them on the floor
+    var lay;try{lay=new rive.Layout({fit:rive.Fit.Cover,alignment:rive.Alignment.BottomCenter});}catch(e){lay=undefined;}
     var inst=new rive.Rive({
       src:RIVE_SRC[gender==='male'?'male':'female'],canvas:cv,artboard:'Artboard',layout:lay,
       stateMachines:['Expression','mouthOps'],autoplay:true,autoBind:true,
