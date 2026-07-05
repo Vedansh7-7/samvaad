@@ -240,12 +240,29 @@ app.get('/api/admin/kpis', async (req, res) => {
     const denom = Math.max(1, selfSoloUsers.size);
     const rate = Math.round((converted / denom) * 100) / 100;
 
+    // voice (ElevenLabs) quota — best effort, never fails the KPI response
+    let voice = { ok: false, error: 'no key set' };
+    try {
+      if (ELEVENLABS_KEY) {
+        const vr = await fetch('https://api.elevenlabs.io/v1/user/subscription', { headers: { 'xi-api-key': ELEVENLABS_KEY } });
+        if (vr.ok) {
+          const v = await vr.json();
+          const used = v.character_count || 0, limit = v.character_limit || 0;
+          voice = { ok: true, tier: v.tier || '', used, limit, remaining: Math.max(0, limit - used), exhausted: limit > 0 && used >= limit, resetUnix: v.next_character_count_reset_unix || null };
+        } else {
+          let d = ''; try { d = await vr.text(); } catch (_) {}
+          voice = { ok: false, error: 'eleven ' + vr.status, detail: d.slice(0, 300) };
+        }
+      }
+    } catch (e) { voice = { ok: false, error: String(e.message || e) }; }
+
     res.json({
       sessions: { total: sessionRows.length, byMode, bySubmode },
       users: { total: users.size },
       optins: { total: optinsTotal },
       founding: { total: foundingTotal },
-      soloToCouple: { converted, rate }
+      soloToCouple: { converted, rate },
+      voice
     });
   } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
 });

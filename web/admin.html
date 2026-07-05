@@ -117,7 +117,8 @@
       + kpi('Solo → Couple', ratePct+'%', (conv.converted||0)+' converted')
       + kpi('Sessions', s.total||0, (bm.relationship||0)+' rel · '+(bm.self||0)+' self')
       + kpi('Users', (k.users&&k.users.total)||0, 'distinct, signed-in')
-      + kpi('Couple · Solo', (bs.couple||0)+' · '+(bs.solo||0), 'by submode');
+      + kpi('Couple · Solo', (bs.couple||0)+' · '+(bs.solo||0), 'by submode')
+      + voiceCard(k.voice);
 
     var msg = n.suggestedMessage||'';
     var list = (n.nudges&&n.nudges.length)
@@ -131,7 +132,8 @@
       : '<div class="empty">No consented opt-ins yet.</div>';
 
     content.innerHTML =
-      '<div class="grid">'+cards+'</div>'
+      voiceBanner(k.voice)
+      + '<div class="grid">'+cards+'</div>'
       + '<div class="glass sec"><h3>Today’s check-ins · '+((n&&n.count)||0)+'</h3>'
       + '<p class="note">Manual send for now (consented users only — honor STOP). Tap “Send on WhatsApp”.</p>'
       + (msg ? '<div class="msgbox" id="msgBox">'+esc(msg)+' <button class="mini" id="copyMsg" style="margin-left:8px">Copy message</button></div>' : '')
@@ -145,6 +147,26 @@
 
   function kpi(lab, val, hint, hero){
     return '<div class="glass kpi'+(hero?' hero':'')+'"><div class="lab">'+esc(lab)+'</div><div class="val">'+esc(val)+'</div><div class="hint">'+esc(hint)+'</div></div>';
+  }
+  /* live ElevenLabs voice quota card */
+  function voiceCard(v){
+    v = v || {};
+    if(!v.ok){
+      return '<div class="glass kpi" style="border:1px solid rgba(192,70,60,.5)"><div class="lab">Voice · ElevenLabs</div><div class="val" style="color:#C0463C;font-size:22px">Down</div><div class="hint">'+esc(v.error||'error')+(v.detail?(' — '+esc(v.detail)):'')+'</div></div>';
+    }
+    var pct = v.limit ? Math.round((v.used/v.limit)*100) : 0;
+    var low = v.exhausted || (v.limit && v.remaining < v.limit*0.1);
+    var reset = v.resetUnix ? new Date(v.resetUnix*1000).toLocaleDateString() : '';
+    return '<div class="glass kpi" style="'+(low?'border:1px solid rgba(192,70,60,.55)':'')+'"><div class="lab">Voice · ElevenLabs'+(v.tier?(' · '+esc(v.tier)):'')+'</div><div class="val" style="'+(low?'color:#C0463C':'')+'">'+esc(v.remaining)+'</div><div class="hint">chars left of '+esc(v.limit)+' · '+pct+'% used'+(reset?(' · resets '+esc(reset)):'')+'</div></div>';
+  }
+  /* prominent banner only when voice is down or exhausted */
+  function voiceBanner(v){
+    v = v || {};
+    if(v.ok && !v.exhausted) return '';
+    var msg = !v.ok
+      ? ('Voice service error — '+esc(v.error||'unknown')+(v.detail?(': '+esc(v.detail)):'')+'. Replays fall back to the robotic browser voice.')
+      : ('ElevenLabs quota exhausted — 0 of '+esc(v.limit)+' characters left. Replays fall back to the robotic browser voice until you add credits'+(v.resetUnix?(' or the monthly reset on '+esc(new Date(v.resetUnix*1000).toLocaleDateString())):'')+'.');
+    return '<div class="glass" style="border:1px solid rgba(192,70,60,.6);background:rgba(192,70,60,.08);padding:14px 16px;margin-bottom:14px;color:#8f2d27;font-weight:600">🔇 '+msg+'</div>';
   }
   function copy(text, btn){
     try { navigator.clipboard.writeText(text); var t=btn.textContent; btn.textContent='Copied ✓'; setTimeout(function(){ btn.textContent=t; }, 1400); } catch(e){}
