@@ -52,11 +52,17 @@ app.post('/api/transcribe', async (req, res) => {
     const d = await r.json();
     const words = d?.results?.channels?.[0]?.alternatives?.[0]?.words || [];
     let out = '', cur = null, line = '';
+    // turns: group contiguous same-speaker words, mapped speaker 0 -> "A", else "B", with word-level timing.
+    const turns = [], lbl = (sp) => (sp === 0 ? 'A' : 'B');
+    let tcur = null, ttext = '', tstart = 0, tend = 0;
     for (const w of words) { const sp = w.speaker ?? 0;
       if (sp !== cur) { if (line) out += (cur === 0 ? nameA : nameB) + ': ' + line.trim() + '\n'; cur = sp; line = ''; }
-      line += (w.punctuated_word || w.word) + ' '; }
+      line += (w.punctuated_word || w.word) + ' ';
+      if (sp !== tcur) { if (ttext) turns.push({ speaker: lbl(tcur), start: tstart, end: tend, text: ttext.trim() }); tcur = sp; ttext = ''; tstart = w.start; }
+      ttext += (w.punctuated_word || w.word) + ' '; tend = w.end; }
     if (line) out += (cur === 0 ? nameA : nameB) + ': ' + line.trim() + '\n';
-    res.json({ transcript: out });
+    if (ttext) turns.push({ speaker: lbl(tcur), start: tstart, end: tend, text: ttext.trim() });
+    res.json({ transcript: out, turns });
   } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
 });
 
@@ -78,13 +84,13 @@ app.post('/api/analyze', async (req, res) => {
       `"strengths":[{"title":"","who":"","detail":""}],` +
       `"improvements":[{"pattern":"","suggestion":"","script":"verbatim line in their own language/Hinglish, <=2 sentences"}],` +
       `"kpis":{"talk_balance":"","question_ratio":"","repair_attempts":0,"self_reference":""}}. ` +
-      `Be honest and dynamic, never pad: include ONLY genuine items. "patterns" (max 4) and "improvements" (max 3) ONLY where a real issue exists — if the exchange is healthy (high scores, low escalation), return [] for them rather than inventing weaknesses. Always surface real "strengths" (max 4). Neutral, non-blaming. KPIs are descriptive text awareness signals, not diagnoses. For "speakers": infer each person's likely gender from their name and how they are addressed (use "unknown" only if genuinely unclear). "A" is ${nameA}; for a solo reflection "B" is the other person ${nameA} describes — give B's name if stated, else "".`;
+      `Be honest and dynamic, never pad: include ONLY genuine items. "patterns" (max 4) and "improvements" (max 3) ONLY where a real issue exists — if the exchange is healthy (high scores, low escalation), return [] for them rather than inventing weaknesses. Always surface real "strengths" (max 4). Neutral, non-blaming. KPIs are descriptive text awareness signals, not diagnoses. For "speakers": infer each person's likely gender from their name and how they are addressed (use "unknown" only if genuinely unclear). "A" is ${nameA}; for a solo reflection "B" is the other person ${nameA} describes — give B's name if stated, else "". Set speakers.A.name to exactly "${nameA}" and (for a couple) speakers.B.name to exactly "${nameB}". In every "who" field and all text, refer to the two people ONLY as "${nameA}" and "${nameB}" — never use any other names even if the transcript uses different ones.`;
     const rep = json(await claude(p1));
 
     let improved = [];
     if (mode === 'relationship') {
       const p2 = `Rewrite the SAME conversation between ${nameA} (A) and ${nameB} (B) applying: ${JSON.stringify(rep.improvements)}.\n${transcript}\n\n` +
-        `Return ONLY minified JSON: {"improved":[{"speaker":"A or B","display":"natural line (Hinglish/Devanagari ok)","speak":"clean Roman transliteration for TTS, no Devanagari","emotion":"sad|attentive|sorry|happy|warm|neutral"}]}. Max 8 short turns. CRITICAL: set "speaker" to exactly "A" or "B" (never a name), and alternate turns as a real back-and-forth (A, B, A, B…) — never label every turn the same speaker. Give each turn a fitting, varied "emotion"; do not default everything to neutral.`;
+        `Return ONLY minified JSON: {"improved":[{"speaker":"A or B","display":"natural line (Hinglish/Devanagari ok)","speak":"clean Roman transliteration for TTS, no Devanagari","emotion":"sad|attentive|sorry|happy|warm|neutral"}]}. Max 8 short turns. CRITICAL: set "speaker" to exactly "A" or "B" (never a name), and alternate turns as a real back-and-forth (A, B, A, B…) — never label every turn the same speaker. Give each turn a fitting, varied "emotion"; do not default everything to neutral. The two people are named EXACTLY "${nameA}" (A) and "${nameB}" (B): wherever a line addresses the other person by name, use ONLY these two names — replace any other names that appear in the transcript, and never use any name other than "${nameA}" or "${nameB}".`;
       improved = (json(await claude(p2)).improved) || [];
     }
 
