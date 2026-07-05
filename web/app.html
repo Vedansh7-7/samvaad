@@ -663,6 +663,7 @@ async function run(){
   $('errBox').classList.remove('show');
   var couple=S.mode==='relationship'&&S.sub==='couple';
   if(couple&&!$('consentChk').checked){return showErr('Please confirm consent — this includes another person.');}
+  if(S.busy)return;S.busy=true;  // guard against rapid double-clicks firing concurrent analyses
   var a=$('nameA').value.trim()||'A',b=$('nameB').value.trim()||'B';
   S.wa=($('waNumber')?$('waNumber').value.trim():'');
   try{
@@ -675,6 +676,7 @@ async function run(){
     S.sessions.unshift({ts:Date.now(),mode:S.mode,sub:S.sub,a:a,b:b,overall:(data.scores||{}).overall||0,pattern:(data.patterns&&data.patterns[0])?data.patterns[0].title:'—',full:data});
     showWalkPrompt(a,b);
   }catch(err){screen('input');showErr(err.message||String(err));}
+  finally{S.busy=false;}
 }
 
 async function transcribe(a,b){var f=S.audioFile;

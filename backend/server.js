@@ -30,15 +30,23 @@ async function getUser(req) {
 
 const json = (s) => { try { return JSON.parse(s); } catch { const a = s.indexOf('{'), b = s.lastIndexOf('}'); return JSON.parse(s.slice(a, b + 1)); } };
 
-async function claude(prompt) {
-  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + GROQ_API_KEY },
-    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1200, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }] })
-  });
-  if (!r.ok) throw new Error('groq ' + r.status + ' ' + (await r.text()).slice(0, 160));
-  const d = await r.json();
-  return (d.choices || []).map(c => c.message?.content || '').join('');
+async function claude(prompt, tries = 3) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + GROQ_API_KEY },
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 3000, temperature: 0.6, response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }] })
+    });
+    if (r.ok) { const d = await r.json(); return (d.choices || []).map(c => c.message?.content || '').join(''); }
+    const body = (await r.text()).slice(0, 300);
+    lastErr = new Error('groq ' + r.status + ' ' + body);
+    // retry the stochastic failures: JSON-generation 400s, rate limits, and 5xx — with a short backoff
+    const retryable = (r.status === 400 && /json/i.test(body)) || r.status === 429 || r.status >= 500;
+    if (retryable && i < tries - 1) { await new Promise(res => setTimeout(res, 350 * (i + 1))); continue; }
+    throw lastErr;
+  }
+  throw lastErr;
 }
 
 // ---- Transcribe (Deepgram, diarized) -> speaker-labelled transcript ----
