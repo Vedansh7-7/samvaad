@@ -871,23 +871,24 @@ function talkStart(side,audioEl){
       var src=ctx.createMediaElementSource(audioEl),an=ctx.createAnalyser();an.fftSize=256;
       src.connect(an);an.connect(ctx.destination);
       _talk.an=an;_talk.src=src;_talk.buf=new Uint8Array(an.frequencyBinCount);
+      var frame=0,hold=0;
       var loop=function(){
         if(_talk.side!==side||!_talk.an)return;
         _talk.an.getByteTimeDomainData(_talk.buf);
         var s=0,b=_talk.buf,i;for(i=0;i<b.length;i++){var v=(b[i]-128)/128;s+=v*v;}
-        var rms=Math.sqrt(s/b.length),p=rms<0.045?0:rms<0.11?1:rms<0.2?3:2;
-        var slot=S._rive&&S._rive[side];if(slot)riveSet(slot.ph,p);
-        _talk.raf=requestAnimationFrame(loop);
+        var rms=Math.sqrt(s/b.length);
+        // hold each shape ~70-130ms; loudness sets how open, with variety + real closures so it never looks robotic
+        if(frame>=hold){var p,pool;if(rms<0.035){p=0;}else{pool=rms<0.09?[1,4,1,0]:rms<0.17?[1,3,2,1]:[3,2,3,4];p=pool[(Math.random()*pool.length)|0];}var slot=S._rive&&S._rive[side];if(slot)riveSet(slot.ph,p);frame=0;hold=4+((Math.random()*4)|0);}
+        frame++;_talk.raf=requestAnimationFrame(loop);
       };loop();return;
     }catch(e){}
   }
-  // no analysable audio (browser speechSynthesis) -> timed phoneme flap
-  var seq=[1,3,2,1,4,0],j=0;
-  _talk.flap=setInterval(function(){if(_talk.side!==side)return;var slot=S._rive&&S._rive[side];if(slot)riveSet(slot.ph,seq[j++%seq.length]);},120);
+  // no analysable audio (browser voice) -> random shapes at random intervals with closures, not a fixed loop
+  var flap=function(){if(_talk.side!==side)return;var pool=[1,3,2,1,4,3,0,0],p=pool[(Math.random()*pool.length)|0];var slot=S._rive&&S._rive[side];if(slot)riveSet(slot.ph,p);_talk.flap=setTimeout(flap,80+((Math.random()*90)|0));};flap();
 }
 function talkStop(){
   if(_talk.raf)cancelAnimationFrame(_talk.raf);_talk.raf=0;
-  if(_talk.flap)clearInterval(_talk.flap);_talk.flap=0;
+  if(_talk.flap)clearTimeout(_talk.flap);_talk.flap=0;
   if(_talk.src){try{_talk.src.disconnect();}catch(e){}}_talk.src=null;
   if(_talk.an){try{_talk.an.disconnect();}catch(e){}}_talk.an=null;
   if(_talk.side){var slot=S._rive&&S._rive[_talk.side];if(slot)riveSet(slot.ph,0);}
