@@ -193,8 +193,10 @@
   @keyframes talk{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1.25)}}
   .blush{opacity:0;transition:.3s}.blush.on{opacity:.5}
   /* Rive avatar canvases (supersede the SVG faces when the runtime is available) */
-  .rvc{display:block;width:100%;height:344px}
-  .rvc.flip{transform:scaleX(-1)}
+  /* zoom past the artboard's baked-in top headroom, anchored to the base so they stay grounded;
+     the empty top gets clipped by .scene's overflow */
+  .rvc{display:block;width:100%;height:344px;transform:scale(1.85);transform-origin:bottom center}
+  .rvc.flip{transform:scaleX(-1) scale(1.85);transform-origin:bottom center}
   .scene-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
   .scene-bg svg{width:100%;height:100%;display:block}
   .ch.rive::after{display:none}
