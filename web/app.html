@@ -195,6 +195,8 @@
   /* Rive avatar canvases (supersede the SVG faces when the runtime is available) */
   .rvc{display:block;width:100%;height:420px}
   .rvc.flip{transform:scaleX(-1)}
+  .scene-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+  .scene-bg svg{width:100%;height:100%;display:block}
   .ch.rive::after{display:none}
   .bubbles{max-height:150px;overflow:auto;margin:0;padding:12px 14px 6px;display:flex;flex-direction:column;gap:8px;
     background:linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,.22))}
@@ -887,6 +889,27 @@ function talkStop(){
   if(_talk.side){var slot=S._rive&&S._rive[_talk.side];if(slot)riveSet(slot.ph,0);}
   _talk.side=null;
 }
+/* homely living-room backdrop behind the replay avatars (warm, on-palette; rug tints per mode) */
+function sceneBg(){return '<div class="scene-bg" aria-hidden="true"><svg viewBox="0 0 1000 480" preserveAspectRatio="xMidYMid slice" width="100%" height="100%">'
+  +'<defs>'
+  +'<linearGradient id="bgWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F8F0E7"/><stop offset="1" stop-color="#F1E1D6"/></linearGradient>'
+  +'<linearGradient id="bgFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9D3C2"/><stop offset="1" stop-color="#DDC1AC"/></linearGradient>'
+  +'<linearGradient id="bgSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FDEFD6"/><stop offset="1" stop-color="#F9DFBE"/></linearGradient>'
+  +'<radialGradient id="bgLight" cx="24%" cy="24%" r="58%"><stop offset="0" stop-color="#FFE9C6" stop-opacity=".55"/><stop offset="1" stop-color="#FFE9C6" stop-opacity="0"/></radialGradient>'
+  +'</defs>'
+  +'<rect width="1000" height="480" fill="url(#bgWall)"/><rect width="1000" height="480" fill="url(#bgLight)"/>'
+  +'<rect y="360" width="1000" height="120" fill="url(#bgFloor)"/><rect y="358" width="1000" height="3" fill="rgba(255,255,255,.35)"/>'
+  +'<ellipse cx="500" cy="442" rx="380" ry="46" fill="var(--accent-soft)" opacity=".6"/><ellipse cx="500" cy="442" rx="380" ry="46" fill="none" stroke="rgba(70,40,50,.10)" stroke-width="2"/>'
+  // window (left) + soft light beam
+  +'<rect x="74" y="150" width="150" height="18" rx="3" fill="#EAD7C6"/><rect x="80" y="52" width="138" height="104" rx="10" fill="#FCF5EC"/><rect x="90" y="62" width="118" height="84" rx="6" fill="url(#bgSky)"/>'
+  +'<line x1="149" y1="62" x2="149" y2="146" stroke="#FCF5EC" stroke-width="6"/><line x1="90" y1="104" x2="208" y2="104" stroke="#FCF5EC" stroke-width="6"/><circle cx="178" cy="84" r="12" fill="#FFF4DC" opacity=".9"/>'
+  +'<path d="M92 152 L150 152 L250 360 L150 360 Z" fill="#FFE9C6" opacity=".16"/>'
+  // framed picture (upper right)
+  +'<rect x="700" y="96" width="116" height="138" rx="4" fill="#8A6B57"/><rect x="708" y="104" width="100" height="122" rx="2" fill="#F5E9DF"/>'
+  +'<path d="M726 198 Q745 150 762 198" fill="none" stroke="var(--accent)" stroke-width="2.4" opacity=".5"/><circle cx="744" cy="150" r="9" fill="#F1C36B" opacity=".8"/>'
+  // potted plant (right corner)
+  +'<g transform="translate(858,300)"><ellipse cx="-14" cy="-40" rx="12" ry="34" fill="#7FA07E" transform="rotate(-18 -14 -40)"/><ellipse cx="6" cy="-52" rx="12" ry="38" fill="#6F9A79"/><ellipse cx="26" cy="-40" rx="12" ry="34" fill="#A6C39E" transform="rotate(18 26 -40)"/><path d="M-20 0 h44 l-7 54 h-30 z" fill="#CE9A78"/><path d="M-20 0 h44 l-2 14 h-40 z" fill="#B9835F"/></g>'
+  +'</svg></div>';}
 function buildScene(a,b){var single=S.mode==='self',couple=S.mode==='relationship'&&S.sub==='couple',sp=(S.report&&S.report.speakers)||{};
   var gfem=function(v){var g=(v&&typeof v==='object')?v.gender:v;return /^f/i.test((g||'')+'');};
   var bName=couple?(b||'Them'):((sp.B&&sp.B.name)||'Them');
@@ -904,6 +927,7 @@ function buildScene(a,b){var single=S.mode==='self',couple=S.mode==='relationshi
     if(single)$('scene').innerHTML=face('a','Sathi','#E9C9A8','#9E6A86',false).replace('ch a','ch a solo');
     else $('scene').innerHTML=face('a',a,'#E8C4A0','#D07EA0',ga)+face('b',bName,'#E0AE86','#5DA8A0',gb);
   }
+  $('scene').insertAdjacentHTML('afterbegin',sceneBg());  // homely backdrop behind the avatars
   $('bubbles').innerHTML='';$('prog').style.transform='scaleX(0)';S.idx=0;S.playing=false;$('playBtn').textContent='▶';setNP('Paused');
   $('muteBtn').onclick=function(){S.mute=!S.mute;$('muteBtn').textContent=S.mute?'🔇':'🔊';if(S.mute){window.speechSynthesis.cancel();if(S._au)S._au.pause();}};
   $('playBtn').onclick=function(){if(_talk.ctx&&_talk.ctx.state==='suspended')_talk.ctx.resume();if(S.playing)pausePlay();else startPlay();};
