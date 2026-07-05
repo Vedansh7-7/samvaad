@@ -116,7 +116,7 @@ app.post('/api/tts', async (req, res) => {
     const r = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + vid, {
       method: 'POST', headers: { 'xi-api-key': ELEVENLABS_KEY, 'content-type': 'application/json' },
       body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.4, similarity_boost: 0.7 } }) });
-    if (!r.ok) throw new Error('eleven ' + r.status);
+    if (!r.ok) { let detail = ''; try { detail = await r.text(); } catch (_) {} return res.status(502).json({ error: 'eleven ' + r.status, detail: detail.slice(0, 700) }); }
     res.set('content-type', 'audio/mpeg'); res.send(Buffer.from(await r.arrayBuffer()));
   } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
 });
