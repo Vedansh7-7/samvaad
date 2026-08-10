@@ -112,7 +112,7 @@
     var s = k.sessions||{}, bm = s.byMode||{}, bs = s.bySubmode||{};
     var conv = k.soloToCouple||{}; var ratePct = Math.round((conv.rate||0)*100);
     var cards = ''
-      + kpi('Founding members', (k.founding&&k.founding.total)||0, 'paid / reserved — willingness-to-pay', true)
+      + kpi('Registered users', (k.users&&k.users.registered)||0, ((k.users&&k.users.suspended)||0)+' paused', true)
       + kpi('WhatsApp opt-ins', (k.optins&&k.optins.total)||0, 'consented daily check-ins')
       + kpi('Solo → Couple', ratePct+'%', (conv.converted||0)+' converted')
       + kpi('Sessions', s.total||0, (bm.relationship||0)+' rel · '+(bm.self||0)+' self')

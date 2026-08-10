@@ -12,7 +12,7 @@ services:
     startCommand: node server.js
     healthCheckPath: /health
     envVars:
-      - key: GROQ_API_KEY             # analysis brain (Mixtral-8x7B, free tier)
+      - key: GROQ_API_KEY             # analysis brain (llama-3.3-70b-versatile)
         sync: false
       - key: DEEPGRAM_KEY             # audio → transcript
         sync: false
@@ -23,6 +23,8 @@ services:
       - key: ALLOWED_ORIGIN           # set to your Vercel URL, e.g. https://samvaad.vercel.app
         sync: false
       - key: ADMIN_USER_IDS          # comma-separated Supabase auth user ids for /api/admin/*
+        sync: false
+      - key: GUEST_SECRET             # signs short-lived guest tokens; any long random string
         sync: false
       - key: SUPABASE_URL
         value: https://bwcszkbtvbvwzioycxxp.supabase.co

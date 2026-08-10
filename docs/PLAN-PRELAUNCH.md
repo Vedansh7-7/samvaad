@@ -84,6 +84,19 @@ user-scoped Supabase call in `server.js` is written without `forUser`.
 **Done-when:** a 40-minute file is rejected client-side; a 35-minute file is truncated server-side
 with the notice shown; a 30k-character paste can't be submitted.
 
+> **Found while building this (2026-08-11): the 30-minute promise is blocked by Groq's free tier.**
+> Groq counts prompt + `max_tokens` against a tokens-per-minute limit, and one analysis makes two
+> calls inside the same minute, so each may use at most half the budget. On the free tier's 12,000
+> TPM that works out to about **1,500 words, roughly 10 minutes of speech**. A 30-minute
+> conversation returns `groq 413` outright. This is not new, the live site has always had it, it
+> was just never surfaced because nobody had submitted anything long.
+>
+> The code now derives its ceiling from a `GROQ_TPM` env var (default 12,000) and trims honestly,
+> telling the user how many words were read. Raising that one variable after upgrading the Groq
+> plan lifts the limit with no code change. Until then the advertised figure must say **10
+> minutes**, not 30. Also fixed alongside it: the 429 retry used a 350ms backoff while Groq was
+> asking for 7 seconds, so every rate-limit retry failed. It now honours `retry-after`.
+
 ### P0-T4 Lock CORS, kill the dead paths, delete the mock
 **Goal:** shrink the surface.
 **Files:** `backend/server.js`, `web/app.html`, `web/founding.html` (delete), `render.yaml`.
