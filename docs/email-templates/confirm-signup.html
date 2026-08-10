@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Confirm your email · Samvaad</title>
+</head>
+<!--
+  Samvaad — Supabase "Confirm signup" template.
+  Email-safe: tables, inline styles, no SVG, no backdrop-filter, no external fonts (serif/sans
+  fallbacks match the Fraunces + Mulish pairing closely enough). Solid bgcolor under every
+  gradient so Outlook degrades cleanly.
+-->
+<body style="margin:0;padding:0;background-color:#F7E6EA;">
+
+<!-- preheader: shown in the inbox list, hidden in the body -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;height:0;width:0;">
+  Confirm your email and your space is ready. This link works once.
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       bgcolor="#F7E6EA"
+       style="background-color:#F7E6EA;background-image:linear-gradient(160deg,#FDF3F2 0%,#F9DEE3 48%,#F1DDE8 100%);margin:0;padding:0;">
+  <tr>
+    <td align="center" style="padding:40px 16px;">
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:480px;width:100%;">
+
+        <!-- card -->
+        <tr>
+          <td bgcolor="#FFFBFB"
+              style="background-color:#FFFBFB;border:1px solid #F4DDE2;border-radius:22px;padding:38px 34px 30px 34px;">
+
+            <!-- wordmark -->
+            <p style="margin:0 0 26px 0;font-family:Georgia,'Times New Roman',serif;font-size:21px;font-weight:600;letter-spacing:-.2px;color:#2E2024;">
+              Samvaad<span style="color:#C8324B;">.</span>
+            </p>
+
+            <p style="margin:0 0 6px 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:#B07C89;">
+              नमस्ते
+            </p>
+
+            <h1 style="margin:0 0 12px 0;font-family:Georgia,'Times New Roman',serif;font-size:29px;line-height:1.25;font-weight:600;color:#2E2024;">
+              Breathe in.<br>Let&rsquo;s begin.
+            </h1>
+
+            <p style="margin:0 0 26px 0;font-family:Helvetica,Arial,sans-serif;font-size:15.5px;line-height:1.65;color:#6E5258;">
+              Confirm this address and your space is ready. A quiet one, where only you ever
+              see what you bring.
+            </p>
+
+            <!-- button -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left" style="margin:0 0 26px 0;">
+              <tr>
+                <td align="center" bgcolor="#C8324B" style="background-color:#C8324B;border-radius:999px;">
+                  <a href="{{ .ConfirmationURL }}" target="_blank"
+                     style="display:inline-block;padding:15px 32px;font-family:Helvetica,Arial,sans-serif;font-size:15.5px;font-weight:700;color:#FFFFFF;text-decoration:none;border-radius:999px;">
+                    Confirm &amp; enter Samvaad
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <div style="clear:both;"></div>
+
+            <!-- code fallback -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="margin:0 0 24px 0;">
+              <tr>
+                <td bgcolor="#FDF1F3"
+                    style="background-color:#FDF1F3;border:1px solid #F4DDE2;border-radius:14px;padding:16px 18px;">
+                  <p style="margin:0 0 6px 0;font-family:Helvetica,Arial,sans-serif;font-size:12.5px;color:#8A6670;">
+                    Or enter this code in the app
+                  </p>
+                  <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:26px;font-weight:700;letter-spacing:7px;color:#A52741;">
+                    {{ .Token }}
+                  </p>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12.5px;line-height:1.7;color:#9B7F86;">
+              This link and code work once and expire in about an hour. If you didn&rsquo;t ask for
+              them, you can safely ignore this email.
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- footer -->
+        <tr>
+          <td align="center" style="padding:22px 18px 0 18px;">
+            <p style="margin:0 0 6px 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#9B7F86;">
+              <span style="color:#C8324B;">&#10022;</span>&nbsp; Wellness awareness, not medical diagnosis.
+            </p>
+            <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#A98A91;">
+              Your data stays in India (Mumbai) &middot; consent-first, always.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
