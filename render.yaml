@@ -14,8 +14,10 @@ services:
     envVars:
       - key: GROQ_API_KEY             # analysis brain — renew at console.groq.com/keys
         sync: false
-      - key: GROQ_MODEL               # llama-3.3-70b-versatile was decommissioned Aug 2026
-        value: openai/gpt-oss-120b
+      # GROQ_MODEL is intentionally NOT set: the backend asks Groq what it serves and picks the
+      # best match, so a decommission repairs itself. Set it only to pin one specific model.
+      - key: GROQ_MODEL
+        sync: false
       - key: GROQ_TPM                 # tokens/min on your Groq plan; free = 8000. Sets the
         value: "8000"                 # longest conversation the product can accept.
       - key: DEEPGRAM_KEY             # audio → transcript

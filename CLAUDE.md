@@ -193,10 +193,21 @@ so a missing migration looks like "quotas do nothing", not like an error.
 - NEVER commit secrets. Keys live in `backend/.env` (git-ignored). The publishable/anon
   Supabase key is public by design and may appear in frontend code; the service_role key
   must not.
-- The analysis model is `GROQ_MODEL` (default `openai/gpt-oss-120b`). Change it in the
-  environment, never in code. Groq retires models on a schedule: when analysis starts failing,
-  check https://console.groq.com/docs/deprecations before debugging anything else.
+- The analysis model **selects itself**: the backend asks Groq what it serves and takes the best
+  match from `MODEL_PREFERENCE` in `server.js`, re-resolving automatically if one is retired
+  mid-flight. `GROQ_MODEL` pins it explicitly and is normally left unset. When a future Groq
+  generation appears, add it to the top of `MODEL_PREFERENCE`.
+- Groq's `strict: true` is **post-generation validation, not constrained decoding**. An enum in the
+  schema is a tripwire, not a guarantee: the model returned emotion "defensive" and the whole
+  analysis came back a 400. Controlled vocabularies are plain strings in the schema and normalised
+  in `sane()`. Do not put enums back.
+- `reasoning_effort: 'low'` is deliberate. gpt-oss-120b is a reasoning model and spends 2,252
+  tokens thinking at default effort versus 6 at low, for identical scores and half the latency.
 - `GROQ_TPM` is the single knob that sets how long a conversation the product accepts. Free tier
   is 8,000, which works out to about 13 minutes. Never hardcode a minute figure in user copy —
-  it comes from `/api/me`.
+  it comes from `/api/me`. Groq charges the RESERVATION (prompt + max_tokens), not the usage, so
+  one analysis costs ~3,700 TPM and only about two fit in a minute; a third queues through the
+  governor in `server.js` rather than failing.
+- Every signed-in account gets **3 analyses** (`profiles.analyses_quota`), guests 3 per day. It is
+  charged only after a report succeeds, so a failure never costs someone one of their three.
 - Preserve the design system above; don't replace the aesthetic.

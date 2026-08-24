@@ -80,7 +80,10 @@
   .person .hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
   .person .em{font-weight:700;font-size:14.5px;word-break:break-all}
   .person .meta{font-size:12.5px;color:var(--muted)}
-  .person .ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .person .ctl{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;margin-top:10px}
+  /* Keep each label with the control it names. Left to wrap freely, "Act 1" ended up on one line
+     and its dropdown on the next, reading as a stray label. */
+  .person .grp{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
   .person label{font-size:12px;color:var(--muted);font-weight:600}
   select,input[type="number"]{font:inherit;font-size:13px;padding:6px 9px;border-radius:10px;border:1px solid var(--glass-brd);background:var(--glass);color:var(--ink)}
   input[type="number"]{width:84px}
@@ -88,6 +91,7 @@
   .pill.active{background:rgba(79,138,107,.16);color:var(--good)}
   .pill.limited{background:rgba(184,130,60,.18);color:var(--warn)}
   .pill.suspended{background:rgba(192,70,60,.16);color:var(--risk)}
+  .pill.out{background:rgba(158,39,64,.12);color:var(--accent-ink)}
   .saved{font-size:12px;font-weight:700;color:var(--good);opacity:0;transition:opacity .2s}
   .saved.on{opacity:1}
   .switch{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--hair)}
@@ -180,6 +184,7 @@
       + kpi('Gave a number', f.withPhone||0, 'reachable on WhatsApp')
       + kpi('Ran an analysis', f.activated||0, (f.activationRate||0)+'% of sign-ups', true)
       + kpi('Came back', f.returning||0, (f.returnRate||0)+'% of those, 2+ analyses', true)
+      + kpi('Used all 3', f.exhausted||0, 'hit the trial limit')
       + '</div>';
 
     html += '<div class="grid">'
@@ -251,6 +256,9 @@
           return '<option value="'+m+'"'+(s.act1_mode===m?' selected':'')+'>'+({voiced:'Voiced',real_audio:'Their real audio',silent:'Silent'})[m]+'</option>';
         }).join('')
       + '</select><span class="saved" id="setAct1Saved">Saved</span></div>'
+      + '<div class="switch"><div class="t"><b>Conversations per new account</b><span>The trial allowance every new sign-up starts with. Changing it does not affect people who already signed up.</span></div>'
+      + '<input type="number" id="setAllow" min="0" step="1" value="'+esc(s.default_analyses_quota==null?3:s.default_analyses_quota)+'" style="width:74px">'
+      + '<button class="mini" id="setAllowBtn">Save</button><span class="saved" id="setAllowSaved">Saved</span></div>'
       + sw('setGuest','Guest access','Lets someone try the app without an account. Turn off before inviting real testers.', s.guest_enabled!==false)
       + sw('setIntro','Intro animation','Show the how-it-works animation to first-time visitors before the login page.', s.intro_enabled!==false)
       + sw('setSelf','“Just me” mode','Self reflection is built but closed for the trial. Opens it for everyone.', s.self_reflection_enabled===true)
@@ -265,6 +273,11 @@
         var ok = await patchSettings(body);
         var sv = $(id+'Saved'); if(sv && ok){ sv.classList.add('on'); setTimeout(function(){ sv.classList.remove('on'); }, 1400); }
       };
+    };
+    var ab = $('setAllowBtn');
+    if(ab) ab.onclick = async function(){
+      var ok = await patchSettings({ default_analyses_quota: Number($('setAllow').value) });
+      var sv = $('setAllowSaved'); if(sv && ok){ sv.classList.add('on'); setTimeout(function(){ sv.classList.remove('on'); }, 1400); }
     };
     bind('setAct1','act1_mode',  function(e){ return e.value; });
     bind('setGuest','guest_enabled', function(e){ return e.checked; });
@@ -323,27 +336,33 @@
     var id = u.id;
     return '<div class="person" id="p_'+id+'">'
       + '<div class="hd"><span class="em">'+esc(u.email || '(no email)')+'</span>'
-        + '<span class="pill '+esc(u.status)+'">'+esc(u.status)+'</span></div>'
+        + '<span class="pill '+esc(u.status)+'">'+esc(u.status)+'</span>'
+        + (u.analysesUsed >= u.analysesQuota ? '<span class="pill out">out of conversations</span>' : '')
+        + '</div>'
       + '<div class="meta">'
         + (u.phone ? '+'+esc(waNumber(u.phone))+' · ' : 'no number · ')
-        + esc(u.analyses)+' analyses · last active '+esc(ago(u.lastActive))
+        + esc(u.analysesUsed)+'/'+esc(u.analysesQuota)+' conversations used · last active '+esc(ago(u.lastActive))
         + ' · '+esc(u.minutesUsed)+'/'+esc(u.minutesQuota)+' min this month'
         + (u.avgScore!=null ? ' · avg '+esc(u.avgScore) : '')
         + '</div>'
       + '<div class="ctl">'
-        + '<label for="st_'+id+'">Status</label>'
+        + '<span class="grp"><label for="st_'+id+'">Status</label>'
         + '<select id="st_'+id+'">'
           + ['active','limited','suspended'].map(function(s){ return '<option value="'+s+'"'+(u.status===s?' selected':'')+'>'+s+'</option>'; }).join('')
-        + '</select>'
-        + '<label for="q_'+id+'">Minutes</label>'
+        + '</select></span>'
+        + '<span class="grp"><label for="ac_'+id+'">Conversations</label>'
+        + '<input type="number" id="ac_'+id+'" min="0" step="1" value="'+esc(u.analysesQuota)+'">'
+        + '<button class="mini" id="acb_'+id+'">Save</button>'
+        + '<button class="mini" id="arb_'+id+'">Reset count</button></span>'
+        + '<span class="grp"><label for="q_'+id+'">Minutes</label>'
         + '<input type="number" id="q_'+id+'" min="0" step="10" value="'+esc(u.minutesQuota)+'">'
-        + '<button class="mini" id="qb_'+id+'">Save limit</button>'
-        + '<button class="mini" id="rb_'+id+'">Reset month</button>'
-        + '<label for="a1_'+id+'">Act 1</label>'
+        + '<button class="mini" id="qb_'+id+'">Save</button>'
+        + '<button class="mini" id="rb_'+id+'">Reset month</button></span>'
+        + '<span class="grp"><label for="a1_'+id+'">Act 1</label>'
         + '<select id="a1_'+id+'">'
           + '<option value=""'+(!u.act1Override?' selected':'')+'>default ('+esc(u.act1)+')</option>'
           + ['voiced','real_audio','silent'].map(function(m){ return '<option value="'+m+'"'+(u.act1Override===m?' selected':'')+'>'+m+'</option>'; }).join('')
-        + '</select>'
+        + '</select></span>'
         + (u.phone ? '<a class="mini wa" target="_blank" rel="noopener" href="https://wa.me/'+encodeURIComponent(waNumber(u.phone))+'">WhatsApp</a>' : '')
         + '<span class="saved" id="sv_'+id+'">Saved</span>'
         + '</div>'
@@ -362,6 +381,7 @@
         // keep the local copy honest so a tab switch does not show stale values
         if(d.profile){
           u.status = d.profile.status; u.minutesQuota = Number(d.profile.minutes_quota);
+          u.analysesQuota = Number(d.profile.analyses_quota); u.analysesUsed = Number(d.profile.analyses_used || 0);
           u.minutesUsed = d.profile.quota_month === new Date().toISOString().slice(0,7) ? Number(d.profile.minutes_used_month||0) : 0;
           u.features = d.profile.features || {}; u.act1Override = u.features.act1 || null;
         }
@@ -371,6 +391,8 @@
     };
 
     var st = $('st_'+id); if(st) st.onchange = function(){ send({ status: st.value }); };
+    var acb = $('acb_'+id); if(acb) acb.onclick = function(){ send({ analysesQuota: Number($('ac_'+id).value) }, acb); };
+    var arb = $('arb_'+id); if(arb) arb.onclick = function(){ send({ resetAnalyses: true }, arb); };
     var qb = $('qb_'+id); if(qb) qb.onclick = function(){ send({ minutesQuota: Number($('q_'+id).value) }, qb); };
     var rb = $('rb_'+id); if(rb) rb.onclick = function(){ send({ resetUsage: true }, rb); };
     var a1 = $('a1_'+id); if(a1) a1.onchange = function(){ send({ act1: a1.value || null }); };

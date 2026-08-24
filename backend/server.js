@@ -30,32 +30,91 @@ const admin = (SUPABASE_URL && SUPABASE_SERVICE_KEY)
 const MAX_WORDS = 4500;
 const MAX_CHARS = 25000;
 const MAX_AUDIO_SECONDS = 35 * 60;      // hard reject beyond this; the advertised limit is derived below
-const GUEST_ANALYSES_PER_DAY = 10;
+// The trial allowance. Everyone who signs up gets this many analyses, full stop — not per month,
+// not per day. It is a taste of the product, and raising it for someone is a deliberate act the
+// admin takes on the People tab. Minutes remain as a second guard against one enormous upload
+// eating the budget, but ANALYSES is the limit a tester will actually meet.
+const DEFAULT_ANALYSES_QUOTA = 3;
+const GUEST_ANALYSES_PER_DAY = 3;
 const DEFAULT_MINUTES_QUOTA = 60;
 
 // ---- The analysis model ----------------------------------------------------
-// Groq deprecated llama-3.3-70b-versatile (announced 2026-06-17, stopped serving Aug 2026) and
-// requests to it now come back `model_decommissioned`. gpt-oss-120b is Groq's own recommended
-// replacement, and it brings something the old model did not: strict json_schema structured
-// outputs. That is why the analysis is a SINGLE call now — see the note on the budget below.
-// Model is env-settable so a future swap is a dashboard change, not a deploy.
-const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+// Groq retires models on a schedule. llama-3.3-70b-versatile was announced dead on 2026-06-17 and
+// stopped being served in Aug 2026, and the failure mode was a bare `model_decommissioned` 400
+// that cost a day to diagnose. So the model is no longer a constant: we ask Groq what it actually
+// serves and take the best one we recognise. Setting GROQ_MODEL pins it explicitly and skips all
+// of this; leaving it unset means the next decommission repairs itself.
+//
+// Ordered best-first. Only chat models that can follow a json_schema belong here — the account
+// also lists whisper (speech), orpheus (TTS) and prompt-guard (moderation) models, which would
+// each fail in their own confusing way if they were ever picked.
+const MODEL_PREFERENCE = [
+  'openai/gpt-oss-120b',
+  'qwen/qwen3.6-27b',
+  'openai/gpt-oss-20b',
+  'groq/compound'
+];
+const PINNED_MODEL = process.env.GROQ_MODEL || null;
+let resolvedModel = PINNED_MODEL;          // null until the first lookup succeeds
+let modelLookup = null;                    // in-flight promise, so a burst does one lookup
+
+async function listGroqModels() {
+  const r = await fetch('https://api.groq.com/openai/v1/models', {
+    headers: { authorization: 'Bearer ' + GROQ_API_KEY }
+  });
+  if (!r.ok) throw new Error('groq models ' + r.status);
+  const d = await r.json();
+  return (d.data || []).map(m => m.id);
+}
+
+// `force` re-resolves after a decommission, ignoring what we cached.
+async function analysisModel(force = false) {
+  if (PINNED_MODEL && !force) return PINNED_MODEL;
+  if (resolvedModel && !force) return resolvedModel;
+  if (!modelLookup) {
+    modelLookup = (async () => {
+      try {
+        const ids = await listGroqModels();
+        const pick = MODEL_PREFERENCE.find(m => ids.includes(m));
+        if (pick) {
+          if (pick !== resolvedModel) console.log('[samvaad] analysis model:', pick);
+          resolvedModel = pick;
+        } else {
+          // Nothing we know is being served. Say so loudly and keep the last known good one:
+          // a stale model that might still work beats guessing at an unknown one.
+          console.error('[samvaad] none of the known models are available. Groq offers:', ids.join(', '),
+            '\n  Add a current chat model to MODEL_PREFERENCE, or set GROQ_MODEL.');
+        }
+      } catch (e) {
+        console.warn('[samvaad] could not list Groq models (' + e.message + '); using', resolvedModel || MODEL_PREFERENCE[0]);
+      } finally {
+        modelLookup = null;
+      }
+      return resolvedModel || MODEL_PREFERENCE[0];
+    })();
+  }
+  return modelLookup;
+}
 
 // The real ceiling is not our preference, it is Groq's tokens-per-minute limit: Groq counts
-// prompt + max_tokens against TPM. The free plan gives gpt-oss-120b 8,000 TPM (the old model had
-// 12,000), so the naive read is that we got *less* room. We got more, because the analysis used
-// to be TWO calls inside the same minute and each could therefore use only half the budget:
+// prompt + max_tokens against TPM. The analysis used to be TWO calls inside the same minute, so
+// each could use only half the budget; merging them into one is most of why a real conversation
+// fits at all. Raising GROQ_TPM after upgrading the Groq plan is the single knob that lifts the
+// limit, and nothing else needs to change.
 //
-//   two calls @ 8,000 TPM  ->  ~600 words   (~4 minutes of speech)
-//   one call  @ 8,000 TPM  -> ~2,300 words  (~15 minutes of speech)
-//
-// Merging them was only safe once the model could guarantee a well-formed, bounded response, which
-// is exactly what strict json_schema gives us. Raising GROQ_TPM after upgrading the Groq plan is
-// the single knob that lifts the limit; nothing else needs to change.
+// Everything below is measured against the live API on 2026-08-25, not estimated:
+//   instructions + schema, no transcript ...........  ~750 prompt tokens
+//   completion at reasoning_effort 'low' ............ 1861-2069 tokens
+//   completion at default (high) effort ............. 3837 tokens, of which 2252 are reasoning
+// gpt-oss-120b is a reasoning model, so the default effort spends more than half the response
+// budget thinking. At 'low' the same conversation scored identically across runs and came back in
+// half the time, so that is what we send. max_tokens carries headroom over the observed peak
+// because Groq charges the RESERVATION, not the usage — too high wastes throughput, too low
+// truncates mid-JSON.
 const GROQ_TPM = Number(process.env.GROQ_TPM || 8000);
-const GROQ_MAX_TOKENS = 2600;                 // reserved for the response, and counted against TPM
+const GROQ_MAX_TOKENS = 2800;                 // reserved for the response, and counted against TPM
 const CHARS_PER_TOKEN = 2.6;                  // measured on romanised Hinglish, which is dense
-const PROMPT_OVERHEAD_TOKENS = 1100;          // instructions + the json_schema, which is itself input
+const PROMPT_OVERHEAD_TOKENS = 850;           // instructions + the json_schema, which is itself input
 const ANALYSIS_MAX_CHARS = Math.max(
   2000,
   Math.floor((GROQ_TPM - GROQ_MAX_TOKENS - PROMPT_OVERHEAD_TOKENS) * CHARS_PER_TOKEN)
@@ -170,8 +229,13 @@ async function ensureProfile(principal) {
     const { data, error } = await admin.from('profiles').select('*').eq('user_id', principal.id).maybeSingle();
     if (error) { console.warn('[samvaad] profiles unavailable:', error.message); return null; }
     if (data) return data;
+    const s = await settings();
     const { data: made } = await admin.from('profiles')
-      .insert({ user_id: principal.id, minutes_quota: DEFAULT_MINUTES_QUOTA })
+      .insert({
+        user_id: principal.id,
+        minutes_quota: Number(s.default_minutes_quota ?? DEFAULT_MINUTES_QUOTA),
+        analyses_quota: Number(s.default_analyses_quota ?? DEFAULT_ANALYSES_QUOTA)
+      })
       .select('*').single();
     return made || null;
   } catch (e) { console.warn('[samvaad] profiles unavailable:', e.message); return null; }
@@ -186,7 +250,10 @@ async function checkQuota(principal, minutes) {
     const u = guestUse.get(principal.id);
     const count = (u && u.day === day) ? u.count : 0;
     if (count >= GUEST_ANALYSES_PER_DAY) {
-      throw { status: 429, message: 'Guest limit reached for today. Sign in to keep going.' };
+      // Same code as the signed-in wall so the app renders one kind of screen, different message
+      // because the way out is different: a guest signs in, a member asks us for more.
+      throw { status: 429, code: 'analyses_exhausted',
+              message: `That is ${GUEST_ANALYSES_PER_DAY} for today as a guest. Sign in and your reflections start being saved, too.` };
     }
     return;
   }
@@ -195,14 +262,28 @@ async function checkQuota(principal, minutes) {
   if (p.status === 'suspended') {
     throw { status: 403, message: 'This account is paused. Please reach out to us and we will sort it out.' };
   }
+  // The trial allowance. `analyses_quota` is null on rows created before this existed — treat
+  // those as the default rather than as unlimited, so an early tester is not accidentally exempt.
+  const quota = Number(p.analyses_quota ?? DEFAULT_ANALYSES_QUOTA);
+  const spent = Number(p.analyses_used || 0);
+  if (spent >= quota) {
+    throw {
+      status: 429,
+      message: `That was your last of ${quota} conversations on the trial. Message us and we will open up more.`,
+      code: 'analyses_exhausted'
+    };
+  }
   const used = (p.quota_month === monthKey()) ? Number(p.minutes_used_month || 0) : 0;
   if (used + minutes > Number(p.minutes_quota || DEFAULT_MINUTES_QUOTA)) {
     throw { status: 429, message: 'You have used this month’s analysis time. Message us and we can raise it.' };
   }
 }
 
-async function chargeQuota(principal, minutes) {
+// `countsAsAnalysis` is false for the transcribe step: an upload is transcribed and then analysed,
+// and charging both would silently halve everyone's allowance.
+async function chargeQuota(principal, minutes, countsAsAnalysis = false) {
   if (principal.kind === 'guest') {
+    if (!countsAsAnalysis) return;
     const day = new Date().toISOString().slice(0, 10);
     const u = guestUse.get(principal.id);
     guestUse.set(principal.id, { day, count: (u && u.day === day ? u.count : 0) + 1 });
@@ -212,12 +293,29 @@ async function chargeQuota(principal, minutes) {
   const p = await ensureProfile(principal);
   if (!p) return;
   const used = (p.quota_month === monthKey()) ? Number(p.minutes_used_month || 0) : 0;
-  await admin.from('profiles').update({
+  const patch = {
     minutes_used_month: used + minutes, quota_month: monthKey(), updated_at: new Date().toISOString()
-  }).eq('user_id', principal.id);
+  };
+  if (countsAsAnalysis) patch.analyses_used = Number(p.analyses_used || 0) + 1;
+  await admin.from('profiles').update(patch).eq('user_id', principal.id);
 }
 
-const quotaFail = (res, e) => res.status(e.status || 500).json({ error: e.message || String(e) });
+// What a caller has left, for /api/me and for the refusal message.
+async function allowance(principal) {
+  if (principal.kind === 'guest') {
+    const day = new Date().toISOString().slice(0, 10);
+    const u = guestUse.get(principal.id);
+    const used = (u && u.day === day) ? u.count : 0;
+    return { quota: GUEST_ANALYSES_PER_DAY, used, left: Math.max(0, GUEST_ANALYSES_PER_DAY - used), perDay: true };
+  }
+  const p = await ensureProfile(principal);
+  if (!p) return { quota: null, used: 0, left: null, perDay: false };
+  const quota = Number(p.analyses_quota ?? DEFAULT_ANALYSES_QUOTA);
+  const used = Number(p.analyses_used || 0);
+  return { quota, used, left: Math.max(0, quota - used), perDay: false };
+}
+
+const quotaFail = (res, e) => res.status(e.status || 500).json({ error: e.message || String(e), code: e.code || null });
 
 // ---- Coarse rate limiting: a backstop against a loop, not a billing control ----
 const hits = new Map();
@@ -232,30 +330,78 @@ function rateLimit(id, perMinute) {
 
 const json = (s) => { try { return JSON.parse(s); } catch { const a = s.indexOf('{'), b = s.lastIndexOf('}'); return JSON.parse(s.slice(a, b + 1)); } };
 
-// Ask for a schema-constrained response when we have a schema, plain JSON otherwise.
-// `strict: true` uses constrained decoding: the model physically cannot emit a token that would
-// break the shape, which is what retires the old "Failed to generate JSON" retry dance.
+// ---- Tokens-per-minute governor ---------------------------------------------
+// Groq bills the RESERVATION (prompt + max_tokens) against a rolling per-minute ceiling, and one
+// analysis reserves roughly 3,700 of the free tier's 8,000. So two people analysing in the same
+// minute is not an edge case, it is Tuesday — and the raw failure is a 429 with a wall of English
+// about upgrading your plan. Worse, the retry then re-reserves the whole amount and collides with
+// itself, which is exactly what happened the first time this ran against a live key.
+//
+// So we queue instead of colliding: hold the tokens we are about to spend, and if a request does
+// not fit the window, wait for the oldest spend to age out rather than firing and failing.
+const tpmWindow = [];                         // [{ at, tokens }]
+const TPM_MAX_WAIT_MS = 45000;                // beyond this, tell the user honestly
+
+function tpmUsed(now) {
+  while (tpmWindow.length && now - tpmWindow[0].at > 60000) tpmWindow.shift();
+  return tpmWindow.reduce((a, x) => a + x.tokens, 0);
+}
+async function tpmReserve(tokens) {
+  const deadline = Date.now() + TPM_MAX_WAIT_MS;
+  for (;;) {
+    const now = Date.now();
+    const used = tpmUsed(now);
+    if (used + tokens <= GROQ_TPM) { tpmWindow.push({ at: now, tokens }); return; }
+    // wait just past the moment the oldest reservation leaves the 60s window
+    const wait = tpmWindow.length ? (60000 - (now - tpmWindow[0].at)) + 250 : 1000;
+    if (now + wait > deadline) {
+      // Not a fault: the free tier's per-minute budget is genuinely spoken for. 503 + Retry-After
+      // says "come back", where a 500 would say "we broke" and get logged as an outage.
+      const e = new Error('A few conversations are being read right now. Give it a minute and try again.');
+      e.status = 503; e.retryAfter = 60;
+      throw e;
+    }
+    await new Promise(r => setTimeout(r, Math.max(500, wait)));
+  }
+}
+
+// Ask for a schema-shaped response when we have a schema, plain JSON otherwise.
+//
+// A warning worth keeping: on Groq, `strict: true` is NOT constrained decoding. The model
+// generates freely and the result is validated afterwards, so an enum value the model invents
+// comes back as a 400 rather than being made impossible. That is why the schema this sends uses
+// plain strings where the vocabulary matters and normalises them in code (see sane()) — an enum
+// there turned perfectly good analyses into json_validate_failed.
 async function groq(prompt, { schema = null, schemaName = 'result', tries = 3 } = {}) {
   const format = schema
     ? { type: 'json_schema', json_schema: { name: schemaName, strict: true, schema } }
     : { type: 'json_object' };
+  const model = await analysisModel();
+  const reserve = Math.ceil(prompt.length / CHARS_PER_TOKEN) + PROMPT_OVERHEAD_TOKENS + GROQ_MAX_TOKENS;
   let lastErr;
   for (let i = 0; i < tries; i++) {
+    await tpmReserve(reserve);
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + GROQ_API_KEY },
-      // temperature 0 + a fixed seed: the same conversation should not score differently on a
-      // re-run. Determinism is not guaranteed by the API, but this removes the deliberate variance.
-      body: JSON.stringify({ model: GROQ_MODEL, max_tokens: GROQ_MAX_TOKENS, temperature: 0, seed: 7, response_format: format, messages: [{ role: 'user', content: prompt }] })
+      // temperature 0 + a fixed seed + low reasoning effort: the same conversation should not score
+      // differently on a re-run. Measured identical across consecutive runs.
+      body: JSON.stringify({ model, max_tokens: GROQ_MAX_TOKENS, temperature: 0, seed: 7, reasoning_effort: 'low', response_format: format, messages: [{ role: 'user', content: prompt }] })
     });
     if (r.ok) { const d = await r.json(); return (d.choices || []).map(c => c.message?.content || '').join(''); }
     const body = (await r.text()).slice(0, 300);
     // 413 means we blew the tokens-per-minute ceiling. Raw Groq text is no help to a user.
     if (r.status === 413) throw new Error('This conversation is longer than we can read in one go right now. Try a shorter section.');
-    // Groq retires models on a schedule and the failure is otherwise a silent 400 nobody decodes.
-    // Say the operator sentence out loud: it cost a day the first time this happened.
+    // A retired model. Re-ask Groq what it serves and try again on the replacement, so the next
+    // decommission is a blip in the logs instead of an outage. Only if the model was not pinned:
+    // an explicit GROQ_MODEL is an instruction, and silently using a different one would be worse.
     if (/model_decommissioned|does not exist|model_not_found/i.test(body)) {
-      console.error('[samvaad] GROQ_MODEL "' + GROQ_MODEL + '" is no longer served. Set GROQ_MODEL to a current model id from https://console.groq.com/docs/models');
+      console.error('[samvaad] model "' + model + '" is no longer served by Groq.');
+      if (!PINNED_MODEL && i < tries - 1) {
+        await analysisModel(true);
+        continue;
+      }
+      console.error('[samvaad] set GROQ_MODEL to a current id from https://console.groq.com/docs/models, or unset it to auto-select.');
       throw new Error('Our analysis engine is being updated. Please try again shortly.');
     }
     if (r.status === 401 || r.status === 403) {
@@ -273,7 +419,12 @@ async function groq(prompt, { schema = null, schemaName = 'result', tries = 3 } 
         const hdr = Number(r.headers.get('retry-after'));
         const m = body.match(/try again in ([\d.]+)s/i);
         const secs = hdr || (m ? Number(m[1]) : 0);
-        wait = Math.min(Math.ceil((secs || 5) * 1000) + 250, 12000);
+        // Honour what Groq actually asks for. The old 12s cap was below the ~18s it requested in
+        // practice, so every rate-limit retry fired early, failed again, and burned the budget a
+        // second time. If it wants 30s, wait 30s.
+        wait = Math.min(Math.ceil((secs || 5) * 1000) + 250, 40000);
+        // The window is already spoken for; do not let the governor double-count this attempt.
+        tpmWindow.length = 0;
       }
       await new Promise(res => setTimeout(res, wait));
       continue;
@@ -284,22 +435,21 @@ async function groq(prompt, { schema = null, schemaName = 'result', tries = 3 } 
 }
 
 // ---- The analysis schema ----------------------------------------------------
-// Strict mode uses constrained decoding, and it supports only a subset of JSON Schema: type,
-// properties, required, additionalProperties, enum, items. Bounds like maxItems and maximum are
-// NOT enforced, so every cap here is asked for in the prompt and clamped in code afterwards.
-// Every property must appear in `required` — that is a strict-mode rule, not a preference.
+// Two hard-won rules live in this shape.
+//
+// 1. NO ENUMS. Groq validates the finished JSON instead of constraining generation, so an enum is
+//    not a guarantee, it is a tripwire: the model returned emotion "defensive" (a perfectly
+//    reasonable reading of the conversation) and the whole analysis came back as a 400. Every
+//    controlled vocabulary is a plain string here and is mapped onto ours in sane().
+// 2. Every property must appear in `required`, and bounds like maxItems are ignored, so the caps
+//    are asked for in the prompt and enforced in code.
 const S = { type: 'string' };
 const ITEM = { type: 'object', additionalProperties: false, required: ['title', 'who', 'detail'], properties: { title: S, who: S, detail: S } };
 const TURN = {
   type: 'object', additionalProperties: false, required: ['speaker', 'display', 'speak', 'emotion'],
-  properties: {
-    speaker: { type: 'string', enum: ['A', 'B'] },
-    display: S,
-    speak: S,
-    emotion: { type: 'string', enum: ['sad', 'attentive', 'sorry', 'happy', 'warm', 'neutral'] }
-  }
+  properties: { speaker: S, display: S, speak: S, emotion: S }
 };
-const PERSON = { type: 'object', additionalProperties: false, required: ['name', 'gender'], properties: { name: S, gender: { type: 'string', enum: ['female', 'male', 'unknown'] } } };
+const PERSON = { type: 'object', additionalProperties: false, required: ['name', 'gender'], properties: { name: S, gender: S } };
 
 const ANALYSIS_SCHEMA = {
   type: 'object', additionalProperties: false,
@@ -330,8 +480,50 @@ const ANALYSIS_SCHEMA = {
 
 const clampInt = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(Number(v) || 0)));
 
-// Strict decoding guarantees the shape, never the sense. Bound the arrays the prompt was asked to
-// bound, and keep scores inside 0-100 so a stray 250 can never reach the score ring.
+// The avatars can wear six expressions. The model, asked for a feeling, reaches for the whole
+// English language — "defensive", "frustrated", "hopeful". Map onto what the rigs can actually
+// show rather than refusing the answer; an unrecognised word lands on neutral, which is a fine
+// face for a line we could not read.
+const EMOTIONS = ['sad', 'attentive', 'sorry', 'happy', 'warm', 'neutral'];
+const EMOTION_ALIAS = {
+  angry: 'sad', frustrated: 'sad', upset: 'sad', hurt: 'sad', defensive: 'sad', anxious: 'sad',
+  disappointed: 'sad', lonely: 'sad', dismissive: 'sad', tense: 'sad', worried: 'sad',
+  apologetic: 'sorry', regretful: 'sorry', remorseful: 'sorry', guilty: 'sorry',
+  loving: 'warm', affectionate: 'warm', tender: 'warm', caring: 'warm', hopeful: 'warm', reassuring: 'warm',
+  joyful: 'happy', glad: 'happy', relieved: 'happy', pleased: 'happy', grateful: 'happy',
+  listening: 'attentive', curious: 'attentive', concerned: 'attentive', thoughtful: 'attentive',
+  understanding: 'attentive', empathetic: 'attentive',
+  calm: 'neutral', flat: 'neutral', matter_of_fact: 'neutral', explaining: 'neutral'
+};
+function normEmotion(v) {
+  const k = String(v || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (EMOTIONS.includes(k)) return k;
+  return EMOTION_ALIAS[k] || 'neutral';
+}
+const normGender = (v) => (/^f/i.test(String(v || '')) ? 'female' : /^m/i.test(String(v || '')) ? 'male' : 'unknown');
+// "A", "a" and "Speaker A" all mean A. Anything else — usually the person's own name — is passed
+// through UNCHANGED on purpose: the frontend's spk() resolves a name against the two it was given,
+// and collapsing it to "A" here would silently put every line in one person's mouth. (It did, the
+// first time: the model answered with names and all eight turns came back as speaker A.)
+function normSpeaker(v) {
+  const raw = String(v == null ? '' : v).trim();
+  if (/^(speaker\s*)?a$/i.test(raw)) return 'A';
+  if (/^(speaker\s*)?b$/i.test(raw)) return 'B';
+  return raw || 'A';
+}
+
+function normTurns(arr) {
+  return (arr || []).slice(0, 8).map(t => ({
+    speaker: normSpeaker(t && t.speaker),
+    display: String((t && t.display) || ''),
+    speak: String((t && t.speak) || (t && t.display) || ''),
+    emotion: normEmotion(t && t.emotion)
+  })).filter(t => t.display.trim());
+}
+
+// A valid shape is not the same as a sane one. Bound the arrays the prompt was asked to bound,
+// keep scores inside 0-100 so a stray 250 can never reach the score ring, and put every free-text
+// vocabulary back into the small set the UI knows how to render.
 function sane(rep) {
   const r = rep || {};
   const sc = r.scores || {};
@@ -340,8 +532,13 @@ function sane(rep) {
   r.patterns = (r.patterns || []).slice(0, 4);
   r.strengths = (r.strengths || []).slice(0, 4);
   r.improvements = (r.improvements || []).slice(0, 3);
-  r.original = (r.original || []).slice(0, 8);
-  r.improved = (r.improved || []).slice(0, 8);
+  r.original = normTurns(r.original);
+  r.improved = normTurns(r.improved);
+  const sp = r.speakers || {};
+  r.speakers = {
+    A: { name: String((sp.A && sp.A.name) || ''), gender: normGender(sp.A && sp.A.gender) },
+    B: { name: String((sp.B && sp.B.name) || ''), gender: normGender(sp.B && sp.B.gender) }
+  };
   return r;
 }
 
@@ -433,7 +630,7 @@ app.post('/api/transcribe', async (req, res) => {
     const cap = capTranscript(out);
     const keptTurns = cap.truncated ? turns.slice(0, cap.text.split('\n').filter(Boolean).length) : turns;
 
-    await chargeQuota(principal, Math.max(1, Math.round(seconds / 60)));
+    await chargeQuota(principal, Math.max(1, Math.round(seconds / 60)), false);
     res.json({
       transcript: cap.text, turns: keptTurns,
       truncated: cap.truncated, wordsKept: cap.wordsKept, wordsTotal: cap.wordsTotal,
@@ -455,11 +652,12 @@ app.post('/api/analyze', async (req, res) => {
     const transcript = cap.text;
     if (!transcript.trim()) return res.status(400).json({ error: 'There is nothing to analyse yet.' });
 
-    // Audio already paid at the transcribe step; only meter text arriving straight from a paste.
+    // Minutes for audio were already paid at the transcribe step, so only text arriving straight
+    // from a paste is metered for time. The ANALYSIS allowance is checked either way — an upload
+    // that skipped this check would be a free hole straight through the trial limit.
     const estMinutes = Math.max(1, Math.round(countWords(transcript) / 150));
-    if (source !== 'audio') {
-      try { await checkQuota(principal, estMinutes); } catch (e) { return quotaFail(res, e); }
-    }
+    const chargeMinutes = source === 'audio' ? 0 : estMinutes;
+    try { await checkQuota(principal, chargeMinutes); } catch (e) { return quotaFail(res, e); }
 
     const lens = mode === 'self'
       ? `This is one person reflecting on themselves (introspection). Analyse THEIR emotional regulation, self-talk, language patterns, and stress markers — not a relationship.`
@@ -488,13 +686,17 @@ BE HONEST, NEVER PAD. "patterns" (max 4) and "improvements" (max 3) are for real
 
 "improved" (max 8 turns) is the SAME stretch replayed kindly, applying your own "improvements". It should mirror "original" turn for turn so the two can be compared side by side.
 
-For every turn in BOTH arrays: "speaker" is exactly "A" or "B" and never a name; alternate as a real back-and-forth rather than labelling every turn the same speaker; "display" is the natural line (Hinglish/Devanagari fine); "speak" is a clean Roman transliteration for text-to-speech with no Devanagari; "emotion" must be fitting and varied, not neutral by default. "display" and "speak" contain ONLY the words spoken — never prefix a line with the speaker's name or a colon (write "Aaj phir call nahi kiya", NOT "${nameA}: Aaj phir call nahi kiya").${mode === 'self' ? '\n\nThis is a solo reflection, so there is no back-and-forth to replay: return empty arrays for "original" and "improved".' : ''}`;
+Each "script" in improvements is the exact line that person should SAY next time, in their own everyday register (Hinglish/Devanagari fine, matching how they already speak), two sentences at most. It contains ONLY the spoken words: no name prefix, no quotation marks, no stage directions.
+
+For every turn in BOTH arrays: "speaker" is exactly "A" or "B" and never a name; alternate as a real back-and-forth rather than labelling every turn the same speaker; "display" is the natural line (Hinglish/Devanagari fine); "speak" is a clean Roman transliteration for text-to-speech with no Devanagari; "emotion" is one of sad, attentive, sorry, happy, warm or neutral, fitting and varied rather than neutral by default. "display" and "speak" contain ONLY the words spoken — never prefix a line with the speaker's name or a colon (write "Aaj phir call nahi kiya", NOT "${nameA}: Aaj phir call nahi kiya").${mode === 'self' ? '\n\nThis is a solo reflection, so there is no back-and-forth to replay: return empty arrays for "original" and "improved".' : ''}`;
 
     const rep = sane(json(await groq(prompt, { schema: ANALYSIS_SCHEMA, schemaName: 'samvaad_analysis' })));
     const original = mode === 'relationship' ? (rep.original || []) : [];
     const improved = mode === 'relationship' ? (rep.improved || []) : [];
 
-    if (source !== 'audio') await chargeQuota(principal, estMinutes);
+    // Charged only now that the analysis actually succeeded: a failed Groq call must never cost
+    // someone one of their three.
+    await chargeQuota(principal, chargeMinutes, true);
 
     let sessionId = null;
     if (user && admin) {
@@ -517,8 +719,11 @@ For every turn in BOTH arrays: "speaker" is exactly "A" or "B" and never a name;
       sessionId = data?.id || null;
       if (sessionId && consent) await admin.from('consents').insert({ user_id: user.id, session_id: sessionId, kind: consent });
     }
-    res.json({ ...rep, original, improved, sessionId, truncated: cap.truncated, wordsKept: cap.wordsKept, wordsTotal: cap.wordsTotal, limits: LIMITS });
-  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+    res.json({ ...rep, original, improved, sessionId, truncated: cap.truncated, wordsKept: cap.wordsKept, wordsTotal: cap.wordsTotal, limits: LIMITS, allowance: await allowance(principal) });
+  } catch (e) {
+    if (e && e.retryAfter) res.set('retry-after', String(e.retryAfter));
+    res.status((e && e.status) || 500).json({ error: String(e.message || e), code: (e && e.code) || null });
+  }
 });
 
 // ---- Text to speech (ElevenLabs) ----
@@ -576,6 +781,7 @@ app.get('/api/me', async (req, res) => {
     if (p.kind === 'guest') {
       return res.json({
         kind: 'guest', status: 'active', features: {}, quota: { minutes: null },
+        allowance: await allowance(p),
         act1: resolveAct1(null, s), limits: LIMITS, selfMode: s.self_reflection_enabled === true
       });
     }
@@ -587,6 +793,7 @@ app.get('/api/me', async (req, res) => {
       phone: prof?.phone || null, phoneVerified: !!prof?.phone_verified,
       features: prof?.features || {},
       quota: { minutes: Number(prof?.minutes_quota || DEFAULT_MINUTES_QUOTA), used },
+      allowance: await allowance(p),
       act1: resolveAct1(prof, s),
       limits: LIMITS,
       // "Just me" is built and kept, but it is off for the trial cohort unless someone is
@@ -709,6 +916,8 @@ app.get('/api/admin/users', async (req, res) => {
         features: p.features || {},
         minutesQuota: Number(p.minutes_quota ?? DEFAULT_MINUTES_QUOTA),
         minutesUsed: usedThisMonth,
+        analysesQuota: Number(p.analyses_quota ?? DEFAULT_ANALYSES_QUOTA),
+        analysesUsed: Number(p.analyses_used || 0),
         analyses: st.count,
         avgScore: st.scoreN ? Math.round(st.scoreSum / st.scoreN) : null,
         lastActive: st.last,
@@ -749,7 +958,13 @@ app.patch('/api/admin/users/:id', async (req, res) => {
       if (!Number.isFinite(q) || q < 0 || q > 100000) return res.status(400).json({ error: 'Bad quota.' });
       patch.minutes_quota = q;
     }
+    if (body.analysesQuota !== undefined) {
+      const q = Number(body.analysesQuota);
+      if (!Number.isFinite(q) || q < 0 || q > 10000) return res.status(400).json({ error: 'Bad analyses quota.' });
+      patch.analyses_quota = q;
+    }
     if (body.resetUsage === true) { patch.minutes_used_month = 0; patch.quota_month = monthKey(); }
+    if (body.resetAnalyses === true) { patch.analyses_used = 0; }
     if (body.act1 !== undefined) {
       // null clears the override and hands the account back to the global default
       if (body.act1 !== null && !ACT1_MODES.includes(body.act1)) return res.status(400).json({ error: 'Bad act1 mode.' });
@@ -785,7 +1000,8 @@ const SETTING_KEYS = {
   self_reflection_enabled: v => typeof v === 'boolean',
   intro_enabled: v => typeof v === 'boolean',
   act1_mode: v => ACT1_MODES.includes(v),
-  default_minutes_quota: v => Number.isFinite(Number(v)) && Number(v) >= 0
+  default_minutes_quota: v => Number.isFinite(Number(v)) && Number(v) >= 0,
+  default_analyses_quota: v => Number.isFinite(Number(v)) && Number(v) >= 0
 };
 
 app.get('/api/admin/settings', async (req, res) => {
@@ -798,10 +1014,11 @@ app.get('/api/admin/settings', async (req, res) => {
         self_reflection_enabled: s.self_reflection_enabled === true,
         intro_enabled: s.intro_enabled !== false,
         act1_mode: ACT1_MODES.includes(s.act1_mode) ? s.act1_mode : ACT1_DEFAULT,
-        default_minutes_quota: Number(s.default_minutes_quota ?? DEFAULT_MINUTES_QUOTA)
+        default_minutes_quota: Number(s.default_minutes_quota ?? DEFAULT_MINUTES_QUOTA),
+        default_analyses_quota: Number(s.default_analyses_quota ?? DEFAULT_ANALYSES_QUOTA)
       },
       act1Modes: ACT1_MODES,
-      engine: { model: GROQ_MODEL, tpm: GROQ_TPM, limits: LIMITS }
+      engine: { model: await analysisModel(), pinned: !!PINNED_MODEL, tpm: GROQ_TPM, limits: LIMITS }
     });
   } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
 });
@@ -857,7 +1074,7 @@ app.get('/api/admin/kpis', async (req, res) => {
       const [s, o, pr, fb, au] = await Promise.all([
         admin.from('sessions').select('id, user_id, mode, submode, created_at, scores, act1_mode, truncated'),
         admin.from('nudge_subscriptions').select('user_id', { count: 'exact', head: true }).eq('consent', true).eq('active', true),
-        admin.from('profiles').select('user_id, status, phone, minutes_used_month, quota_month'),
+        admin.from('profiles').select('user_id, status, phone, minutes_used_month, quota_month, analyses_used, analyses_quota'),
         admin.from('feedback').select('will_try, session_id, asked_at'),
         admin.auth.admin.listUsers({ page: 1, perPage: 500 })
       ]);
@@ -886,6 +1103,8 @@ app.get('/api/admin/kpis', async (req, res) => {
 
     // --- funnel ---
     const withPhone = profileRows.filter(p => p.phone).length;
+    const exhausted = profileRows.filter(p =>
+      Number(p.analyses_used || 0) >= Number(p.analyses_quota ?? DEFAULT_ANALYSES_QUOTA)).length;
     const byStatus = { active: 0, limited: 0, suspended: 0 };
     for (const p of profileRows) byStatus[p.status] = (byStatus[p.status] || 0) + 1;
     const signups = authUsers.length || profileRows.length;
@@ -935,6 +1154,7 @@ app.get('/api/admin/kpis', async (req, res) => {
         signups, withPhone, activated, returning,
         activationRate: signups ? Math.round((activated / signups) * 100) : 0,
         returnRate: activated ? Math.round((returning / activated) * 100) : 0,
+        exhausted,
         optins: optinsTotal
       },
       activity: {
@@ -952,7 +1172,7 @@ app.get('/api/admin/kpis', async (req, res) => {
       },
       accounts: byStatus,
       experiment: exp,
-      capacity: { minutesThisMonth, model: GROQ_MODEL, tpm: GROQ_TPM, limits: LIMITS },
+      capacity: { minutesThisMonth, model: await analysisModel(), pinned: !!PINNED_MODEL, tpm: GROQ_TPM, limits: LIMITS },
       voice
     });
   } catch (e) { res.status(500).json({ error: String(e.message || e) }); }

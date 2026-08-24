@@ -89,6 +89,8 @@ create table if not exists public.profiles (
   display_name       text,
   status             text not null default 'active' check (status in ('active','limited','suspended')),
   minutes_quota      numeric not null default 60,
+  analyses_quota     integer not null default 3,          -- the trial allowance: 3 analyses, total
+  analyses_used      integer not null default 0,
   minutes_used_month numeric not null default 0,
   quota_month        text,                                  -- 'YYYY-MM'; usage resets when this rolls
   features           jsonb  not null default '{"self_reflection": false}'::jsonb,
@@ -112,6 +114,7 @@ alter table public.app_settings enable row level security;
 insert into public.app_settings (key, value) values
   ('guest_enabled',           'true'::jsonb),
   ('default_minutes_quota',   '60'::jsonb),
+  ('default_analyses_quota',  '3'::jsonb),      -- analyses a new account gets, total
   ('act1_mode',               '"voiced"'::jsonb),   -- walk-through act 1: voiced|real_audio|silent
   ('intro_enabled',           'true'::jsonb),       -- animated intro before the login page
   ('self_reflection_enabled', 'false'::jsonb)       -- "Just me" is built but closed for the trial

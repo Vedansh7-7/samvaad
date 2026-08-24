@@ -1,64 +1,80 @@
 # Samvaad — pre-launch trial: what you have to do by hand
 
-_Written 2026-08-24. Everything in the code is done and tested. This file is only the list of
-things that live in a dashboard and therefore could not be done from here._
+_Written 2026-08-24, updated 2026-08-25 after testing against the live Groq key. Everything in the
+code is done and tested. This file is only the list of things that live in a dashboard and
+therefore could not be done from here._
 
 Work top to bottom. Nothing below step 4 matters until steps 1 to 4 are done.
 
 ---
 
-## 1. Renew the Groq key and set the new model  *(blocking: analysis is dead without it)*
+## 1. Groq: key renewed, model now picks itself  *(done, verified against the live API)*
 
-Groq announced on 2026-06-17 that `llama-3.1-8b-instant` and `llama-3.3-70b-versatile` were
-deprecated, and stopped serving them during August 2026. Requests now come back
-`model_decommissioned`. That is the failure you were seeing, on top of the expired key.
+You renewed the key and it works. Verified on 2026-08-25: the key authenticates, and
+`llama-3.3-70b-versatile` is genuinely absent from what your account is served, which is exactly
+the `model_decommissioned` failure you hit.
 
-1. https://console.groq.com/keys → create a new API key.
-2. Render → `samvaad-backend` → Environment, and set:
+**You no longer have to name a model.** On boot the backend asks Groq what it actually serves and
+takes the best one it recognises, in this order: `openai/gpt-oss-120b`, `qwen/qwen3.6-27b`,
+`openai/gpt-oss-20b`, `groq/compound`. If Groq retires one mid-flight, the next request re-asks
+and continues on the replacement instead of failing. Setting `GROQ_MODEL` still pins it explicitly
+and skips all of that; **leave it unset** unless you want a specific model.
 
-   | Key | Value |
-   |---|---|
-   | `GROQ_API_KEY` | the new key |
-   | `GROQ_MODEL` | `openai/gpt-oss-120b` |
-   | `GROQ_TPM` | `8000` |
+So on Render you need exactly this:
 
-3. Save. Render redeploys on its own.
-
-**Why gpt-oss-120b.** It is Groq's own recommended replacement for the 70B model, and unlike it,
-it supports **strict `json_schema`** output. That mattered more than the model swap itself: the
-analysis used to be two Groq calls, split apart to stop the JSON getting truncated. Strict schemas
-made that split unnecessary, so it is now one call, and one call gets the whole per-minute token
-budget instead of half of it.
-
-**What that means for length.** Groq counts prompt plus reserved output against a tokens-per-minute
-ceiling. On the free plan gpt-oss-120b gets 8,000 TPM:
-
-| | words | speech |
+| Key | Value | Notes |
 |---|---|---|
-| Two calls (the old design) at 8,000 TPM | ~600 | ~4 min |
-| One call (now) at 8,000 TPM | **~2,030** | **~13 min** |
+| `GROQ_API_KEY` | your new key | the only required one |
+| `GROQ_TPM` | `8000` | free plan. Raise after upgrading. |
+| `GROQ_MODEL` | *leave unset* | set it only to pin a specific model |
 
-Every user-facing limit is derived from `GROQ_TPM`, never typed into the copy. Raise that one
-variable after upgrading the Groq plan and the app immediately offers longer conversations, with
-no code change and no new deploy of the frontend.
+### What a real analysis actually costs
 
-Free tier also caps you at **200,000 tokens/day**, which is roughly **35 to 40 analyses per day
-across the whole cohort**. Fine for ten to twenty testers. It is the thing that will break first
-if the trial grows.
+Measured, not estimated:
+
+| | value |
+|---|---|
+| Prompt (instructions + schema, no transcript) | ~750 tokens |
+| Response at default reasoning effort | 3,837 tokens (2,252 of them *reasoning*) |
+| Response at `reasoning_effort: low` | 1,861 to 2,069 tokens |
+| Wall-clock, low effort | ~5 to 7 seconds |
+| Reserved against your per-minute budget | ~3,700 of 8,000 |
+
+Two things came out of that. gpt-oss-120b is a **reasoning model**, so at default effort more than
+half the response budget is spent thinking, and the previous `max_tokens` would have truncated
+real analyses. And at `low` effort the same conversation scored **identically across consecutive
+runs**, which is the repeatability the plan wanted and did not have.
+
+### The one thing to know about the free tier
+
+An analysis reserves ~3,700 of 8,000 tokens per minute, so **roughly two analyses per minute
+across the entire cohort**. A third in the same minute now waits in a queue rather than failing,
+and if the wait would exceed 45 seconds the person gets *"A few conversations are being read right
+now. Give it a minute and try again."* — a 503, not an error screen, and it does **not** cost them
+one of their three.
+
+With ten to twenty testers each holding three conversations, collisions will be occasional. If
+they stop being occasional, that is the signal to move to Groq's Dev tier, and the only change is
+`GROQ_TPM`.
 
 ---
 
-## 2. Run the two SQL migrations  *(blocking: no per-user control without them)*
+## 2. Run the three SQL migrations  *(blocking: no per-user control or limits without them)*
 
 Supabase → SQL Editor → run each file's contents once, in order:
 
 1. `backend/migrations/001-phase0.sql` — run this **if you have not already**. It creates
-   `profiles` and `app_settings`. (It shipped in the last commit; run it if you never did.)
-2. `backend/migrations/002-prelaunch.sql` — new. Adds `sessions.original` and
-   `sessions.act1_mode`, seeds the admin switches, adds two indexes.
+   `profiles` and `app_settings`.
+2. `backend/migrations/002-prelaunch.sql` — adds `sessions.original` and `sessions.act1_mode`,
+   seeds the admin switches, adds two indexes.
+3. `backend/migrations/003-analyses-allowance.sql` — **new**. Adds the 3-conversation trial
+   allowance (`profiles.analyses_quota` / `analyses_used`) and backfills the counter from sessions
+   already on record, so the cap starts out honest instead of handing existing testers a clean
+   slate.
 
-Both are guarded and safe to re-run. The backend degrades gracefully if they have not run (quotas
-simply go unenforced), so it will not crash at you — it will just quietly not work.
+All three are guarded and safe to re-run. The backend degrades gracefully if they have not run
+(quotas simply go unenforced), so it will not crash at you — it will just quietly not limit
+anyone, which during a trial is the expensive kind of quiet.
 
 ---
 
@@ -90,7 +106,26 @@ failure is silent, which is exactly the kind of thing that eats the first day of
 
 ---
 
-## 6. Decide the guest switch before you invite anyone
+## 6. The trial allowance
+
+Every new sign-up gets **3 conversations**, total — not per month, not per day. Guests get 3 per
+day. The app says how many are left above the Analyse button and disables it at zero, rather than
+letting someone type out an argument and then refusing it.
+
+- **Raise it for one person**: Admin → People → their row → Conversations → Save.
+- **Give someone a clean slate**: Reset count.
+- **Change it for everyone who signs up next**: Admin → Metrics → Settings → *Conversations per
+  new account*. This does not touch people who already signed up, by design.
+- **Watch whether 3 is right**: the *Used all 3* tile on Metrics. If most testers hit it and ask
+  for more, the number is too low and the product is working. If nobody reaches 3, the number is
+  not your problem.
+
+A failed analysis never costs an allowance: it is charged only after a report is successfully
+produced.
+
+---
+
+## 7. Decide the guest switch before you invite anyone
 
 Admin console → Metrics → Settings → **Guest access**.
 
@@ -100,7 +135,7 @@ which is the only data this trial exists to collect.
 
 ---
 
-## 7. Run the act-1 A/B
+## 8. Run the act-1 A/B
 
 The walk-through now opens by replaying the real conversation. Three ways to deliver it are built
 and switchable:
@@ -127,16 +162,17 @@ When one wins, tell me and I will delete the other two paths.
 
 ---
 
-## 8. Things I could not verify from here
+## 9. Things I could not verify from here
 
-- I could not run a real analysis end to end, because the Groq key is dead. The request path,
-  auth, quotas, caps and error handling are tested; the **shape of a real Groq response against
-  the new strict schema is not**. First thing to do after step 1 is run one analysis and check
-  that the report and both replay tracks populate.
+- **Now verified** with your new key: real analyses run end to end, act-1 lines come back
+  verbatim from the transcript, speakers and genders map correctly, scripts are in Hinglish with
+  no name prefix, the 3-conversation cap refuses the fourth attempt, and a refusal costs nothing.
 - I could not test `real_audio` against a real recording, because that needs Deepgram turn
   timings from a live transcription. The matcher declines rather than guesses (it needs half the
   content words of a line to match a turn), and falls back to `voiced` if fewer than half the
   lines match, so the worst realistic case is that it quietly behaves like `voiced`.
+- I could not test the signed-in exhaustion message specifically, only the guest one, because that
+  needs a real Supabase session. Both take the same code path and differ only in wording.
 - SMTP, Render env vars and the Supabase dashboard are all yours.
 
 ---

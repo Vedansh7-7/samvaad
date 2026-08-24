@@ -516,6 +516,7 @@
       </div>
       <div class="consent" id="consentBox"><input type="checkbox" id="consentChk"><label for="consentChk">This includes another person. I confirm I have their consent to analyse it.</label></div>
       <div class="row"><button class="btn" id="goBtn">Analyse with care</button></div>
+      <p class="hint" id="allowLine" style="text-align:center;margin:10px 0 0"></p>
       <div class="err" id="errBox"></div>
     </section>
 
@@ -667,13 +668,31 @@ syncMode();
    /api/me carries three things the UI cannot know on its own: whether "Just me" is open for this
    account, which act-1 replay variant they are in, and the REAL input ceiling (which is set by the
    Groq plan's tokens-per-minute, so it must never be hardcoded in the copy). */
-S.me={act1:'voiced',selfMode:false,limits:{maxChars:11180,maxWords:2032,maxMinutes:13,maxAudioSeconds:858}};
+S.me={act1:'voiced',selfMode:false,allowance:null,limits:{maxChars:11310,maxWords:2056,maxMinutes:13,maxAudioSeconds:858}};
+/* How many conversations this account has left. Stated plainly and up front rather than sprung on
+   someone after they have typed out an argument: three is a small number and they should be able
+   to spend it deliberately. */
+function renderAllowance(){
+  var el=$('allowLine'),a=S.me&&S.me.allowance;
+  if(!el)return;
+  if(!a||a.left===null||a.quota===null){el.textContent='';return;}
+  var go=$('goBtn');
+  if(a.left<=0){
+    el.innerHTML='<b style="color:var(--risk)">'+(a.perDay?'That is your three for today.':'You have used all '+a.quota+' of your trial conversations.')+'</b> '
+      +(a.perDay?'Sign in and your reflections start being saved, too.':'Message us and we will open up more.');
+    if(go){go.disabled=true;go.style.opacity='.55';go.style.cursor='not-allowed';}
+    return;
+  }
+  if(go){go.disabled=false;go.style.opacity='';go.style.cursor='';}
+  el.textContent=a.left+' of '+a.quota+' conversations left'+(a.perDay?' today':'')+'.';
+}
 function applyMe(){
   var self=!!S.me.selfMode;
   ['intentSelf','checkinTile','modeBar'].forEach(function(id){var el=$(id);if(el)el.classList.toggle('hide',!self);});
   var lim=S.me.limits||{};
   if(lim.maxChars){var ta=$('transcript');if(ta)ta.setAttribute('maxlength',lim.maxChars);}
   updateCount();
+  renderAllowance();
   var h=$('taHint');
   if(h&&lim.maxMinutes)h.innerHTML='Format each line as <code>Name: what they said</code>. Hinglish and Devanagari welcome. We can read up to about '+lim.maxMinutes+' minutes of conversation at a time.';
   var d=$('drop');
@@ -685,7 +704,7 @@ async function loadMe(){
     var r=await fetch(be()+'/api/me',{headers:beHeaders()});
     if(!r.ok)return;
     var d=await r.json();
-    S.me={act1:d.act1||'voiced',selfMode:!!d.selfMode,limits:d.limits||S.me.limits,status:d.status,quota:d.quota,phone:d.phone||null};
+    S.me={act1:d.act1||'voiced',selfMode:!!d.selfMode,limits:d.limits||S.me.limits,status:d.status,quota:d.quota,allowance:d.allowance||null,phone:d.phone||null};
     // A suspended account should find out here, not after typing out a painful conversation.
     if(d.status==='suspended')showErr('This account is paused. Please reach out to us and we will sort it out.');
     applyMe();
@@ -785,6 +804,7 @@ async function run(){
     if(!transcript||transcript.length<15)throw new Error('Need a little more to work with.');
     setProc(1);var data=await analyse(transcript,a,b);
     S.report=data;S.improved=data.improved||[];S.original=data.original||[];
+    if(data.allowance){S.me.allowance=data.allowance;renderAllowance();}
     S.sessions.unshift({ts:Date.now(),mode:S.mode,sub:S.sub,a:a,b:b,overall:(data.scores||{}).overall||0,pattern:(data.patterns&&data.patterns[0])?data.patterns[0].title:'—',full:data,local:true});
     saveWhatsApp();   // fire and forget: links the number to the account, never blocks the report
     showWalkPrompt(a,b);
@@ -804,7 +824,17 @@ function toB64(f){return new Promise(function(res,rej){var r=new FileReader();r.
 async function analyse(transcript,a,b){
   var r=await fetch(be()+'/api/analyze',{method:'POST',headers:beHeaders(),body:JSON.stringify({transcript:transcript,mode:S.mode,submode:S.sub,nameA:a,nameB:b,source:S.tab==='up'?'audio':'text',consent:S.sub==='couple'?'both_partners':'self_only'})});
   if(r.status===401)return authLapsed();
-  var d=await r.json();if(!r.ok)throw new Error(d.error||'Analysis failed');
+  var d=await r.json();
+  // Out of conversations: not an error, a boundary. Update the counter so the page reflects it.
+  if(r.status===429&&d.code==='analyses_exhausted'){
+    if(S.me.allowance){S.me.allowance.left=0;renderAllowance();}
+    else{S.me.allowance={quota:3,used:3,left:0,perDay:SamvaadAuth.isGuest()};renderAllowance();}
+    throw new Error(d.error||'You have used your trial conversations.');
+  }
+  // The free tier's per-minute budget is momentarily spoken for. Nothing was spent, nothing is
+  // broken, and saying so is kinder than "Analysis failed".
+  if(r.status===503)throw new Error(d.error||'A few conversations are being read right now. Give it a minute and try again.');
+  if(!r.ok)throw new Error(d.error||'Analysis failed');
   if(d.truncated&&!S._trunc)S._trunc={kept:d.wordsKept,total:d.wordsTotal};
   setProc(2);return d;
 }
