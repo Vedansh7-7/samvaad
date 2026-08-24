@@ -15,7 +15,7 @@ patterns, strengths, verbatim "scripts") plus an **intervene layer** (guided bre
 → a voiced, animated avatar replay of a kinder version). Three intents: **Us two** (couple,
 consent required), **A relationship** (solo), **Just me** (self/introspection, reframed as
 "say these out loud" affirmations with a companion, Sathi). Hinglish + Devanagari first-class.
-Wellness framing, never diagnosis. India / DPDP posture throughout.
+Wellness framing throughout. India / DPDP posture throughout.
 
 Strategic thesis (from `ROADMAP.md`, still correct): the product is feature-rich; the open
 question is **whether strangers will pay and return**. Everything should be judged against that.

@@ -83,8 +83,11 @@ The browser must never hold provider secrets. The proxy is the key fix vs. the e
 ## Compliance posture (India DPDP Act 2023 + 2025 Rules)
 Consent-first; purpose limitation; auto-delete raw audio after transcription; two-party
 consent for couple recordings; no under-18 without parental consent; RLS everywhere; Mumbai
-data residency. Keep all framing as **wellness awareness, not medical diagnosis**. Voice
-biomarker KPIs (pitch/jitter/rate) are staged for later, not implemented.
+data residency. Samvaad is a **wellness product** and the copy should simply read as one.
+Do NOT write explicit "not medical" / "not a diagnosis" disclaimers into the product: naming the
+thing you are not invites the comparison and reads defensively. Say what it is — gentler, calmer,
+private — and let that carry it. Voice biomarker KPIs (pitch/jitter/rate) are staged for later,
+not implemented.
 
 ## Next steps (suggested order)
 1. `cd backend && npm install`, copy `.env.example` → `.env`, fill keys, `npm start`.

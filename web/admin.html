@@ -92,6 +92,13 @@
   .pill.limited{background:rgba(184,130,60,.18);color:var(--warn)}
   .pill.suspended{background:rgba(192,70,60,.16);color:var(--risk)}
   .pill.out{background:rgba(158,39,64,.12);color:var(--accent-ink)}
+  .setup{padding:20px;margin-bottom:16px;border:1px solid var(--risk);background:rgba(255,255,255,.62)}
+  .setup h3{color:var(--risk)}
+  .setup code{background:rgba(46,32,36,.07);padding:2px 6px;border-radius:6px;font-size:12.5px}
+  .setup ol{margin:10px 0 0;padding-left:20px;font-size:13.5px}
+  .setup li{margin-bottom:4px}
+  .setup .miss{font-size:13px;color:var(--muted);margin-top:10px}
+  .okline{font-size:13px;color:var(--good);font-weight:700;margin:0 0 14px}
   .saved{font-size:12px;font-weight:700;color:var(--good);opacity:0;transition:opacity .2s}
   .saved.on{opacity:1}
   .switch{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--hair)}
@@ -116,7 +123,7 @@
 
   <div id="content"><div class="glass gate"><p class="note">Loading…</p></div></div>
 
-  <footer>Internal · read live from your backend. Wellness awareness, not medical diagnosis.</footer>
+  <footer>Internal · read live from your backend.</footer>
 </div>
 
 <script>
@@ -124,7 +131,7 @@
   var $ = function(id){ return document.getElementById(id); };
   var content = $('content');
   var TAB = 'metrics';
-  var DATA = { kpis:null, nudges:null, users:null, settings:null };
+  var DATA = { kpis:null, nudges:null, users:null, settings:null, schema:null };
 
   function esc(s){ s=(s==null?'':String(s)); return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function gate(html){ $('tabs').classList.add('hide'); content.innerHTML = '<div class="glass gate">'+html+'</div>'; }
@@ -152,13 +159,14 @@
         fetch(BACKEND_URL + '/api/admin/kpis',     { headers: h }),
         fetch(BACKEND_URL + '/api/admin/nudges',   { headers: h }),
         fetch(BACKEND_URL + '/api/admin/users',    { headers: h }),
-        fetch(BACKEND_URL + '/api/admin/settings', { headers: h })
+        fetch(BACKEND_URL + '/api/admin/settings', { headers: h }),
+        fetch(BACKEND_URL + '/api/admin/schema',   { headers: h })
       ]);
       if(res.some(function(r){ return r.status === 403; })){
         return gate('<h2 class="serif">Not an admin</h2><p class="note">This account isn’t in the backend allowlist (<code>ADMIN_USER_IDS</code>). Ask the owner to add your Supabase user id.</p>');
       }
       var out = await Promise.all(res.map(function(r){ return r.json(); }));
-      DATA.kpis = out[0]; DATA.nudges = out[1]; DATA.users = out[2]; DATA.settings = out[3];
+      DATA.kpis = out[0]; DATA.nudges = out[1]; DATA.users = out[2]; DATA.settings = out[3]; DATA.schema = out[4];
       $('tabs').classList.remove('hide');
       render();
     }catch(e){
@@ -167,6 +175,31 @@
   }
 
   function render(){ TAB === 'people' ? renderPeople() : renderMetrics(); }
+
+  /* The database is the one dependency the console cannot paper over. Lead with it: a missing
+     migration used to show up only as a browser alert full of PostgREST jargon, on a page that
+     had already rendered convincing-looking defaults. */
+  function schemaBanner(){
+    var sc = DATA.schema;
+    if(!sc) return '';
+    if(sc.configured === false){
+      return '<div class="glass sec setup"><h3>Backend has no database keys</h3>'
+        + '<p class="note">Set <code>SUPABASE_URL</code> and <code>SUPABASE_SERVICE_KEY</code> on Render. Nothing is being saved right now.</p></div>';
+    }
+    if(sc.ok) return '';
+    var bits = [];
+    (sc.missingTables || []).forEach(function(t){ bits.push('<li>table <code>'+esc(t)+'</code> is missing</li>'); });
+    (sc.missingColumns || []).forEach(function(m){ bits.push('<li><code>'+esc(m.table)+'</code> is missing: '+esc((m.columns||[]).join(', '))+'</li>'); });
+    return '<div class="glass sec setup"><h3>Your database is behind the app</h3>'
+      + '<p class="note">Until this is fixed, limits are not enforced, per-user settings cannot be saved, and the replay loses its speaker map.</p>'
+      + '<ol>'
+      + '<li>Open Supabase → <b>SQL Editor</b> → New query.</li>'
+      + '<li>Paste all of <code>backend/migrations/000-bring-schema-current.sql</code> and press Run.</li>'
+      + '<li>Come back and hit <b>Refresh</b>. This banner disappears.</li>'
+      + '</ol>'
+      + '<div class="miss"><b>What is missing right now:</b><ul>' + bits.join('') + '</ul></div>'
+      + '</div>';
+  }
 
   /* ---------------- Metrics ---------------- */
   function kpi(lab, val, hint, hero){
@@ -203,6 +236,17 @@
       + '<p class="note" style="margin-top:12px">Pin one account to a variant on the <b>People</b> tab, or change the default for everyone in Settings below.</p>'
       + '</div>';
 
+    var intro = k.intro || {};
+    html += '<div class="glass sec"><h3>The intro</h3>'
+      + '<p class="sub">Whether the opening film is earning its place, and whether the voice-over is actually being heard.</p>'
+      + '<div class="grid" style="margin:0">'
+      + kpi('Started', intro.started||0, 'people who saw it')
+      + kpi('Watched to the end', intro.completed||0, intro.completionRate==null?'—':intro.completionRate+'% of starts')
+      + kpi('Skipped', intro.skipped||0, intro.avgSceneOnSkip==null?'—':'average scene '+intro.avgSceneOnSkip)
+      + kpi('Voice blocked', intro.audioBlocked||0, 'browser refused autoplay')
+      + kpi('Muted it', intro.muted||0, 'chose silence')
+      + '</div></div>';
+
     html += '<div class="glass sec"><h3>Accounts</h3><div class="grid" style="margin:10px 0 0">'
       + kpi('Active', acc.active||0, '')
       + kpi('Limited', acc.limited||0, '')
@@ -221,7 +265,9 @@
       + '</div>';
 
     html += nudgeSection();
-    content.innerHTML = voiceBanner(k.voice||{}) + html;
+    content.innerHTML = schemaBanner() + voiceBanner(k.voice||{})
+      + (DATA.schema && DATA.schema.ok ? '<p class="okline">Database is up to date.</p>' : '')
+      + html;
     wireSettings();
   }
 
@@ -324,8 +370,8 @@
   /* ---------------- People ---------------- */
   function renderPeople(){
     var users = (DATA.users && DATA.users.users) || [];
-    if(!users.length){ content.innerHTML = '<div class="glass sec"><div class="empty">No accounts yet.</div></div>'; return; }
-    content.innerHTML = '<div class="glass sec"><h3>People · '+users.length+'</h3>'
+    if(!users.length){ content.innerHTML = schemaBanner() + '<div class="glass sec"><div class="empty">No accounts yet.</div></div>'; return; }
+    content.innerHTML = schemaBanner() + '<div class="glass sec"><h3>People · '+users.length+'</h3>'
       + '<p class="sub">Pause someone, raise their limit, or pin them to one act-1 variant. Changes apply on their next request; nothing here needs a deploy.</p>'
       + users.map(personRow).join('')
       + '</div>';

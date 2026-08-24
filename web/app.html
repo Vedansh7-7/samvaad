@@ -753,6 +753,7 @@ function setFile(f){
     // Kept, not revoked: the "real audio" act-1 variant plays this very file back during the
     // walk-through. releaseAudio() cleans it up when the session is replaced.
     releaseAudio();S.audioURL=u;S.audioSeconds=probe.duration;
+    S._tr=null;S._trFile=null;              // new file, so any cached transcript is stale
     $('fileName').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB'+(isFinite(mins)?' · '+Math.round(mins)+' min':'');
   };
   probe.onerror=function(){URL.revokeObjectURL(u);S.audioFile=f;S.audioURL=null;$('fileName').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB';};
@@ -800,7 +801,15 @@ async function run(){
     await ensureGuestToken();   // guests need a signed token before any paid endpoint will answer
     var transcript=(S.tab==='text')?$('transcript').value.trim():(S.tab==='rec')?S.recT.trim():null;
     screen('proc');setProc(0);
-    if(S.tab==='up'){if(!S.audioFile)throw new Error('Choose an audio file first.');transcript=await transcribe(a,b);}
+    if(S.tab==='up'){
+      if(!S.audioFile)throw new Error('Choose an audio file first.');
+      if(!(S._tr&&S._trFile===S.audioFile))setProc(0);
+      // Reuse a transcript we already paid Deepgram for. If the ANALYSIS fails — the per-minute
+      // budget being momentarily full is the common one — pressing Analyse again should not
+      // re-transcribe the same file, cost the credit twice and make the person wait twice.
+      if(S._tr&&S._trFile===S.audioFile){transcript=S._tr;}
+      else{transcript=await transcribe(a,b);S._tr=transcript;S._trFile=S.audioFile;}
+    }
     if(!transcript||transcript.length<15)throw new Error('Need a little more to work with.');
     setProc(1);var data=await analyse(transcript,a,b);
     S.report=data;S.improved=data.improved||[];S.original=data.original||[];
@@ -833,7 +842,10 @@ async function analyse(transcript,a,b){
   }
   // The free tier's per-minute budget is momentarily spoken for. Nothing was spent, nothing is
   // broken, and saying so is kinder than "Analysis failed".
-  if(r.status===503)throw new Error(d.error||'A few conversations are being read right now. Give it a minute and try again.');
+  if(r.status===503){
+    var extra=(S.tab==='up'&&S._tr)?' Your recording is still here — just press Analyse again.':'';
+    throw new Error((d.error||'A few conversations are being read right now.')+extra);
+  }
   if(!r.ok)throw new Error(d.error||'Analysis failed');
   if(d.truncated&&!S._trunc)S._trunc={kept:d.wordsKept,total:d.wordsTotal};
   setProc(2);return d;
@@ -928,7 +940,7 @@ function renderResults(a,b){
   // signals
   var k=r.kpis||{},kp=[];if(k.talk_balance)kp.push('Talk balance <b>'+esc(k.talk_balance)+'</b>');if(k.question_ratio)kp.push('Questions <b>'+esc(k.question_ratio)+'</b>');if(k.repair_attempts!=null)kp.push('Repair attempts <b>'+esc(k.repair_attempts)+'</b>');if(k.self_reference)kp.push('Self-reference <b>'+esc(k.self_reference)+'</b>');
   var sig='<div class="chips">'+[scoreChip('Connection',sc.connection),scoreChip('Empathy',sc.empathy),scoreChip('Escalation',sc.escalation_risk,'escalation_risk')].join('')+kp.map(function(x){return '<span class="chip">'+x+'</span>';}).join('')+'</div>';
-  cards.push('<div class="glass section"><h3>Signals</h3>'+sig+'<p class="hint">Awareness, not diagnosis. Voice pitch &amp; pace KPIs arrive with audio analysis.</p></div>');
+  cards.push('<div class="glass section"><h3>Signals</h3>'+sig+'<p class="hint">Gentle signals to notice. Voice pitch &amp; pace arrive with audio analysis.</p></div>');
 
   // strengths always; "Watch for" only when there are genuine patterns (no forced negatives)
   var st=(r.strengths||[]).map(function(s){return '<div class="item good"><span class="t dv">'+esc(s.title)+'</span> <span class="who">'+esc(s.who||'')+'</span><div class="d dv">'+esc(s.detail||'')+'</div></div>';}).join('')||'<p class="hint">—</p>';

@@ -193,7 +193,8 @@ before publication — not written from memory.**
 
 The honest caveat, stated in the doc and reflected in app copy: these instruments were validated on
 mostly Western couples, coded from video by trained humans. Applying them to Hinglish text is an
-*adaptation*, not a validated clinical measure. Copy must never imply diagnosis. Guardrails: refuse
+*adaptation*, not a validated clinical measure. Copy stays everyday and non-clinical, and never carries a disclaimer denying it is medical.
+Guardrails: refuse
 to score inputs under 10 turns (say why); never score a single speaker in Relationship Analysis;
 surface a low-confidence flag when the transcript is short or badly diarized.
 **Done-when:** `docs/SCORING.md` exists with verified citations; the app shows the method to any

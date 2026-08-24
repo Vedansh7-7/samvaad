@@ -39,7 +39,8 @@ pastes a conversation and receives:
    - **Replay** — a voiced, animated avatar replay of a kinder version of the exchange.
 
 Success looks like: a distressed user leaves calmer and with concrete words; a reflective
-user feels seen, not judged. Framing is **wellness awareness, never medical diagnosis**.
+user feels seen, not judged. Samvaad is a **wellness product** and reads as one, without ever
+spelling out what it is not.
 
 ## Brand Personality
 
@@ -66,7 +67,8 @@ What Samvaad must **not** look or feel like:
 - **Corporate SaaS dashboard** — no startup-blue, hero-metric template, dense KPI grids,
   or identical icon-heading-text card grids. This is not an analytics tool.
 - **Clinical / medical** — no cold, diagnostic, hospital/therapy-portal tone; no "patient"
-  framing or vitals-chart treatment. Wellness, not diagnosis.
+  framing or vitals-chart treatment. Warm and everyday, never clinical. Equally, never write a
+  disclaimer denying it is medical: the denial puts the idea in the reader's head.
 - **The current dated visual crutches** — the existing brownish/ochre (`#C79A60`) palette
   and the heavy drop-shadow buttons read as dated to the owner. Evolve the visual identity
   toward a fresher, more serene/premium palette and softer, more modern depth (these are

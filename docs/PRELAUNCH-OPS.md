@@ -59,22 +59,35 @@ they stop being occasional, that is the signal to move to Groq's Dev tier, and t
 
 ---
 
-## 2. Run the three SQL migrations  *(blocking: no per-user control or limits without them)*
+## 2. Run ONE SQL file  *(this is the thing currently breaking your admin console)*
 
-Supabase → SQL Editor → run each file's contents once, in order:
+Verified against your live database on 2026-08-25: `profiles` and `app_settings` **do not exist**,
+`sessions` is missing `original`, `speakers`, `truncated` and `act1_mode`, and `founding_members`
+is still there. That is the whole explanation for
+*"Could not find the table 'public.profiles' in the schema cache"*.
 
-1. `backend/migrations/001-phase0.sql` — run this **if you have not already**. It creates
-   `profiles` and `app_settings`.
-2. `backend/migrations/002-prelaunch.sql` — adds `sessions.original` and `sessions.act1_mode`,
-   seeds the admin switches, adds two indexes.
-3. `backend/migrations/003-analyses-allowance.sql` — **new**. Adds the 3-conversation trial
-   allowance (`profiles.analyses_quota` / `analyses_used`) and backfills the counter from sessions
-   already on record, so the cap starts out honest instead of handing existing testers a clean
-   slate.
+The three-migration sequence is replaced by one idempotent file. Run it once:
 
-All three are guarded and safe to re-run. The backend degrades gracefully if they have not run
-(quotas simply go unenforced), so it will not crash at you — it will just quietly not limit
-anyone, which during a trial is the expensive kind of quiet.
+1. Open **https://supabase.com/dashboard/project/bwcszkbtvbvwzioycxxp/sql/new**
+2. Paste all of **`backend/migrations/000-bring-schema-current.sql`**
+3. Press **Run**
+
+It is safe on a fresh database, safe on a half-migrated one, and safe to run twice. Its last line
+is `notify pgrst, 'reload schema'`, which is what clears the "schema cache" error without waiting
+or restarting anything. (001, 002 and 003 stay in the folder as history. You do not need them.)
+
+**Check it worked, without guessing:**
+
+```bash
+cd backend && npm run schema:check
+```
+
+It prints every table and column and tells you if anything is still missing. The admin console
+shows the same thing as a banner at the top of both tabs, so a missing migration can never again
+present itself as a cryptic alert on a page full of plausible-looking defaults.
+
+Nothing below works properly until this is done: limits go unenforced, per-user settings cannot be
+saved, the replay loses its speaker map, and the intro funnel records nothing.
 
 ---
 
@@ -162,7 +175,58 @@ When one wins, tell me and I will delete the other two paths.
 
 ---
 
-## 9. Things I could not verify from here
+## 9. Run the funnel test
+
+```bash
+cd backend
+npm start                 # in one terminal
+npm run funnel            # in another
+```
+
+It walks the whole path a trial user takes and prints a pass/fail line for each step: the public
+config, intro events, every money endpoint refusing without a principal, every admin endpoint
+refusing without the allowlist, a guest token, the account's limits, a **real** analysis through
+Groq, the shape of what comes back (scores in range, names honoured, emotions the rigs can wear,
+act-1 lines verbatim from the transcript, both people speaking), the allowance ticking down,
+feedback, history, and the database itself.
+
+Add `--full` to also drive an account to its limit and confirm the refusal. That one waits out the
+tokens-per-minute window between calls, so it takes a few minutes.
+
+Last run against a local backend on your live Groq key: **39 passed, 1 failed, 2 skipped**. The
+single failure is the database, which is step 2 above. Point it at production with
+`npm run funnel https://samvaad-backend-gyk9.onrender.com`.
+
+---
+
+## 10. The intro
+
+`web/intro.html` is now the two official Rive rigs introducing the product themselves. Whoever is
+speaking is lip-synced to real ElevenLabs narration; the other one listens. Two narrators, Meera
+and Aarav, alternate across six scenes, about 45 seconds.
+
+**Why it opens on a poster with a play button.** Browsers refuse to autoplay audio without a
+gesture. Starting the film automatically would mean a large share of your audience watching a
+silent movie and never knowing there was a voice. One tap buys the audio for the whole run.
+
+**How skipping and the voice-over are tracked.** Every viewer gets an anonymous id in
+localStorage. The page emits `intro_started`, an `intro_scene` for each scene reached,
+`intro_muted` if they silence it, `intro_audio_blocked` if the browser refuses anyway, and either
+`intro_completed` or `intro_skipped` carrying the scene they left on and the seconds elapsed. The
+leaving events go out with `sendBeacon`, so a skip that navigates away still gets counted.
+Admin → Metrics → **The intro** shows started, watched-to-the-end, skipped with the average scene
+people bail at, blocked and muted. If most people leave on the same scene, that scene is the
+problem and the fix is obvious.
+
+Regenerate the voice-over after editing the script: the lines live in
+`web/audio/intro/script.json`, the audio in `web/audio/intro/*.mp3` (271 KB total, mono 48 kbps).
+
+**Marketing cut:** `docs/media/samvaad-intro.mp4`, 720×1280 vertical, 45.9s, 1.8 MB, recorded from
+`intro.html?film=1` so the clip can never drift from the product it advertises.
+
+---
+
+## 11. Things I could not verify from here
 
 - **Now verified** with your new key: real analyses run end to end, act-1 lines come back
   verbatim from the transcript, speakers and genders map correctly, scripts are in Hinglish with

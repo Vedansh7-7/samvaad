@@ -563,6 +563,49 @@ function capTranscript(text, maxWords = MAX_WORDS, maxChars = Math.min(MAX_CHARS
   return { text: out.join('\n'), truncated: kept < wordsTotal, wordsKept: kept, wordsTotal };
 }
 
+// ---- Events ------------------------------------------------------------------
+// Small, append-only product analytics. Public on purpose: the intro plays BEFORE anyone signs in
+// or even gets a guest token, and an intro funnel you cannot measure is an intro you cannot
+// improve. Guarded instead by a closed list of event names, a hard cap on the payload, and a
+// per-IP rate limit — nothing here is user content and nothing costs money.
+const EVENT_NAMES = new Set([
+  'intro_started', 'intro_scene', 'intro_completed', 'intro_skipped', 'intro_audio_blocked',
+  'intro_muted', 'intro_replayed',
+  'signup_started', 'phone_submitted',
+  'analysis_started', 'analysis_ready', 'analysis_refused',
+  'walkthrough_opened', 'walkthrough_completed', 'act1_played', 'act1_finished',
+  'replay_played', 'breathing_opened', 'feedback_given', 'report_opened'
+]);
+
+app.post('/api/event', async (req, res) => {
+  try {
+    const { name, props = {}, anonId = null } = req.body || {};
+    if (!EVENT_NAMES.has(name)) return res.status(400).json({ error: 'Unknown event.' });
+    const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'anon').split(',')[0].trim();
+    if (!rateLimit('ev:' + ip, 120)) return res.status(429).json({ error: 'Too many events.' });
+    if (!admin) return res.json({ ok: true, stored: false });
+
+    const user = await getUser(req);
+    // Keep the payload small and flat; this table is for counting, not for storing content.
+    const safe = {};
+    for (const [k, v] of Object.entries(props)) {
+      if (Object.keys(safe).length >= 12) break;
+      if (v === null || ['string', 'number', 'boolean'].includes(typeof v)) {
+        safe[String(k).slice(0, 40)] = typeof v === 'string' ? v.slice(0, 200) : v;
+      }
+    }
+    const { error } = await admin.from('events').insert({
+      user_id: user ? user.id : null,
+      anon_id: user ? null : String(anonId || '').slice(0, 64) || null,
+      name, props: safe
+    });
+    if (error && !/schema cache|does not exist/i.test(error.message)) {
+      console.warn('[samvaad] event insert failed:', error.message);
+    }
+    res.json({ ok: true, stored: !error });
+  } catch (e) { res.json({ ok: true, stored: false }); }
+});
+
 // ---- Public config -----------------------------------------------------------
 // The only endpoint that answers without a principal, and it says nothing about anyone: just the
 // switches the pre-login pages need. Without it the admin's "intro animation" toggle would be
@@ -680,7 +723,7 @@ Produce the analysis. Rules:
 
 SCORES are 0-100. Higher is better for connection, empathy and overall; higher escalation_risk means MORE heat.
 
-BE HONEST, NEVER PAD. "patterns" (max 4) and "improvements" (max 3) are for real issues only — if this exchange was healthy, return empty arrays rather than inventing weaknesses. Always surface genuine "strengths" (max 4). Stay neutral and non-blaming. KPIs are short descriptive awareness signals, not diagnoses. ${naming}
+BE HONEST, NEVER PAD. "patterns" (max 4) and "improvements" (max 3) are for real issues only — if this exchange was healthy, return empty arrays rather than inventing weaknesses. Always surface genuine "strengths" (max 4). Stay neutral and non-blaming. KPIs are short, plain-language observations about how the conversation went. ${naming}
 
 "original" (max 8 turns) is the pivotal stretch of the conversation as it ACTUALLY happened — the moment the improvements are responding to. Copy each line VERBATIM from the transcript above; never paraphrase, soften or invent a line. Choose the consecutive turns where the exchange turned, not the opening pleasantries. "emotion" is what that person genuinely sounded like in that moment.
 
@@ -871,6 +914,58 @@ async function requireAdmin(req, res) {
   return u;
 }
 
+// ---- Admin: is the database actually up to date? ----------------------------
+// The failure this replaces: someone opens Admin -> People, taps Save, and gets a browser alert
+// reading "Could not find the table 'public.profiles' in the schema cache". That sentence is true
+// and completely useless. It means a migration was never run, and nothing in the product said so —
+// the page even rendered plausible-looking defaults, because a missing profiles table and a user
+// with no profile row look identical from the outside.
+//
+// So the backend now checks, and the console leads with the answer.
+const SCHEMA_EXPECTED = {
+  sessions: ['id', 'user_id', 'mode', 'submode', 'name_a', 'name_b', 'scores', 'summary', 'patterns',
+             'strengths', 'improvements', 'original', 'improved', 'kpis', 'speakers', 'truncated',
+             'act1_mode', 'created_at'],
+  feedback: ['id', 'user_id', 'session_id', 'asked_at', 'context', 'top_suggestion', 'will_try'],
+  consents: ['id', 'user_id', 'session_id', 'kind', 'attested', 'created_at'],
+  nudge_subscriptions: ['user_id', 'phone', 'display_name', 'cadence', 'consent', 'active'],
+  profiles: ['user_id', 'phone', 'phone_verified', 'display_name', 'status', 'minutes_quota',
+             'minutes_used_month', 'quota_month', 'features', 'analyses_quota', 'analyses_used'],
+  app_settings: ['key', 'value', 'updated_at'],
+  events: ['id', 'user_id', 'anon_id', 'name', 'props', 'created_at']
+};
+
+async function schemaReport() {
+  if (!admin) return { ok: false, configured: false, tables: [], missingTables: [], missingColumns: [] };
+  const tables = [], missingTables = [], missingColumns = [];
+  for (const [table, cols] of Object.entries(SCHEMA_EXPECTED)) {
+    const probe = await admin.from(table).select('*').limit(1);
+    if (probe.error) { missingTables.push(table); tables.push({ table, present: false, missing: cols }); continue; }
+    // PostgREST rejects a select naming a column that does not exist, which is a cheap per-column
+    // existence check without needing rights on information_schema.
+    const missing = [];
+    for (const c of cols) {
+      const r = await admin.from(table).select(c).limit(1);
+      if (r.error) missing.push(c);
+    }
+    if (missing.length) missingColumns.push({ table, columns: missing });
+    tables.push({ table, present: true, missing });
+  }
+  return {
+    ok: !missingTables.length && !missingColumns.length,
+    configured: true,
+    tables, missingTables, missingColumns,
+    fix: 'Run backend/migrations/000-bring-schema-current.sql once in the Supabase SQL editor.'
+  };
+}
+
+app.get('/api/admin/schema', async (req, res) => {
+  try {
+    if (!(await requireAdmin(req, res))) return;
+    res.json(await schemaReport());
+  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+});
+
 // ---- Admin: every account, with the levers attached -------------------------
 // One row per signed-up user: who they are, what they have used, and the state the admin can
 // change. Deliberately assembled here rather than in the browser so admin.html stays a thin view.
@@ -979,12 +1074,15 @@ app.patch('/api/admin/users/:id', async (req, res) => {
     }
     if (Object.keys(patch).length === 1) return res.status(400).json({ error: 'Nothing to change.' });
 
+    const explain = (msg) => /schema cache|does not exist|relation .* does not exist/i.test(msg)
+      ? 'The database is missing the profiles table. Run backend/migrations/000-bring-schema-current.sql once in the Supabase SQL editor, then reload this page.'
+      : msg;
     if (existing) {
       const { error } = await admin.from('profiles').update(patch).eq('user_id', id);
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(explain(error.message));
     } else {
       const { error } = await admin.from('profiles').insert({ user_id: id, minutes_quota: DEFAULT_MINUTES_QUOTA, ...patch });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(explain(error.message));
     }
 
     const { data: after } = await admin.from('profiles').select('*').eq('user_id', id).maybeSingle();
@@ -1038,7 +1136,9 @@ app.patch('/api/admin/settings', async (req, res) => {
     if (!rows.length) return res.status(400).json({ error: 'Nothing to change.' });
 
     const { error } = await admin.from('app_settings').upsert(rows, { onConflict: 'key' });
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(/schema cache|does not exist/i.test(error.message)
+      ? 'The database is missing the app_settings table. Run backend/migrations/000-bring-schema-current.sql once in the Supabase SQL editor, then reload this page.'
+      : error.message);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
 });
@@ -1128,6 +1228,30 @@ app.get('/api/admin/kpis', async (req, res) => {
       e.willTryRate = e.feedback ? Math.round((e.yes / e.feedback) * 100) : null;
     }
 
+    // --- the intro funnel ---
+    // How many people met the animation, how many sat through it, how far the skippers got, and
+    // whether the voice-over actually played (browsers block autoplay audio far more often than
+    // anyone expects, and a silent intro is a different product).
+    let intro = { started: 0, completed: 0, skipped: 0, audioBlocked: 0, muted: 0, completionRate: null, avgSceneOnSkip: null };
+    if (admin) {
+      const ev = await admin.from('events').select('name, props').in('name',
+        ['intro_started', 'intro_completed', 'intro_skipped', 'intro_audio_blocked', 'intro_muted']);
+      if (!ev.error) {
+        const rows = ev.data || [];
+        const count = (n) => rows.filter(r => r.name === n).length;
+        intro.started = count('intro_started');
+        intro.completed = count('intro_completed');
+        intro.skipped = count('intro_skipped');
+        intro.audioBlocked = count('intro_audio_blocked');
+        intro.muted = count('intro_muted');
+        intro.completionRate = intro.started ? Math.round((intro.completed / intro.started) * 100) : null;
+        const skips = rows.filter(r => r.name === 'intro_skipped' && Number.isFinite(Number(r.props?.scene)));
+        intro.avgSceneOnSkip = skips.length
+          ? Math.round((skips.reduce((a, r) => a + Number(r.props.scene), 0) / skips.length) * 10) / 10
+          : null;
+      }
+    }
+
     // --- capacity ---
     const minutesThisMonth = profileRows
       .filter(p => p.quota_month === monthKey())
@@ -1171,6 +1295,8 @@ app.get('/api/admin/kpis', async (req, res) => {
         feedbackGiven: feedbackRows.filter(f => f.will_try).length
       },
       accounts: byStatus,
+      intro,
+      schema: await schemaReport(),
       experiment: exp,
       capacity: { minutesThisMonth, model: await analysisModel(), pinned: !!PINNED_MODEL, tpm: GROQ_TPM, limits: LIMITS },
       voice

@@ -3,8 +3,14 @@
   "version": "0.1.0",
   "type": "module",
   "private": true,
-  "engines": { "node": ">=20.6.0" },
-  "scripts": { "start": "node --env-file-if-exists=.env server.js" },
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "funnel": "node --env-file-if-exists=.env test/funnel.mjs",
+    "schema:check": "node --env-file-if-exists=.env test/schema.mjs"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "cors": "^2.8.5",
