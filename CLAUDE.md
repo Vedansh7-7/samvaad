@@ -1,8 +1,16 @@
 # Samvaad — project context (read me first)
 
-This file is auto-loaded into every Claude Code session in this directory. It is the
-handoff from the chat where Samvaad was designed and prototyped. Treat it as the source
-of truth for decisions already made.
+This file is auto-loaded into every Claude Code session in this directory. It carries the working
+rules and guardrails.
+
+> **Before your first edit, read [`handover/03-DECISIONS.md`](handover/03-DECISIONS.md).**
+> Several things in this codebase look like mistakes and are not — each was learned by something
+> breaking against a live API, and changing one back costs roughly a day. The full pack lives in
+> [`handover/`](handover/README.md): architecture, runbook, decisions, current state, what is next,
+> and the account transfer checklist.
+>
+> Verification is `cd backend && npm run schema:check && npm run funnel && npm run funnel:signed-in`.
+> There is no build step and no test framework; those three commands hit the real APIs.
 
 ## What Samvaad is
 A wellness-leaning web app for the Indian market (Hinglish + Devanagari) that helps people
