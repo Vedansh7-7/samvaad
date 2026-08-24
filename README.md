@@ -27,6 +27,6 @@ Then in `web/app.html` → Settings → set **Backend URL** to your backend orig
 - Supabase — already provisioned (free). Only the service_role key must be copied from the dashboard.
 - Deepgram — $200 one-time credit (audio → text).
 - ElevenLabs — 10k chars/month free (voices); key scoped to Text-to-Speech only.
-- Anthropic — ~$5 trial credit (analysis); model `claude-sonnet-4-6`.
+- Groq — free tier (analysis); model `openai/gpt-oss-120b`, set via `GROQ_MODEL`.
 
 Never commit `.env`. It is git-ignored.

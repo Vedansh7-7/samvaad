@@ -39,8 +39,11 @@ Browser (static HTML) → **Node/Express backend proxy** (holds ALL secrets) →
 The browser must never hold provider secrets. The proxy is the key fix vs. the early demo.
 
 - **STT (audio → text):** Deepgram `nova-2`, `diarize=true`. (One-time $200 credit.)
-- **Analysis brain:** Claude API, model string **`claude-sonnet-4-6`**. Two-step call:
-  (1) report JSON, (2) improved-conversation JSON — split to avoid truncation.
+- **Analysis brain:** Groq, model string **`openai/gpt-oss-120b`** (env `GROQ_MODEL`).
+  ONE call returning strict `json_schema` structured output. It used to be two calls (report,
+  then improved conversation) split to avoid truncation; strict schemas removed that risk, and
+  merging them doubled the transcript we can fit inside Groq's tokens-per-minute limit.
+  History: `llama-3.3-70b-versatile` was decommissioned by Groq in Aug 2026.
 - **TTS (voices):** ElevenLabs `eleven_multilingual_v2` (good Hindi/Indian voices). Use a
   key **scoped to Text-to-Speech only**, with a monthly character cap, sent via `xi-api-key`
   header, server-side only. Free tier = 10k chars/mo (no PAYG overage until Starter $5/mo).
@@ -85,7 +88,7 @@ biomarker KPIs (pitch/jitter/rate) are staged for later, not implemented.
 
 ## Next steps (suggested order)
 1. `cd backend && npm install`, copy `.env.example` → `.env`, fill keys, `npm start`.
-2. Create the free accounts: Deepgram, ElevenLabs, Anthropic (each has a no-card free start).
+2. Create the free accounts: Deepgram, ElevenLabs, Groq (each has a no-card free start).
 3. Wire **login → app** handoff (pass the Supabase session to `app.html`; gate on auth).
 4. In the Supabase dashboard: create the private `audio` bucket; configure auth email
    (SMTP + `{{ .Token }}` template).
@@ -156,9 +159,44 @@ only so the proxy wiring resolves) — never re-surface API-key fields to users.
 custom SMTP (Gmail app password) is set — demo via "Continue as guest". `.claude/settings.json` sets
 `worktree.bgIsolation:none` so background agents edit this checkout directly (not a worktree).
 
+## Pre-launch trial state (2026-08-24) — read this before touching the app
+The product is being taken to a small invited cohort. `docs/PRELAUNCH-OPS.md` is the live handover:
+what is done, and the dashboard steps only the founder can do. `docs/STATE-OF-PLAY.md` still
+describes the architecture accurately; its findings 4.1 (dashboard amnesia), 4.2 (model drift) and
+4.6 (feedback insert) are now fixed.
+
+Decisions taken with the founder on 2026-08-24:
+- **One mode.** "Relationship", always a two-person exchange (both names + consent). The three
+  intent cards are gone. **"Just me" is kept, not deleted** — it is hidden behind
+  `app_settings.self_reflection_enabled` / `profiles.features.self_reflection` and comes back
+  through the same wiring. Do not remove its code.
+- **Groq, staying on free** for now. See the guardrails below for what that costs us.
+- **Act 1 of the walk-through replays the real conversation** before any judgement. Three
+  deliveries (`voiced`, `real_audio`, `silent`) are live at once and being A/B'd per account from
+  the admin console; the losers get deleted once the founder picks. `sessions.act1_mode` records
+  which variant each session ran under.
+- **An animated intro** (`web/intro.html`) precedes the login page for first-time visitors.
+  CSS/SVG, not an MP4, so there is nothing to host or buffer. Swappable for a real film later.
+- **Two sides.** Admin (`web/admin.html`) = Metrics + People, with pause/suspend/extend/reset and
+  per-user feature pinning. It is unlinked by design; `ADMIN_USER_IDS` gates it.
+- Phone (WhatsApp) is the account key: `profiles.phone`, unique, saved via `/api/profile/phone`.
+
+Walk-through order is now deliberate and should not be shuffled: score → breathe (if it was hot)
+→ **the real conversation played back** → what went wrong → what to say instead → what you did
+well → the kinder version → daily check-in. Breathing is reachable from every slide.
+
+Migrations `backend/migrations/001-phase0.sql` and `002-prelaunch.sql` must both be run by hand in
+the Supabase SQL editor. The backend degrades to unmetered rather than failing if they have not,
+so a missing migration looks like "quotas do nothing", not like an error.
+
 ## Guardrails for the agent
 - NEVER commit secrets. Keys live in `backend/.env` (git-ignored). The publishable/anon
   Supabase key is public by design and may appear in frontend code; the service_role key
   must not.
-- Keep the model string `claude-sonnet-4-6` unless deliberately upgrading.
+- The analysis model is `GROQ_MODEL` (default `openai/gpt-oss-120b`). Change it in the
+  environment, never in code. Groq retires models on a schedule: when analysis starts failing,
+  check https://console.groq.com/docs/deprecations before debugging anything else.
+- `GROQ_TPM` is the single knob that sets how long a conversation the product accepts. Free tier
+  is 8,000, which works out to about 13 minutes. Never hardcode a minute figure in user copy —
+  it comes from `/api/me`.
 - Preserve the design system above; don't replace the aesthetic.

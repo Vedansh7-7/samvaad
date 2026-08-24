@@ -257,6 +257,28 @@
   .slides.show{display:grid}
   .slide-card{position:relative;width:min(560px,95vw);max-height:92vh;overflow:auto;padding:30px 26px 22px}
   .slide-x{position:absolute;top:12px;right:14px;border:none;background:none;font-size:20px;color:var(--muted);cursor:pointer;line-height:1}
+  .slide-breathe{position:absolute;top:10px;left:14px;display:inline-flex;align-items:center;gap:6px;padding:6px 11px 6px 9px;border-radius:999px;border:1px solid var(--glass-brd);background:var(--accent-soft);color:var(--accent-ink);font:inherit;font-size:12px;font-weight:700;cursor:pointer;line-height:1;transition:transform .18s,box-shadow .18s}
+  .slide-breathe:hover,.slide-breathe:focus-visible{transform:translateY(-1px);box-shadow:0 10px 20px -14px rgba(70,30,45,.6);outline:none}
+  .slide-breathe svg{flex:0 0 auto}
+  /* The stage was sized for the full-width report card. Inside a walk-through slide the card is
+     capped at 92vh, so at 470px the scene pushed the transport controls below the fold — a player
+     whose play button you have to scroll to find. Compact it here only; the report card keeps the
+     roomier original. */
+  .slide-body .stage{margin-top:4px}
+  .slide-body .scene{height:min(300px,38vh)}
+  .slide-body .bubbles{max-height:min(120px,16vh)}
+  .slide-body .ctrls{padding:10px 14px 12px}
+  /* The 1.4x rig zoom fills a 470px scene; in a 300px one it crops the heads off. Pull the zoom
+     back and shrink the rig to match, so the compact stage still frames both faces. */
+  .slide-body .rvc{height:250px;transform:scale(1.06)}
+  .slide-body .rvc.flip{transform:scaleX(-1) scale(1.06)}
+  .slide-body .ch{width:210px}
+  @media (max-height:760px){
+    .slide-body .scene{height:min(230px,32vh)}
+    .slide-body .bubbles{max-height:92px}
+    .slide-body .rvc{height:200px;transform:scale(1)}
+    .slide-body .rvc.flip{transform:scaleX(-1) scale(1)}
+  }
   .slide-dots{display:flex;gap:6px;justify-content:center;margin:2px 0 18px}
   .slide-dots i{width:7px;height:7px;border-radius:50%;background:var(--hair);transition:.3s}
   .slide-dots i.on{background:var(--accent);width:20px;border-radius:99px}
@@ -324,8 +346,14 @@
   .sec-h{display:flex;align-items:baseline;justify-content:space-between;font-family:'Fraunces',serif;font-weight:500;font-size:16.5px;margin:20px 2px 10px}
   .sec-h a{font-family:'Mulish',sans-serif;font-size:13px;font-weight:600;color:var(--accent-ink);text-decoration:none;cursor:pointer}
 
-  .intent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-  .intent{display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:104px;border:1px solid var(--glass-brd);background:var(--glass);border-radius:18px;padding:13px 12px;cursor:pointer;font:inherit;text-align:left;transition:transform .2s,box-shadow .2s}
+  /* auto-fit rather than a fixed 3 columns: the trial ships ONE intent, and a lone tile stranded
+     in a third of the row reads like two cards failed to load. Self reflection can rejoin later
+     without touching this. */
+  .intent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px}
+  .intent{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:12px;min-height:76px;border:1px solid var(--glass-brd);background:var(--glass);border-radius:18px;padding:14px 16px;cursor:pointer;font:inherit;text-align:left;transition:transform .2s,box-shadow .2s}
+  .intent .ib{flex:1;min-width:0}
+  .intent .isub{display:block;margin-top:3px;font-weight:400;font-size:11.5px;color:var(--muted);line-height:1.35}
+  .intent .igo{color:var(--accent-ink);font-size:17px;flex:0 0 auto}
   .intent:hover,.intent:focus-visible{transform:translateY(-3px);box-shadow:0 16px 28px -18px rgba(70,30,45,.5);outline:none}
   .intent .ig{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink)}
   .intent .ig svg{width:18px;height:18px}
@@ -427,16 +455,18 @@
     </div>
 
     <div class="sec-h sec-intents">What are we looking at?</div>
+    <!-- The trial runs ONE intent. "Just me" is built, kept, and simply closed: it un-hides when
+         /api/me reports selfMode (a global switch or a per-account flag in the admin console).
+         Do not delete it. -->
     <div class="intent-grid">
-      <button class="intent" onclick="startSession('relationship','couple')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="9" r="3"/><circle cx="16" cy="10" r="2.6"/><path d="M3.4 19c.4-3 2.7-4.7 5.1-4.7"/><path d="M13.2 19c.3-2.6 2.2-4 4.3-4"/></svg></span><span class="it">Us two</span></button>
-      <button class="intent" onclick="startSession('relationship','solo')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-9.1A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.9C19 15.6 12 20 12 20z"/></svg></span><span class="it">A relationship</span></button>
-      <button class="intent" onclick="startSession('self','solo')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.2"/><path d="M6 19c.4-3.3 3-5 6-5s5.6 1.7 6 5"/></svg></span><span class="it">Just me</span></button>
+      <button class="intent" onclick="startSession('relationship','couple')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="9" r="3"/><circle cx="16" cy="10" r="2.6"/><path d="M3.4 19c.4-3 2.7-4.7 5.1-4.7"/><path d="M13.2 19c.3-2.6 2.2-4 4.3-4"/></svg></span><span class="ib"><span class="it">Relationship</span><span class="isub">A conversation between the two of you</span></span><span class="igo">→</span></button>
+      <button class="intent hide" id="intentSelf" onclick="startSession('self','solo')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.2"/><path d="M6 19c.4-3.3 3-5 6-5s5.6 1.7 6 5"/></svg></span><span class="ib"><span class="it">Just me</span><span class="isub">A quiet reflection, on your own</span></span><span class="igo">→</span></button>
     </div>
 
     <div class="sec-h sec-recent">Recent reflections <a onclick="view('dash')">See all →</a></div>
     <div class="carousel" id="homeRecent"></div>
 
-    <button class="checkin" onclick="startSession('self','solo')">
+    <button class="checkin hide" id="checkinTile" onclick="startSession('self','solo')">
       <span class="ci"><svg width="22" height="16" viewBox="0 0 120 90" fill="none" stroke="var(--accent-ink)" stroke-width="3.4" stroke-linecap="round"><path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/><path d="M60 79 C44 56 38 40 32 30"/><path d="M60 79 C76 56 82 40 88 30"/></svg></span>
       <span class="ct"><b>Today’s check-in</b><p>How was your day? Take a minute to reflect.</p></span>
       <span class="cgo">→</span>
@@ -445,9 +475,12 @@
 
   <!-- ANALYSE -->
   <div id="viewAnalyse" class="screen hide">
-    <div class="modebar">
+    <!-- One live intent, so the segmented control has nothing to segment. The element stays in the
+         DOM (empty of choices unless self reflection is open) because setIntent() and syncMode()
+         still drive their selected state, and "Just me" comes back through the same wiring. -->
+    <div class="modebar hide" id="modeBar">
       <span class="lbl">I want to look at</span>
-      <div class="seg" id="intentSeg"><button data-m="relationship" data-s="couple" aria-selected="true">Us two</button><button data-m="relationship" data-s="solo" aria-selected="false">A relationship</button><button data-m="self" data-s="solo" aria-selected="false">Just me</button></div>
+      <div class="seg" id="intentSeg"><button data-m="relationship" data-s="couple" aria-selected="true">Relationship</button><button data-m="self" data-s="solo" aria-selected="false">Just me</button></div>
     </div>
     <p class="lede serif" id="lede" style="font-style:italic"></p>
 
@@ -542,6 +575,13 @@
 <div class="slides" id="slides" role="dialog" aria-modal="true" aria-label="Guided walk-through">
   <div class="glass slide-card">
     <button class="slide-x" id="slideX" aria-label="Close walk-through">✕</button>
+    <!-- Breathing sits ON TOP of the walk-through, reachable from every slide. Someone reading
+         back their own argument can need a minute at any point, not only on the slide where the
+         escalation score happened to earn one. -->
+    <button class="slide-breathe" id="slideBreathe" aria-label="Take a minute to breathe" title="Take a minute to breathe">
+      <svg width="17" height="13" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/><path d="M60 79 C44 56 38 40 32 30"/><path d="M60 79 C76 56 82 40 88 30"/></svg>
+      <span>Breathe</span>
+    </button>
     <div class="slide-dots" id="slideDots"></div>
     <div class="slide-eyebrow" id="slideEyebrow"></div>
     <h2 class="slide-h" id="slideH"></h2>
@@ -554,7 +594,7 @@
 </div>
 
 <script>
-var S={mode:'relationship',sub:'couple',tab:'text',audioFile:null,recT:'',recording:false,report:null,improved:[],mute:false,playing:false,idx:0,sessions:[]};
+var S={mode:'relationship',sub:'couple',tab:'text',audioFile:null,audioURL:null,recT:'',recording:false,report:null,original:[],improved:[],track:null,mute:false,playing:false,idx:0,sessions:[],turns:[]};
 var $=function(id){return document.getElementById(id);};
 document.body.setAttribute('data-mode','relationship');
 
@@ -581,7 +621,7 @@ if(!SamvaadAuth.isGuest()){SamvaadAuth.ensureValid().then(function(s){if(!s){loc
 /* nav — bottom tab bar */
 function cap(s){s=(s||'')+'';return s.charAt(0).toUpperCase()+s.slice(1);}
 /* fully stop a playing replay (audio + speech + loop) when leaving or restarting a session */
-function stopReplay(){try{S.playing=false;if(window.speechSynthesis)window.speechSynthesis.cancel();if(S._au){S._au.pause();S._au=null;}if(typeof stopTalk==='function')stopTalk();if(typeof setNP==='function')setNP('Paused');var p=$('playBtn');if(p)p.textContent='▶';}catch(e){}}
+function stopReplay(){try{S.playing=false;if(window.speechSynthesis)window.speechSynthesis.cancel();if(S._au){S._au.pause();S._au=null;}if(S._real){S._real.pause();}if(typeof stopTalk==='function')stopTalk();if(typeof setNP==='function')setNP('Paused');var p=$('playBtn');if(p)p.textContent='▶';}catch(e){}}
 var VIEWS={home:'viewHome',analyse:'viewAnalyse',dash:'viewDash',you:'viewYou'};
 function view(v){
   stopReplay();
@@ -595,8 +635,10 @@ function view(v){
 document.querySelectorAll('.bottomnav button').forEach(function(b){b.onclick=function(){view(b.dataset.tab);};});
 $('acctBtn').onclick=function(){view('you');};
 
-/* set the analysis intent from anywhere (home cards or the in-flow segment) */
-function setIntent(m,s){S.mode=m;S.sub=s;document.body.setAttribute('data-mode',m);document.querySelectorAll('#intentSeg button').forEach(function(x){x.setAttribute('aria-selected',String(x.dataset.m===m&&x.dataset.s===s));});syncMode();}
+/* set the analysis intent from anywhere (home cards or the in-flow segment)
+   Relationship is always a two-person exchange now — the solo sub-mode is normalised away here
+   rather than at every call site, so nothing can slip a 'solo' relationship session through. */
+function setIntent(m,s){if(m==='relationship')s='couple';S.mode=m;S.sub=s;document.body.setAttribute('data-mode',m);document.querySelectorAll('#intentSeg button').forEach(function(x){x.setAttribute('aria-selected',String(x.dataset.m===m&&x.dataset.s===s));});syncMode();}
 /* start a fresh session from a home entry point: set intent, reset to the input form, open Talk */
 function startSession(m,s){if(m)setIntent(m,s);if(typeof screen==='function')screen('input');view('analyse');}
 
@@ -614,12 +656,41 @@ function renderHome(){
 document.querySelectorAll('#intentSeg button').forEach(function(b){b.onclick=function(){document.querySelectorAll('#intentSeg button').forEach(function(x){x.setAttribute('aria-selected','false');});b.setAttribute('aria-selected','true');S.mode=b.dataset.m;S.sub=b.dataset.s;document.body.setAttribute('data-mode',S.mode);syncMode();};});
 function syncMode(){
   var couple=S.mode==='relationship'&&S.sub==='couple';$('nameBWrap').classList.toggle('hide',!couple);$('consentBox').classList.toggle('hide',!couple);
-  var L={'relationship|couple':["A conversation between the two of you — scores, the patterns underneath, what you each did well, exact lines to try, and a kinder replay.","Conversation","Paste both sides as Name: line."],
+  var L={'relationship|couple':["A conversation between the two of you — we replay how it actually went, show where it caught, and give you the lines to try instead.","Conversation","Paste both sides as Name: line."],
          'relationship|solo':["Just you. Describe a situation or speak a voice-journal — we read how you show up and gently infer the other side.","Your reflection","Speak or write freely about what happened."],
          'self|solo':["The introspection space — your own words. A commute debrief or a journal entry; we surface your stress, self-talk and language, and help you cool down.","Your words","A debrief, a journal entry, a call transcript."]};
   var c=L[S.mode+'|'+S.sub]||L['relationship|couple'];$('lede').textContent=c[0];$('taLbl').textContent=c[1];$('taHint').innerHTML=c[2];
 }
 syncMode();
+
+/* ---------- who this account is, and what it may do ----------
+   /api/me carries three things the UI cannot know on its own: whether "Just me" is open for this
+   account, which act-1 replay variant they are in, and the REAL input ceiling (which is set by the
+   Groq plan's tokens-per-minute, so it must never be hardcoded in the copy). */
+S.me={act1:'voiced',selfMode:false,limits:{maxChars:11180,maxWords:2032,maxMinutes:13,maxAudioSeconds:858}};
+function applyMe(){
+  var self=!!S.me.selfMode;
+  ['intentSelf','checkinTile','modeBar'].forEach(function(id){var el=$(id);if(el)el.classList.toggle('hide',!self);});
+  var lim=S.me.limits||{};
+  if(lim.maxChars){var ta=$('transcript');if(ta)ta.setAttribute('maxlength',lim.maxChars);}
+  updateCount();
+  var h=$('taHint');
+  if(h&&lim.maxMinutes)h.innerHTML='Format each line as <code>Name: what they said</code>. Hinglish and Devanagari welcome. We can read up to about '+lim.maxMinutes+' minutes of conversation at a time.';
+  var d=$('drop');
+  if(d&&lim.maxMinutes)d.innerHTML='<strong>Drop an audio file</strong> or click to browse<br><span class="hint">MP3, WAV, M4A · up to about '+lim.maxMinutes+' minutes</span><input type="file" id="file" accept="audio/*" class="hide">',bindFile();
+}
+async function loadMe(){
+  try{
+    await ensureGuestToken();
+    var r=await fetch(be()+'/api/me',{headers:beHeaders()});
+    if(!r.ok)return;
+    var d=await r.json();
+    S.me={act1:d.act1||'voiced',selfMode:!!d.selfMode,limits:d.limits||S.me.limits,status:d.status,quota:d.quota,phone:d.phone||null};
+    // A suspended account should find out here, not after typing out a painful conversation.
+    if(d.status==='suspended')showErr('This account is paused. Please reach out to us and we will sort it out.');
+    applyMe();
+  }catch(e){}
+}
 
 /* tabs */
 document.querySelectorAll('.tabs .tab').forEach(function(t){t.onclick=function(){document.querySelectorAll('.tabs .tab').forEach(function(x){x.setAttribute('aria-selected','false');});t.setAttribute('aria-selected','true');S.tab=t.dataset.tab;$('tab-text').classList.toggle('hide',S.tab!=='text');$('tab-rec').classList.toggle('hide',S.tab!=='rec');$('tab-up').classList.toggle('hide',S.tab!=='up');};});
@@ -639,35 +710,42 @@ $('drop').onclick=function(){$('file').click();};
 ['dragover','dragenter'].forEach(function(e){$('drop').addEventListener(e,function(ev){ev.preventDefault();$('drop').classList.add('over');});});
 ['dragleave','drop'].forEach(function(e){$('drop').addEventListener(e,function(ev){ev.preventDefault();$('drop').classList.remove('over');});});
 $('drop').addEventListener('drop',function(e){if(e.dataTransfer.files[0])setFile(e.dataTransfer.files[0]);});
-$('file').onchange=function(e){if(e.target.files[0])setFile(e.target.files[0]);};
-/* 30 minutes is the advertised ceiling; reject past 35 before a byte is uploaded, so nobody
-   waits on a long upload only to be refused by the server. */
-var MAX_AUDIO_MIN=35, LIMIT_AUDIO_MIN=30;
+/* applyMe() rewrites the drop zone's copy with the real minute limit, which replaces the file
+   input inside it — so the change handler is bound through a function that can be called again. */
+function bindFile(){var f=$('file');if(f)f.onchange=function(e){if(e.target.files[0])setFile(e.target.files[0]);};}
+bindFile();
+/* Reject a too-long file before a byte is uploaded, so nobody waits out an upload only to be
+   refused by the server. The ceiling comes from /api/me (it is set by the Groq plan), never from
+   a number typed in here — a hardcoded "30 minutes" is how the copy came to promise three times
+   what the backend could actually read. */
+function audioLimitMin(){return (S.me&&S.me.limits&&S.me.limits.maxAudioSeconds)?Math.floor(S.me.limits.maxAudioSeconds/60):13;}
 function setFile(f){
   var u=URL.createObjectURL(f),probe=document.createElement('audio');
   probe.preload='metadata';
   probe.onloadedmetadata=function(){
-    URL.revokeObjectURL(u);
-    var mins=probe.duration/60;
-    if(isFinite(mins)&&mins>MAX_AUDIO_MIN){
-      S.audioFile=null;$('fileName').textContent='';
-      showErr('That recording is '+Math.round(mins)+' minutes. Please trim it to '+LIMIT_AUDIO_MIN+' minutes or less.');
+    var mins=probe.duration/60,lim=audioLimitMin();
+    if(isFinite(mins)&&mins>lim){
+      URL.revokeObjectURL(u);
+      S.audioFile=null;S.audioURL=null;$('fileName').textContent='';
+      showErr('That recording is '+Math.round(mins)+' minutes. Right now we can read up to about '+lim+' minutes in one go — trim it to the part that matters most.');
       return;
     }
     S.audioFile=f;
-    var over=isFinite(mins)&&mins>LIMIT_AUDIO_MIN;
-    $('fileName').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB'+(isFinite(mins)?' · '+Math.round(mins)+' min':'')
-      +(over?' · we will analyse the first '+LIMIT_AUDIO_MIN+' minutes':'');
+    // Kept, not revoked: the "real audio" act-1 variant plays this very file back during the
+    // walk-through. releaseAudio() cleans it up when the session is replaced.
+    releaseAudio();S.audioURL=u;S.audioSeconds=probe.duration;
+    $('fileName').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB'+(isFinite(mins)?' · '+Math.round(mins)+' min':'');
   };
-  probe.onerror=function(){URL.revokeObjectURL(u);S.audioFile=f;$('fileName').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB';};
+  probe.onerror=function(){URL.revokeObjectURL(u);S.audioFile=f;S.audioURL=null;$('fileName').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB';};
   probe.src=u;
 }
-/* live character counter — the paste ceiling matches roughly 30 minutes of speech */
-var MAX_CHARS=25000;
-(function(){var ta=$('transcript'),out=$('taCount');if(!ta||!out)return;
-  var upd=function(){var n=ta.value.length;out.textContent=n?(n.toLocaleString()+' / '+MAX_CHARS.toLocaleString()+' characters'):'';
-    out.style.color=n>MAX_CHARS*0.9?'var(--warn)':'';};
-  ta.addEventListener('input',upd);upd();})();
+function releaseAudio(){if(S.audioURL){try{URL.revokeObjectURL(S.audioURL);}catch(e){}S.audioURL=null;}}
+/* live character counter — the paste ceiling tracks whatever the backend can actually read */
+function updateCount(){var ta=$('transcript'),out=$('taCount');if(!ta||!out)return;
+  var max=(S.me&&S.me.limits&&S.me.limits.maxChars)||11180,n=ta.value.length;
+  out.textContent=n?(n.toLocaleString()+' / '+max.toLocaleString()+' characters'):'';
+  out.style.color=n>max*0.9?'var(--warn)':'';}
+(function(){var ta=$('transcript');if(ta)ta.addEventListener('input',updateCount);updateCount();})();
 
 $('goBtn').onclick=run;$('againBtn').onclick=function(){stopReplay();screen('input');};
 function screen(s){$('screenInput').classList.toggle('hide',s!=='input');$('screenProc').classList.toggle('hide',s!=='proc');$('screenResults').classList.toggle('hide',s!=='results');window.scrollTo({top:0,behavior:'smooth'});}
@@ -706,8 +784,9 @@ async function run(){
     if(S.tab==='up'){if(!S.audioFile)throw new Error('Choose an audio file first.');transcript=await transcribe(a,b);}
     if(!transcript||transcript.length<15)throw new Error('Need a little more to work with.');
     setProc(1);var data=await analyse(transcript,a,b);
-    S.report=data;S.improved=data.improved||[];
-    S.sessions.unshift({ts:Date.now(),mode:S.mode,sub:S.sub,a:a,b:b,overall:(data.scores||{}).overall||0,pattern:(data.patterns&&data.patterns[0])?data.patterns[0].title:'—',full:data});
+    S.report=data;S.improved=data.improved||[];S.original=data.original||[];
+    S.sessions.unshift({ts:Date.now(),mode:S.mode,sub:S.sub,a:a,b:b,overall:(data.scores||{}).overall||0,pattern:(data.patterns&&data.patterns[0])?data.patterns[0].title:'—',full:data,local:true});
+    saveWhatsApp();   // fire and forget: links the number to the account, never blocks the report
     showWalkPrompt(a,b);
   }catch(err){screen('input');showErr(err.message||String(err));}
   finally{S.busy=false;}
@@ -753,8 +832,54 @@ function showWalkPrompt(a,b){
 function openSession(i){
   var s=S.sessions[i]; if(!s||!s.full) return;
   S.mode=s.mode; S.sub=s.sub; document.body.setAttribute('data-mode',s.mode);
-  S.report=s.full; S.improved=s.full.improved||[];
+  S.report=s.full; S.improved=s.full.improved||[]; S.original=s.full.original||[];
+  // A session restored from the server has no local recording, so the real-audio act 1 cannot
+  // apply to it. act1For() falls back on its own; this just makes sure a stale URL is not reused.
+  if(!s.local)S.audioURL=null;
   view('analyse'); renderResults(s.a,s.b);
+}
+
+/* ---------- history: the dashboard used to forget everything on reload ----------
+   Sessions were only ever appended in memory by run(), so a signed-in user who came back the next
+   day found an empty dashboard and an empty streak — for a product about returning, the worst
+   possible first impression. The rows were in Supabase the whole time. */
+function rowToSession(r){
+  var full={
+    scores:r.scores||{}, summary:r.summary||'', patterns:r.patterns||[], strengths:r.strengths||[],
+    improvements:r.improvements||[], improved:r.improved||[], original:r.original||[],
+    kpis:r.kpis||{}, speakers:r.speakers||{}, sessionId:r.id
+  };
+  return {
+    ts:new Date(r.created_at).getTime(), mode:r.mode, sub:r.submode,
+    a:r.name_a||'You', b:r.name_b||'Them',
+    overall:(r.scores&&r.scores.overall)||0,
+    pattern:(r.patterns&&r.patterns[0])?r.patterns[0].title:'—',
+    full:full
+  };
+}
+async function loadHistory(){
+  if(SamvaadAuth.isGuest())return;              // guests deliberately persist nothing
+  try{
+    var r=await fetch(be()+'/api/history',{headers:beHeaders()});
+    if(!r.ok)return;
+    var d=await r.json(),rows=(d.sessions||[]).map(rowToSession).filter(function(s){return isFinite(s.ts);});
+    // Keep anything analysed in this tab that the server has not caught up with yet, newest first.
+    var local=S.sessions.filter(function(s){return s.local;});
+    S.sessions=local.concat(rows).sort(function(x,y){return y.ts-x.ts;});
+    renderHome();if(!$('viewDash').classList.contains('hide'))renderDash();
+  }catch(e){}
+}
+
+/* The WhatsApp number is the account key for the trial: it is how the finished report reaches
+   them. Saved quietly alongside the analysis rather than gated behind another form. */
+async function saveWhatsApp(){
+  var n=(S.wa||'').replace(/[^\d+]/g,'');
+  if(!n||SamvaadAuth.isGuest())return;
+  if(S.me&&S.me.phone)return;                    // already linked; do not overwrite silently
+  try{
+    var r=await fetch(be()+'/api/profile/phone',{method:'POST',headers:beHeaders(),body:JSON.stringify({phone:n,display_name:($('nameA').value||'').trim()})});
+    if(r.ok){var d=await r.json();S.me.phone=d.phone;}
+  }catch(e){}
 }
 function renderResults(a,b){
   var r=S.report,sc=r.scores||{},risk=sc.escalation_risk||0;
@@ -790,7 +915,7 @@ function renderResults(a,b){
 
   // replay — only when substantial enough to watch (drops <2s clips)
   var showReplay=replayWorth();
-  if(showReplay)cards.push('<div class="glass section"><h3>'+(S.mode==='self'?'Sathi reflects back':'A kinder replay')+'</h3><div class="stage" id="stage" data-playing="false"><div class="stage-bar"><span class="np-dot"></span><span class="np-label">'+(S.mode==='self'?'Sathi reflects back':'Kinder replay')+'</span><span class="np-live" id="npLive">Paused</span></div><div class="scene" id="scene"></div><div class="bubbles" id="bubbles"></div><div class="ctrls"><button id="playBtn" class="play" aria-label="Play replay">▶</button><div class="bar" id="bar"><i id="prog"></i></div><button id="muteBtn" class="ic" aria-label="Mute voices">🔊</button></div></div></div>');
+  if(showReplay)cards.push('<div class="glass section"><h3>'+(S.mode==='self'?'Sathi reflects back':'A kinder replay')+'</h3>'+stageHTML(S.mode==='self'?'Sathi reflects back':'Kinder replay')+'</div>');
 
   // feedback — only when there is a concrete suggestion to commit to
   var top=(r.improvements&&r.improvements[0])?r.improvements[0].suggestion:'';
@@ -903,7 +1028,11 @@ function talkStart(side,audioEl){
   if(audioEl&&Ctx){
     try{
       var ctx=_talk.ctx||(_talk.ctx=new Ctx());if(ctx.state==='suspended')ctx.resume();
-      var src=ctx.createMediaElementSource(audioEl),an=ctx.createAnalyser();an.fftSize=256;
+      // One MediaElementSource per element, ever: creating a second on the same <audio> throws
+      // InvalidStateError. The kinder replay makes a fresh element per line so it never noticed,
+      // but act 1's real-audio variant plays many segments through ONE element.
+      var src=audioEl.__svSrc||(audioEl.__svSrc=ctx.createMediaElementSource(audioEl));
+      var an=ctx.createAnalyser();an.fftSize=256;
       src.connect(an);an.connect(ctx.destination);
       _talk.an=an;_talk.src=src;_talk.buf=new Uint8Array(an.frequencyBinCount);
       var frame=0,hold=0;
@@ -950,11 +1079,28 @@ function sceneBg(){return '<div class="scene-bg" aria-hidden="true"><svg viewBox
   // potted plant (right corner)
   +'<g transform="translate(858,300)"><ellipse cx="-14" cy="-40" rx="12" ry="34" fill="#7FA07E" transform="rotate(-18 -14 -40)"/><ellipse cx="6" cy="-52" rx="12" ry="38" fill="#6F9A79"/><ellipse cx="26" cy="-40" rx="12" ry="34" fill="#A6C39E" transform="rotate(18 26 -40)"/><path d="M-20 0 h44 l-7 54 h-30 z" fill="#CE9A78"/><path d="M-20 0 h44 l-2 14 h-40 z" fill="#B9835F"/></g>'
   +'</svg></div>';}
-function buildScene(a,b){var single=S.mode==='self',couple=S.mode==='relationship'&&S.sub==='couple',sp=(S.report&&S.report.speakers)||{};
+/* The one and only replay stage markup. The walk-through's act 1 and the report's act 2 both
+   render it, never at the same time, so the fixed ids (#scene #bubbles #playBtn #prog #npLive)
+   stay unique and every handler in the engine keeps working untouched. */
+function stageHTML(label){
+  return '<div class="stage" id="stage" data-playing="false">'
+    +'<div class="stage-bar"><span class="np-dot"></span><span class="np-label">'+esc(label)+'</span><span class="np-live" id="npLive">Paused</span></div>'
+    +'<div class="scene" id="scene"></div><div class="bubbles" id="bubbles"></div>'
+    +'<div class="ctrls"><button id="playBtn" class="play" aria-label="Play replay">▶</button>'
+    +'<div class="bar" id="bar"><i id="prog"></i></div>'
+    +'<button id="muteBtn" class="ic" aria-label="Mute voices">🔊</button></div></div>';
+}
+
+/* The engine plays whichever track it is handed: the kinder version (act 2, the default) or
+   the real conversation (act 1). Everything downstream — advance, spk, the progress bar —
+   reads S.track, so both acts run through exactly the same wiring. */
+function trackOf(){return (S.track&&S.track.length)?S.track:(S.improved||[]);}
+function buildScene(a,b,tr){var single=S.mode==='self',couple=S.mode==='relationship'&&S.sub==='couple',sp=(S.report&&S.report.speakers)||{};
+  S.track=(tr&&tr.length)?tr:(S.improved||[]);var TR=trackOf();
   var gfem=function(v){var g=(v&&typeof v==='object')?v.gender:v;return /^f/i.test((g||'')+'');};
   var bName=couple?(b||'Them'):((sp.B&&sp.B.name)||'Them');
   S._nm={a:a,b:bName,solo:(single?'Sathi':a)};
-  S._alt=(!single)&&(S.improved||[]).length>1&&S.improved.every(function(x){return (((x.speaker||'')+'').trim().toUpperCase())===(((S.improved[0].speaker||'')+'').trim().toUpperCase());});
+  S._alt=(!single)&&TR.length>1&&TR.every(function(x){return (((x.speaker||'')+'').trim().toUpperCase())===(((TR[0].speaker||'')+'').trim().toUpperCase());});
   var ga=('A' in sp)?gfem(sp.A):true,gb=('B' in sp)?gfem(sp.B):false;
   // tear down any prior Rive instances before rebuilding the scene
   if(S._rive){for(var _k in S._rive){try{S._rive[_k]&&S._rive[_k].rive&&S._rive[_k].rive.cleanup();}catch(e){}}}
@@ -973,24 +1119,117 @@ function buildScene(a,b){var single=S.mode==='self',couple=S.mode==='relationshi
   $('playBtn').onclick=function(){if(_talk.ctx&&_talk.ctx.state==='suspended')_talk.ctx.resume();if(S.playing)pausePlay();else startPlay();};
 }
 function setExpr(side,emo){if(riveActive(side)){var n=EXPR_NUM[emo];riveSet(S._rive[side].exp,n===undefined?0:n);return;}var m=$('mouth-'+side);if(m)m.setAttribute('d',MOUTH[emo]||MOUTH.neutral);var on=(emo==='happy'||emo==='warm');['l','r'].forEach(function(s){var bl=$('bl-'+side+'-'+s);if(bl)bl.classList.toggle('on',on);});var up=(emo==='sad'||emo==='sorry'),att=(emo==='attentive');var bl=$('brow-'+side+'-l'),br=$('brow-'+side+'-r');if(bl)bl.setAttribute('d',up?'M35 45 Q41 38 45 41':(att?'M35 41 Q40 39 45 42':'M35 43 Q40 41 45 43'));if(br)br.setAttribute('d',up?'M55 41 Q59 38 65 45':(att?'M55 42 Q60 39 65 41':'M55 43 Q60 41 65 43'));var ch=$('ch-'+side),sv=ch&&ch.querySelector('svg');if(sv){var tl=({happy:3,warm:2,sad:-4,sorry:-3,attentive:1,neutral:0})[emo]||0;sv.style.transformOrigin='50% 82%';sv.style.transition='transform .45s cubic-bezier(.22,1,.36,1)';sv.style.transform='rotate('+tl+'deg)';}}
-function pausePlay(){S.playing=false;$('playBtn').textContent='▶';window.speechSynthesis.cancel();if(S._au)S._au.pause();stopTalk();setNP('Paused');}
-function startPlay(){if(S.idx>=S.improved.length){S.idx=0;$('bubbles').innerHTML='';}S.playing=true;$('playBtn').textContent='⏸';setNP('Now playing');advance();}
+function pausePlay(){S.playing=false;$('playBtn').textContent='▶';window.speechSynthesis.cancel();if(S._au)S._au.pause();if(S._real)S._real.pause();stopTalk();setNP('Paused');}
+function startPlay(){if(S.idx>=trackOf().length){S.idx=0;$('bubbles').innerHTML='';}S.playing=true;$('playBtn').textContent='⏸';setNP('Now playing');advance();}
 function stopTalk(){talkStop();document.querySelectorAll('.mouth').forEach(function(m){m.classList.remove('talk');});document.querySelectorAll('.ch').forEach(function(c){c.classList.remove('speaking');});document.querySelectorAll('.scene svg').forEach(function(s){s.style.transform='rotate(0deg)';});}
 /* resolve which side speaks: trust A/B or the name, but if the model labelled every turn the same, fall back to strict alternation */
 function spk(t,i){if(S._alt)return i%2?'b':'a';var s=(((t&&t.speaker)||'')+'').trim(),nb=(S._nm&&S._nm.b)||'',na=(S._nm&&S._nm.a)||'';if(/^b$/i.test(s)||(nb&&s.toLowerCase()===nb.toLowerCase()))return 'b';if(/^a$/i.test(s)||(na&&s.toLowerCase()===na.toLowerCase()))return 'a';return i%2?'b':'a';}
 /* the model sometimes prefixes a line with the speaker's own name ("Roma: ..."); drop it so only the sentence is shown + spoken */
 function stripSpk(text){if(!text)return text;var s=''+text,m=s.match(/^\s*([^:\n]{1,24}):\s*/);if(!m)return s;var who=m[1].trim().toLowerCase(),names=[S._nm&&S._nm.a,S._nm&&S._nm.b,S._nm&&S._nm.solo,'a','b'].filter(Boolean).map(function(n){return (''+n).trim().toLowerCase();});return names.indexOf(who)>=0?s.slice(m[0].length):s;}
-function advance(){if(!S.playing)return;if(S.idx>=S.improved.length){S.playing=false;$('playBtn').textContent='▶';$('prog').style.transform='scaleX(1)';stopTalk();setNP('Ended');return;}
-  var t=S.improved[S.idx],single=S.mode==='self',cls=single?'a':spk(t,S.idx);
+function advance(){if(!S.playing)return;var TR=trackOf();if(S.idx>=TR.length){S.playing=false;$('playBtn').textContent='▶';$('prog').style.transform='scaleX(1)';stopTalk();setNP('Ended');return;}
+  var t=TR[S.idx],single=S.mode==='self',cls=single?'a':spk(t,S.idx);
   var who=single?((S._nm&&S._nm.solo)||''):(cls==='b'?((S._nm&&S._nm.b)||'B'):((S._nm&&S._nm.a)||'A'));
   var bub=document.createElement('div');bub.className='bub '+(single?'solo':cls);bub.innerHTML=(who?'<span class="bub-who">'+esc(who)+'</span>':'')+'<span class="dv">'+esc(stripSpk(t.display))+'</span>';$('bubbles').appendChild(bub);$('bubbles').scrollTop=$('bubbles').scrollHeight;
   stopTalk();var ch=$('ch-'+cls);if(ch)ch.classList.add('speaking');var tag=$('tag-'+cls);if(tag)tag.textContent=EMO[t.emotion]||'😐';setExpr(cls,t.emotion);var m=$('mouth-'+cls);if(m&&!S.mute&&!riveActive(cls))m.classList.add('talk');
-  $('prog').style.transform='scaleX('+((S.idx+1)/S.improved.length)+')';
-  speak(stripSpk(t.speak||t.display),cls,function(){if(m)m.classList.remove('talk');talkStop();S.idx++;setTimeout(advance,260);});}
-/* Voices come from the proxy only. If it fails, fall back to the browser synth. */
-function speak(text,cls,done){if(S.mute){setTimeout(done,700);return;}speakBackend(text,cls,done,function(){browser(text,cls,done);});}
+  $('prog').style.transform='scaleX('+((S.idx+1)/TR.length)+')';
+  var onDone=function(){if(m)m.classList.remove('talk');talkStop();S.idx++;setTimeout(advance,260);};
+  // In the real-audio variant a turn may map to a stretch of the user's own recording; play
+  // that instead of synthesising it. Anything unmatched falls through to the normal voice.
+  var seg=S._segs&&S._segs[S.idx];
+  if(seg)playSegment(seg,cls,onDone);else speak(stripSpk(t.speak||t.display),cls,onDone);}
+/* Voices come from the proxy only. If it fails, fall back to the browser synth.
+   The 'silent' act-1 variant reads at a plausible pace with the mouth moving but no audio. */
+function speak(text,cls,done){
+  if(S.mute){setTimeout(done,700);return;}
+  if(S._silent){var ms=Math.max(1300,Math.min(6500,(''+text).length*62));talkStart(cls,null);setTimeout(function(){talkStop();done();},ms);return;}
+  speakBackend(text,cls,done,function(){browser(text,cls,done);});
+}
 function browser(text,cls,done){try{window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);var vs=window.speechSynthesis.getVoices();var p=vs.filter(function(v){return /en-IN|hi-IN/i.test(v.lang);});if(!p.length)p=vs.filter(function(v){return /en-/i.test(v.lang);});if(p.length)u.voice=cls==='a'?(p.find(function(v){return /female|heera|aria|kalpana/i.test(v.name);})||p[0]):(p.find(function(v){return /male|ravi|prabhat/i.test(v.name);})||p[p.length-1]);u.lang='en-IN';u.pitch=cls==='a'?1.18:0.85;u.rate=0.88;u.onend=done;u.onerror=done;window.speechSynthesis.speak(u);talkStart(cls,null);}catch(e){setTimeout(done,900);}}
 async function speakBackend(text,cls,done,fb){try{var r=await fetch(be()+'/api/tts',{method:'POST',headers:beHeaders(),body:JSON.stringify({text:text,speaker:cls==='a'?'A':'B'})});if(!r.ok)throw 0;var u=URL.createObjectURL(await r.blob());var au=new Audio(u);S._au=au;au.playbackRate=0.9;try{au.preservesPitch=true;}catch(e){}au.onended=function(){URL.revokeObjectURL(u);done();};au.onerror=done;if(!S.playing){try{au.pause();}catch(e){}URL.revokeObjectURL(u);return;}au.play();talkStart(cls,au);}catch(e){fb();}}
+
+/* ---------- act 1: the conversation as it actually happened ----------
+   The walk-through opens by playing the pivotal moment back in the couple's own words, before it
+   says a single thing about what went wrong. Three deliveries are in the field at once and the
+   admin console pins an account to one of them (see resolveAct1 in the backend):
+
+     voiced      the avatars speak the real lines through ElevenLabs
+     real_audio  their actual recording plays, matched to the lines by Deepgram's turn timings,
+                 with anything unmatched voiced instead
+     silent      no audio at all; the avatars move and the lines land as bubbles
+
+   All three run through the SAME engine (buildScene / advance / speak) — only the sound differs. */
+function act1Mode(){
+  var m=(S.me&&S.me.act1)||'voiced';
+  // A pasted transcript has no recording to play, so real_audio has nothing to be.
+  if(m==='real_audio'&&!(S.audioURL&&(S.turns||[]).length))m='voiced';
+  return m;
+}
+function act1Worth(){return S.mode==='relationship'&&(S.original||[]).length>=2;}
+
+/* Map a model-chosen verbatim line back onto a Deepgram turn so we know where it sits in the
+   audio. Word overlap rather than exact match: smart_format punctuation and the model's copy are
+   never byte-identical. Below half the content words matching we decline rather than guess, and
+   that line simply gets voiced instead. */
+function matchSegment(line){
+  var norm=function(x){return (''+x).toLowerCase().replace(/[^a-z0-9ऀ-ॿ ]/g,' ').replace(/\s+/g,' ').trim();};
+  var target=norm(line);if(!target)return null;
+  var words=target.split(' ').filter(function(w){return w.length>2;});
+  if(words.length<2)return null;
+  var best=null,bestScore=0;
+  (S.turns||[]).forEach(function(t){
+    var c=norm(t.text);if(!c)return;
+    var hit=words.filter(function(w){return c.indexOf(w)>=0;}).length;
+    var score=hit/words.length;
+    if(score>bestScore){bestScore=score;best=t;}
+  });
+  return (bestScore>=0.5&&best&&best.end>best.start)?{start:best.start,end:best.end}:null;
+}
+
+/* One <audio> for the whole recording, seeked per segment. Re-created per act-1 run so a stale
+   element from a previous session can never play someone else's conversation. */
+function playSegment(seg,cls,done){
+  var au=S._real;
+  if(!au||S.mute){setTimeout(done,S.mute?700:400);return;}
+  var finished=false;
+  var stop=function(){
+    if(finished)return;
+    if(au.currentTime>=seg.end-0.02||au.ended){
+      finished=true;au.pause();au.removeEventListener('timeupdate',stop);au.removeEventListener('ended',stop);
+      talkStop();done();
+    }
+  };
+  try{
+    au.pause();au.currentTime=seg.start;
+    au.addEventListener('timeupdate',stop);au.addEventListener('ended',stop);
+    talkStart(cls,au);           // connect the analyser BEFORE play, or the first word is silent
+    var pr=au.play();if(pr&&pr.catch)pr.catch(function(){finished=true;talkStop();done();});
+    // hard stop, in case timeupdate stalls on a seek near the end of the file
+    setTimeout(function(){if(!finished)stop();},Math.max(800,(seg.end-seg.start)*1000+900));
+  }catch(e){talkStop();done();}
+}
+
+function startAct1(){
+  var a=($('nameA').value||'').trim()||'You',b=($('nameB').value||'').trim()||'Them';
+  var mode=act1Mode();
+  S._act1=mode;
+  S._silent=(mode==='silent');
+  S._segs=null;S._real=null;
+  if(mode==='real_audio'){
+    S._real=new Audio(S.audioURL);
+    S._real.preload='auto';
+    S._segs=(S.original||[]).map(function(t){return matchSegment(t.display||t.speak);});
+    // If almost nothing matched, the recording is not really driving this — drop to voiced rather
+    // than showing a stuttering half-and-half.
+    var got=S._segs.filter(Boolean).length;
+    if(got<Math.ceil((S.original||[]).length/2)){S._segs=null;S._real=null;S._act1='voiced';}
+  }
+  buildScene(a,b,S.original);
+  var lbl=$('slides').querySelector('.np-label');
+  if(lbl)lbl.textContent=(S._act1==='real_audio')?'Their voices':(S._act1==='silent'?'As it happened':'As it happened');
+  startPlay();
+}
+/* Leaving act 1 hands the engine back to the kinder replay. */
+function endAct1(){S._silent=false;S._segs=null;if(S._real){try{S._real.pause();}catch(e){}S._real=null;}S.track=null;}
 
 /* ---------- breathing exercise (the intervene layer) ---------- */
 var BR=null;
@@ -1003,16 +1242,35 @@ function tick(){if(!BR||!BR.running)return;var s=Math.floor((Date.now()-BR.start
 
 /* ---------- guided walk-through (step-3 sequence) ---------- */
 var WALK={slides:[],i:0};
-function openSlides(){var a=($('nameA').value||'').trim()||'You';WALK.slides=buildSlides(a);WALK.i=0;$('slides').classList.add('show');renderSlide();}
-function closeSlides(){$('slides').classList.remove('show');}
+function openSlides(){var a=($('nameA').value||'').trim()||'You';WALK.slides=buildSlides(a);WALK.i=0;WALK.cur=null;$('slides').classList.add('show');renderSlide();}
+function closeSlides(){leaveSlide();$('slides').classList.remove('show');}
 function walkNav(d){var n=WALK.i+d;if(n<0)return;if(n>=WALK.slides.length){closeSlides();renderDash();view('dash');return;}WALK.i=n;renderSlide();}
+/* A slide that put a replay stage on screen has to tear it down before the next slide replaces
+   the markup underneath it — otherwise the audio keeps playing over the following slide. */
+function leaveSlide(){
+  var prev=WALK.cur;WALK.cur=null;
+  stopReplay();
+  if(prev&&typeof prev.leave==='function'){try{prev.leave();}catch(e){}}
+}
 function renderSlide(){var s=WALK.slides[WALK.i],last=WALK.i===WALK.slides.length-1,first=WALK.i===0;
+  leaveSlide();
   $('slideEyebrow').textContent=s.eyebrow;$('slideH').innerHTML=s.h;$('slideBody').innerHTML=s.html;
+  WALK.cur=s;
   $('slideDots').innerHTML=WALK.slides.map(function(_,i){return '<i class="'+(i===WALK.i?'on':'')+'"></i>';}).join('');
   $('slidePrev').style.visibility=first?'hidden':'visible';
   $('slideNext').textContent=last?'Done':'Next ›';
   var card=$('slides').querySelector('.slide-card');if(card)card.scrollTop=0;
+  // after the markup exists, not before: startAct1/startAct2 mount Rive into #scene
+  if(typeof s.after==='function'){try{s.after();}catch(e){console.error('slide',e);}}
 }
+/* Act 2 inside the walk-through: the same engine, handed the kinder track. */
+function startAct2(){
+  endAct1();
+  var a=($('nameA').value||'').trim()||'You',b=($('nameB').value||'').trim()||'Them';
+  buildScene(a,b,S.improved);
+  startPlay();
+}
+$('slideBreathe').onclick=function(){stopReplay();openBreath();};
 function scriptCards(arr,self){arr=arr||[];if(!arr.length)return '<p class="hint">—</p>';return arr.map(function(s){return self
   ? '<div class="imp"><div class="p dv">'+esc(s.pattern||'')+'</div><div class="script dv"><span class="lab">🔊 say this out loud</span>'+esc(s.script||'')+'</div></div>'
   : '<div class="imp"><div class="p dv">'+esc(s.pattern||'')+'</div><div class="s dv">'+esc(s.suggestion||'')+'</div><div class="script dv"><span class="lab">try saying</span>'+esc(s.script||'')+'</div></div>';}).join('');}
@@ -1023,10 +1281,28 @@ function buildSlides(a){
   slides.push({eyebrow:'A gentle walk-through',h:'Let’s look at this together, '+esc(a),html:'<div class="slide-big" style="color:'+clr('overall',overall)+'">'+overall+'</div><p class="slide-p" style="margin-top:2px">'+(self?'wellbeing signal':'connection')+'</p><p class="slide-p dv">'+esc(r.summary||'')+'</p>'});
   // breathing earns its place only when escalation was genuinely high — and the reason is shown
   if(hot)slides.push({eyebrow:'One minute for you',h:'There was real heat — let’s breathe',html:'<p class="slide-p">Escalation read high on this one ('+risk+'/100). Before anything else, one minute to settle your body — inhale, hold, exhale, soften. Regulate first, talk second.</p><div class="row" style="justify-content:center"><button class="btn accent" onclick="openBreath()">Take a minute</button></div>'});
+  // ACT 1 — the conversation as it actually happened, in their own words, before a word of
+  // judgement. Seeing it played back is what makes everything after it land.
+  if(act1Worth())slides.push({
+    eyebrow:'How it went',
+    h:'First, the moment itself',
+    html:'<p class="slide-p">This is the stretch where it turned — your own words, played back. Watch it once before we look at why.</p>'+stageHTML('As it happened'),
+    after:startAct1, leave:endAct1
+  });
+  // Then what went wrong, then what could have been said instead. That order is the point:
+  // the diagnosis only means something once you have watched the thing being diagnosed.
+  if((r.patterns||[]).length)slides.push({eyebrow:'Where it caught',h:'What went wrong here',html:sList(r.patterns,'pat')});
+  if((r.improvements||[]).length)slides.push(self?{eyebrow:'Your words, out loud',h:'Say these out loud',html:'<p class="slide-p">Say each line aloud, your way — hearing your own voice is the practice.</p>'+scriptCards(r.improvements,true)}:{eyebrow:'How to improve',h:'What could be said instead',html:scriptCards(r.improvements,false)});
+  // — rest as before —
   if((r.strengths||[]).length)slides.push({eyebrow:'The good in you',h:self?'What’s working':'What you did well',html:sList(r.strengths,'good')});
-  if((r.patterns||[]).length)slides.push({eyebrow:'Domains to grow',h:'Where it gets caught',html:sList(r.patterns,'pat')});
-  if((r.improvements||[]).length)slides.push(self?{eyebrow:'Your words, out loud',h:'Say these out loud',html:'<p class="slide-p">Say each line aloud, your way — hearing your own voice is the practice.</p>'+scriptCards(r.improvements,true)}:{eyebrow:'How to improve',h:'Lines to try next time',html:scriptCards(r.improvements,false)});
-  if(replayWorth())slides.push({eyebrow:'See it play out',h:self?'Sathi reflects back':'A kinder replay',html:'<p class="slide-p">Watch a voiced, animated version of a kinder exchange — the same moment, softened.</p><div class="row" style="justify-content:center"><button class="btn accent" onclick="slideToReplay()">▶ Play the replay</button></div>'});
+  // ACT 2 — the same moment, softened. Inline now, so the walk-through is not interrupted
+  // halfway through to send someone off to another screen.
+  if(replayWorth())slides.push({
+    eyebrow:'See it play out',
+    h:self?'Sathi reflects back':'Now, a kinder version',
+    html:'<p class="slide-p">The same moment, said differently.</p>'+stageHTML(self?'Sathi reflects back':'Kinder replay'),
+    after:startAct2, leave:stopReplay
+  });
   slides.push({eyebrow:'Stay with it',h:'A gentle daily check-in',html:optinBlock(a)});
   return slides;
 }
@@ -1059,7 +1335,7 @@ function renderDash(){var list=$('dashList'),trend=$('trendCard');
   var d=pts.map(function(v,i){return (i===0?'M':'L')+(i*step).toFixed(1)+' '+(H-(v/100)*H+6).toFixed(1);}).join(' ');var dots=pts.map(function(v,i){return '<circle cx="'+(i*step).toFixed(1)+'" cy="'+(H-(v/100)*H+6).toFixed(1)+'" r="3.5" fill="var(--accent)"/>';}).join('');
   var freq={};S.sessions.forEach(function(s){freq[s.pattern]=(freq[s.pattern]||0)+1;});var common=Object.keys(freq).sort(function(a,b){return freq[b]-freq[a];})[0];
   trend.innerHTML='<div style="font-size:13px;color:var(--muted);margin-bottom:8px">Overall, oldest → newest</div><svg width="100%" viewBox="0 0 '+W+' '+(H+12)+'" preserveAspectRatio="none" style="max-width:100%"><path d="'+d+'" fill="none" stroke="var(--accent)" stroke-width="2"/>'+dots+'</svg><div style="margin-top:10px;font-size:13.5px">Most recurring: <b class="dv">'+esc(common)+'</b></div>';
-  list.innerHTML='<p class="hint" style="margin:0 0 10px">Tap a tile to revisit its full report.</p>'+S.sessions.map(function(s,i){var when=new Date(s.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});return '<div class="glass sess" style="cursor:pointer" onclick="openSession('+i+')"><div class="sc" style="color:'+clr('overall',s.overall)+'">'+s.overall+'</div><div class="meta"><div class="ttl dv">'+esc(s.pattern)+'</div><div class="sub"><span class="badge">'+(s.mode==='self'?'Self · '+s.sub:'Relationship · '+s.sub)+'</span> · '+when+'</div></div><div style="color:var(--muted);font-size:20px;padding-left:6px">›</div></div>';}).join('');
+  list.innerHTML='<p class="hint" style="margin:0 0 10px">Tap a tile to revisit its full report.</p>'+S.sessions.map(function(s,i){var when=new Date(s.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});return '<div class="glass sess" style="cursor:pointer" onclick="openSession('+i+')"><div class="sc" style="color:'+clr('overall',s.overall)+'">'+s.overall+'</div><div class="meta"><div class="ttl dv">'+esc(s.pattern)+'</div><div class="sub"><span class="badge">'+(s.mode==='self'?'Just me':'Relationship')+'</span> · '+when+'</div></div><div style="color:var(--muted);font-size:20px;padding-left:6px">›</div></div>';}).join('');
 }
 if('speechSynthesis' in window)window.speechSynthesis.onvoiceschanged=function(){window.speechSynthesis.getVoices();};
 
@@ -1082,7 +1358,9 @@ function riveDemo(){
   view('analyse');renderResults('Aarav','Meera');
 }
 /* boot into the Home screen (or the replay demo) */
-ensureGuestToken();
 if(location.hash==='#rivedemo'){try{riveDemo();}catch(e){console.error('rivedemo',e);}}
 else view('home');
+/* Ask the backend who this is (limits, feature flags, act-1 variant) and pull their past sessions
+   back down. Both are best-effort: the app is fully usable if either call fails. */
+loadMe().then(loadHistory);
 </script>

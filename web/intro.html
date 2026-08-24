@@ -1,0 +1,263 @@
+<!doctype html>
+<!--
+  Samvaad — the first thing a new visitor sees.
+  A short animated walk-through of how the product works, before the login page.
+
+  Built as CSS + SVG rather than an MP4 on purpose: nothing to host, nothing to buffer on an
+  Indian mobile connection, it scales to any screen, and the copy can be edited without
+  re-rendering a video. Swapping in a real film later means replacing SCENES[] with a <video>.
+
+  Shown once per browser (localStorage 'samvaad.introSeen'), skippable at any moment, and the
+  admin can switch it off for everyone from the console (app_settings.intro_enabled).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Samvaad · How it works</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Mulish:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600&display=swap');
+  :root{
+    --ink:#2E2024; --muted:#6E5258;
+    --glass:rgba(255,255,255,.52); --glass-2:rgba(255,255,255,.7); --glass-brd:rgba(255,255,255,.74);
+    --cherry:#C8324B; --cherry-2:#A52741; --accent-soft:#F8DDE0; --accent-ink:#9E2740;
+    --good:#4F8A6B; --risk:#C0463C;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;color:var(--ink);font-family:'Mulish',system-ui,sans-serif;line-height:1.6;overflow:hidden;
+    background:radial-gradient(120% 90% at 12% 6%,#FDEEF0 0%,rgba(253,238,240,0) 46%),
+               radial-gradient(120% 100% at 92% 18%,#F8D6DD 0%,rgba(248,214,221,0) 50%),
+               linear-gradient(160deg,#FDF3F2 0%,#F9DEE3 48%,#F1DDE8 100%);}
+  .serif{font-family:'Fraunces',serif}
+  .dv{font-family:'Mulish','Noto Sans Devanagari',sans-serif}
+
+  /* floating arcs, the same signature the app uses */
+  .arc{position:fixed;border-radius:50%;border:1px solid rgba(200,50,75,.13);pointer-events:none}
+  .a1{width:520px;height:520px;top:-190px;right:-160px}
+  .a2{width:360px;height:360px;bottom:-150px;left:-120px}
+
+  .stagewrap{position:relative;height:100dvh;display:grid;grid-template-rows:auto 1fr auto;padding:16px 18px 22px;max-width:560px;margin:0 auto}
+
+  /* progress + skip */
+  .top{display:flex;align-items:center;gap:12px}
+  .bars{flex:1;display:flex;gap:5px}
+  .bars i{flex:1;height:3px;border-radius:99px;background:rgba(70,40,50,.14);overflow:hidden;position:relative}
+  .bars i b{position:absolute;inset:0;background:var(--cherry);transform:scaleX(0);transform-origin:left;border-radius:99px}
+  .bars i.done b{transform:scaleX(1)}
+  .bars i.now b{animation:fill var(--dur,4600ms) linear forwards}
+  @keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .skip{border:none;background:none;font:inherit;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;padding:4px 2px}
+  .skip:hover{color:var(--accent-ink)}
+
+  /* the scene */
+  .scene{display:grid;place-items:center;text-align:center;padding:8px 4px}
+  .card{width:100%}
+  .art{height:min(300px,40dvh);display:grid;place-items:center;margin-bottom:20px}
+  .eyebrow{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);font-weight:700}
+  h1{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(24px,6vw,32px);line-height:1.22;margin:8px 0 10px;letter-spacing:-.01em}
+  p.say{margin:0;color:var(--muted);font-size:15px;max-width:38ch;margin-inline:auto}
+
+  /* enter animation on every scene change */
+  .anim{animation:rise .62s cubic-bezier(.22,1,.36,1) both}
+  .anim.d1{animation-delay:.07s}.anim.d2{animation-delay:.14s}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  /* bottom */
+  .bottom{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .btn{border:none;border-radius:14px;padding:14px 30px;font:inherit;font-weight:700;font-size:15px;cursor:pointer;color:#fff;
+    background:linear-gradient(180deg,var(--cherry),var(--cherry-2));box-shadow:0 16px 30px -14px rgba(165,39,65,.6);
+    transition:transform .2s}
+  .btn:hover{transform:translateY(-2px)}
+  .tapnote{font-size:12.5px;color:var(--muted)}
+
+  /* ---- scene art ---- */
+  .pair{display:flex;align-items:flex-end;justify-content:center;gap:min(60px,12vw)}
+  .head{width:74px;height:74px;border-radius:50%;position:relative;box-shadow:0 14px 26px -16px rgba(70,30,45,.55)}
+  .head.a{background:linear-gradient(160deg,#F2C0CB,#E092A6)}
+  .head.b{background:linear-gradient(160deg,#E9B79B,#C98C70)}
+  .head::before,.head::after{content:'';position:absolute;top:31px;width:7px;height:7px;border-radius:50%;background:#4A2E37}
+  .head::before{left:20px}.head::after{right:20px}
+  .head i{position:absolute;left:50%;top:46px;transform:translateX(-50%);width:20px;height:3px;border-radius:99px;background:#4A2E37;opacity:.75}
+  .head.sad i{width:16px;height:8px;border-radius:99px 99px 0 0;border:3px solid #4A2E37;border-bottom:none;background:none;top:48px}
+  .head.warm i{width:22px;height:10px;border-radius:0 0 99px 99px;background:#4A2E37;top:44px}
+
+  .bub{position:relative;padding:9px 14px;border-radius:14px;font-size:14px;max-width:210px;text-align:left;
+    background:var(--glass-2);border:1px solid var(--glass-brd);box-shadow:0 12px 24px -18px rgba(70,30,45,.5)}
+  .bub.hot{background:#FBE2DF;border-color:#F0C4BE;color:#8C3B33}
+  .bub.kind{background:#E4F1E9;border-color:#C6E1D2;color:#336B4F}
+  .stack{display:flex;flex-direction:column;gap:10px;align-items:center}
+  .row{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+
+  .waves{display:flex;align-items:center;gap:4px;height:52px}
+  .waves span{width:5px;border-radius:99px;background:var(--cherry);opacity:.75;animation:wv 1.15s ease-in-out infinite}
+  @keyframes wv{0%,100%{height:12px}50%{height:44px}}
+
+  .ring{width:132px;height:132px;border-radius:50%;display:grid;place-items:center;
+    background:radial-gradient(circle at 34% 30%,rgba(255,255,255,.85),rgba(248,221,224,.55));
+    border:1px solid var(--glass-brd);animation:breathe 7s ease-in-out infinite}
+  @keyframes breathe{0%,100%{transform:scale(.86)}42%{transform:scale(1.12)}62%{transform:scale(1.12)}}
+  .ring .lab{font-size:12.5px;font-weight:700;color:var(--accent-ink);letter-spacing:.06em;text-transform:uppercase}
+
+  .score{font-family:'Fraunces',serif;font-weight:600;font-size:56px;color:var(--cherry);line-height:1}
+
+  @media (prefers-reduced-motion: reduce){
+    .anim,.bars i.now b,.waves span,.ring{animation:none!important}
+    .bars i.now b{transform:scaleX(1)}
+  }
+</style>
+</head>
+<body>
+<div class="arc a1"></div>
+<div class="arc a2"></div>
+
+<div class="stagewrap">
+  <div class="top">
+    <div class="bars" id="bars"></div>
+    <button class="skip" id="skip">Skip</button>
+  </div>
+
+  <div class="scene"><div class="card" id="card"></div></div>
+
+  <div class="bottom">
+    <button class="btn" id="cta">Next</button>
+    <div class="tapnote" id="tapnote">Tap anywhere to continue</div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+var LOGIN = 'login.html';
+var SEEN_KEY = 'samvaad.introSeen';
+var BACKEND = (function(){ try{ return localStorage.getItem('samvaad.beUrl'); }catch(e){ return null; } })()
+              || 'https://samvaad-backend-gyk9.onrender.com';
+
+/* Two heads, optionally with a mood and a line each. The whole cast of this film. */
+function pair(aMood, bMood){
+  return '<div class="pair"><div class="head a '+(aMood||'')+'"><i></i></div><div class="head b '+(bMood||'')+'"><i></i></div></div>';
+}
+
+var SCENES = [
+  {
+    dur: 4200,
+    eyebrow: 'Samvaad',
+    h: 'Every couple has that one conversation',
+    p: 'The one that went sideways, and neither of you is quite sure where.',
+    art: '<div class="stack">'
+       + '<div class="row"><span class="bub hot dv">Tum hamesha busy rehte ho.</span></div>'
+       + pair('sad','sad')
+       + '<div class="row"><span class="bub hot dv">Main kaam kar raha hoon, samajh nahi aata?</span></div>'
+       + '</div>'
+  },
+  {
+    dur: 4400,
+    eyebrow: 'Step one',
+    h: 'Bring it to us, however you have it',
+    p: 'Paste the chat, upload a recording. Hinglish and Devanagari, both welcome.',
+    art: '<div class="stack">'
+       + '<div class="waves">'+[0,1,2,3,4,5,6,7,8].map(function(i){ return '<span style="animation-delay:'+(i*0.09)+'s"></span>'; }).join('')+'</div>'
+       + '<div class="row"><span class="bub dv">Kavya: Aaj phir call nahi kiya.</span></div>'
+       + '<div class="row"><span class="bub dv">Rohit: Office mein kaam tha.</span></div>'
+       + '</div>'
+  },
+  {
+    dur: 4800,
+    eyebrow: 'Step two',
+    h: 'Watch the moment play back',
+    p: 'Your own words, acted out, so you can see the exchange from outside it for once.',
+    art: '<div class="stack">'
+       + pair('sad','')
+       + '<div class="row"><span class="bub hot dv">Hamesha koi excuse hota hai.</span></div>'
+       + '</div>'
+  },
+  {
+    dur: 4800,
+    eyebrow: 'Step three',
+    h: 'See what caught, and what to say instead',
+    p: 'Not blame. The specific line, and a kinder one you can actually use next time.',
+    art: '<div class="stack">'
+       + '<div class="row"><span class="bub hot dv">Tum hamesha busy rehte ho.</span></div>'
+       + '<div style="font-size:20px;color:var(--muted)">↓</div>'
+       + '<div class="row"><span class="bub kind dv">Mujhe akela feel hota hai jab tum late aate ho.</span></div>'
+       + '</div>'
+  },
+  {
+    dur: 4400,
+    eyebrow: 'Whenever you need it',
+    h: 'And a minute to breathe',
+    p: 'If it got heated, we stop and settle first. Regulate, then talk.',
+    art: '<div class="ring"><span class="lab">Breathe in</span></div>'
+  },
+  {
+    dur: 0,
+    eyebrow: 'That is all of it',
+    h: 'Shall we look at yours?',
+    p: 'Private to you. Wellness awareness, never a diagnosis.',
+    art: '<div class="stack">'
+       + '<div class="score">72</div>'
+       + pair('warm','warm')
+       + '</div>',
+    cta: 'Get started'
+  }
+];
+
+var i = 0, timer = null;
+
+function bars(){
+  $('bars').innerHTML = SCENES.map(function(s, n){
+    var cls = n < i ? 'done' : (n === i ? 'now' : '');
+    return '<i class="'+cls+'"'+(n===i&&s.dur?' style="--dur:'+s.dur+'ms"':'')+'><b></b></i>';
+  }).join('');
+}
+
+function render(){
+  var s = SCENES[i];
+  $('card').innerHTML =
+      '<div class="art anim">'+s.art+'</div>'
+    + '<div class="eyebrow anim d1">'+s.eyebrow+'</div>'
+    + '<h1 class="serif anim d1">'+s.h+'</h1>'
+    + '<p class="say anim d2">'+s.p+'</p>';
+  $('cta').textContent = s.cta || 'Next';
+  $('tapnote').style.visibility = s.cta ? 'hidden' : 'visible';
+  bars();
+  clearTimeout(timer);
+  if(s.dur) timer = setTimeout(next, s.dur);
+}
+
+function next(){
+  if(i >= SCENES.length - 1) return finish();
+  i++; render();
+}
+
+function finish(){
+  clearTimeout(timer);
+  try{ localStorage.setItem(SEEN_KEY, '1'); }catch(e){}
+  location.replace(LOGIN);
+}
+
+$('cta').onclick = function(e){ e.stopPropagation(); next(); };
+$('skip').onclick = function(e){ e.stopPropagation(); finish(); };
+document.body.addEventListener('click', function(){ if(!SCENES[i].cta) next(); });
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape') finish();
+  else if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+});
+
+/* If the admin has switched the intro off, do not show it at all. Give the backend a short
+   moment — a sleeping Render instance must never hold a first-time visitor on a blank screen —
+   and start the film regardless once that window passes. */
+(function boot(){
+  var started = false;
+  var start = function(){ if(!started){ started = true; render(); } };
+  var t = setTimeout(start, 600);
+  fetch(BACKEND + '/api/config')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(d && d.introEnabled === false){ clearTimeout(t); return finish(); }
+      clearTimeout(t); start();
+    })
+    .catch(function(){ clearTimeout(t); start(); });
+})();
+</script>
+</body>
+</html>

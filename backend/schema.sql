@@ -18,10 +18,12 @@ create table if not exists public.sessions (
   patterns     jsonb default '[]'::jsonb,
   strengths    jsonb default '[]'::jsonb,
   improvements jsonb default '[]'::jsonb,
-  improved     jsonb default '[]'::jsonb,             -- the rewritten conversation turns
+  original     jsonb default '[]'::jsonb,             -- the pivotal real turns, verbatim (walk-through act 1)
+  improved     jsonb default '[]'::jsonb,             -- the rewritten conversation turns (act 2)
   kpis         jsonb default '{}'::jsonb,             -- acoustic/text KPIs (staged: pitch, rate, pauses)
   speakers     jsonb default '{}'::jsonb,             -- {A:{name,gender},B:{...}} — the replay picks rigs from this
   truncated    boolean default false,                 -- true when a long conversation hit the word ceiling
+  act1_mode    text,                                  -- which act-1 delivery was live: voiced|real_audio|silent
   created_at   timestamptz not null default now()
 );
 
@@ -106,5 +108,13 @@ create table if not exists public.app_settings (
 );
 alter table public.app_settings enable row level security;
 -- (intentionally no policy: service-role only)
+
+insert into public.app_settings (key, value) values
+  ('guest_enabled',           'true'::jsonb),
+  ('default_minutes_quota',   '60'::jsonb),
+  ('act1_mode',               '"voiced"'::jsonb),   -- walk-through act 1: voiced|real_audio|silent
+  ('intro_enabled',           'true'::jsonb),       -- animated intro before the login page
+  ('self_reflection_enabled', 'false'::jsonb)       -- "Just me" is built but closed for the trial
+on conflict (key) do nothing;
 
 create index if not exists sessions_user_created on public.sessions (user_id, created_at desc);

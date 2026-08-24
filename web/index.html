@@ -1,15 +1,26 @@
 <!doctype html>
-<!-- Deploy entry: Samvaad starts at the login page. This redirect makes "/" work on Vercel. -->
+<!--
+  Deploy entry: makes "/" work on Vercel.
+  A first-time visitor is sent to the intro animation; everyone after that goes straight to login.
+  The meta-refresh and the <noscript> link both point at login.html so the page is never a dead end
+  if scripting is off — the intro is an enhancement, not a gate.
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Samvaad</title>
-  <meta http-equiv="refresh" content="0; url=login.html">
+  <meta http-equiv="refresh" content="1; url=login.html">
   <link rel="canonical" href="login.html">
 </head>
 <body>
-  <script>location.replace('login.html');</script>
+  <script>
+    (function(){
+      var seen = false;
+      try { seen = localStorage.getItem('samvaad.introSeen') === '1'; } catch (e) {}
+      location.replace(seen ? 'login.html' : 'intro.html');
+    })();
+  </script>
   <noscript><a href="login.html">Continue to Samvaad</a></noscript>
 </body>
 </html>

@@ -270,6 +270,23 @@
   };
   $('backBtn').onclick = function(){ show('email'); $('msg1').textContent=''; };
 
+  /* Guest access is an admin switch (app_settings.guest_enabled). The backend already refuses to
+     issue guest tokens when it is off, but leaving the button here would send someone into the app
+     only to bounce them back at the first request. Hide it instead. */
+  (function(){
+    var be = (function(){ try{ return localStorage.getItem('samvaad.beUrl'); }catch(e){ return null; } })()
+             || 'https://samvaad-backend-gyk9.onrender.com';
+    fetch(be.replace(/\/+$/,'') + '/api/config')
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        if(d && d.guestEnabled === false){
+          var b = $('guestBtn'); if(b) b.style.display = 'none';
+          var dv = document.querySelector('#state-email .divider'); if(dv) dv.style.display = 'none';
+        }
+      })
+      .catch(function(){});
+  })();
+
   $('guestBtn').onclick = function(){
     SamvaadAuth.setGuest(); // app.html allows guests through (no persistence)
     $('doneH').textContent = 'Welcome, friend.';

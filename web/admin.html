@@ -1,9 +1,9 @@
 <!doctype html>
 <!--
-  Samvaad — Admin dashboard (E2-T2 KPIs + E3-T1 today's-nudges manual send list).
-  Auth-gated: only Supabase users whose id is in the backend's ADMIN_USER_IDS see data.
-  Backend URL is read from localStorage 'samvaad.beUrl' (set it once in the app → Settings),
-  or paste it into BACKEND_URL below.
+  Samvaad — Admin console (pre-launch trial).
+  Two sides: Metrics (what the cohort is doing) and People (what you can do about it).
+  Auth-gated: only Supabase users whose id is in the backend's ADMIN_USER_IDS see anything.
+  Backend URL is read from localStorage 'samvaad.beUrl', else the Render default below.
 -->
 <html lang="en">
 <head>
@@ -17,7 +17,7 @@
     --ink:#2E2024; --muted:#6E5258; --hair:rgba(46,32,36,.12);
     --glass:rgba(255,255,255,.5); --glass-2:rgba(255,255,255,.66); --glass-brd:rgba(255,255,255,.72);
     --cherry:#C8324B; --cherry-2:#A52741;
-    --good:#4F8A6B; --risk:#C0463C;
+    --good:#4F8A6B; --warn:#B8823C; --risk:#C0463C;
     --accent:#C8324B; --accent-soft:#F8DDE0; --accent-ink:#9E2740;
   }
   *{box-sizing:border-box}
@@ -25,37 +25,77 @@
     background:radial-gradient(120% 90% at 12% 6%,#FDEEF0 0%,rgba(253,238,240,0) 46%),
                radial-gradient(120% 100% at 92% 18%,#F8D6DD 0%,rgba(248,214,221,0) 50%),
                linear-gradient(160deg,#FDF3F2 0%,#F9DEE3 48%,#F1DDE8 100%);}
-  .wrap{max-width:980px;margin:0 auto;padding:26px 18px 80px}
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 18px 80px}
   .serif{font-family:'Fraunces',serif}
   .glass{background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(1.2);backdrop-filter:blur(20px) saturate(1.2);
     border:1px solid var(--glass-brd);border-radius:20px;box-shadow:0 20px 50px -30px rgba(76,58,42,.4),inset 0 1px 0 rgba(255,255,255,.55)}
-  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
   .word{font-family:'Fraunces',serif;font-weight:600;font-size:22px}.word .d{color:var(--cherry)}
   .word .sub{font-size:13px;color:var(--muted);font-family:'Mulish';font-weight:600;margin-left:8px}
   .btn{border:none;border-radius:12px;padding:10px 18px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;color:#fff;
     background:linear-gradient(180deg,var(--cherry),var(--cherry-2));box-shadow:0 12px 24px -12px rgba(165,39,65,.55)}
   .btn.soft{background:var(--glass);color:var(--ink);border:1px solid var(--glass-brd);box-shadow:none;font-weight:600}
+  .btn:disabled{opacity:.55;cursor:progress}
   .note{font-size:13.5px;color:var(--muted);margin:0}
   .gate{padding:30px;text-align:center}
   .gate h2{font-family:'Fraunces',serif;font-weight:500;margin:0 0 8px}
   .gate a{color:var(--accent-ink);font-weight:700}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
-  .kpi{padding:16px 18px}
+
+  /* tabs */
+  .tabs{display:inline-flex;gap:4px;padding:4px;border-radius:99px;background:var(--glass);border:1px solid var(--glass-brd);margin-bottom:18px}
+  .tabs button{border:none;background:none;font:inherit;font-weight:700;font-size:13.5px;color:var(--muted);padding:8px 18px;border-radius:99px;cursor:pointer}
+  .tabs button[aria-selected="true"]{background:linear-gradient(180deg,var(--cherry),var(--cherry-2));color:#fff}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-bottom:16px}
+  .kpi{padding:15px 17px}
   .kpi .lab{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
-  .kpi .val{font-family:'Fraunces',serif;font-weight:600;font-size:34px;line-height:1.1;margin-top:4px}
-  .kpi .hint{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .kpi .val{font-family:'Fraunces',serif;font-weight:600;font-size:32px;line-height:1.1;margin-top:2px}
+  .kpi .hint{font-size:12.5px;color:var(--muted);margin-top:1px}
   .kpi.hero .val{color:var(--cherry)}
   .sec{padding:20px;margin-bottom:16px}
   .sec h3{font-family:'Fraunces',serif;font-weight:500;font-size:18px;margin:0 0 4px}
+  .sec .sub{font-size:13px;color:var(--muted);margin:0 0 14px}
   .msgbox{background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin:10px 0;font-size:14px;color:var(--accent-ink);position:relative}
   .nudge{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--glass-brd);background:var(--glass-2);border-radius:12px;margin-bottom:8px;flex-wrap:wrap}
   .nudge .who{flex:1;min-width:140px}.nudge .who b{font-size:14px}.nudge .who .ph{font-size:12.5px;color:var(--muted)}
   .nudge a.wa{text-decoration:none}
   .mini{border:1px solid var(--glass-brd);background:var(--glass);border-radius:99px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
   .mini.wa{background:#25D366;color:#fff;border-color:#25D366}
+  .mini:disabled{opacity:.5;cursor:progress}
   .err{color:var(--risk);font-weight:600}
   .empty{color:var(--muted);text-align:center;padding:18px;font-size:14px}
   footer{margin-top:24px;color:var(--muted);font-size:12px;text-align:center}
+
+  /* experiment comparison */
+  .exp{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  .exp .card{border:1px solid var(--glass-brd);background:var(--glass-2);border-radius:14px;padding:14px}
+  .exp .card.live{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .exp .card h4{margin:0;font-family:'Fraunces',serif;font-weight:500;font-size:15.5px}
+  .exp .card .tag{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-ink);font-weight:700}
+  .exp .card .big{font-family:'Fraunces',serif;font-weight:600;font-size:28px;line-height:1.15;margin-top:6px}
+  .exp .card .n{font-size:12.5px;color:var(--muted)}
+
+  /* people */
+  .person{border:1px solid var(--glass-brd);background:var(--glass-2);border-radius:14px;padding:13px 15px;margin-bottom:10px}
+  .person .hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .person .em{font-weight:700;font-size:14.5px;word-break:break-all}
+  .person .meta{font-size:12.5px;color:var(--muted)}
+  .person .ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .person label{font-size:12px;color:var(--muted);font-weight:600}
+  select,input[type="number"]{font:inherit;font-size:13px;padding:6px 9px;border-radius:10px;border:1px solid var(--glass-brd);background:var(--glass);color:var(--ink)}
+  input[type="number"]{width:84px}
+  .pill{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:99px}
+  .pill.active{background:rgba(79,138,107,.16);color:var(--good)}
+  .pill.limited{background:rgba(184,130,60,.18);color:var(--warn)}
+  .pill.suspended{background:rgba(192,70,60,.16);color:var(--risk)}
+  .saved{font-size:12px;font-weight:700;color:var(--good);opacity:0;transition:opacity .2s}
+  .saved.on{opacity:1}
+  .switch{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--hair)}
+  .switch:last-child{border-bottom:none}
+  .switch .t{flex:1}.switch .t b{font-size:14px;display:block}
+  .switch .t span{font-size:12.5px;color:var(--muted)}
+  .switch input[type="checkbox"]{accent-color:var(--cherry)}   /* default blue fights the palette */
+  .hide{display:none!important}
 </style>
 </head>
 <body>
@@ -65,113 +105,285 @@
     <div><button class="btn soft" id="refreshBtn">Refresh</button></div>
   </header>
 
+  <div class="tabs hide" id="tabs">
+    <button data-t="metrics" aria-selected="true">Metrics</button>
+    <button data-t="people" aria-selected="false">People</button>
+  </div>
+
   <div id="content"><div class="glass gate"><p class="note">Loading…</p></div></div>
 
-  <footer>Internal · KPIs read from your backend. Wellness awareness, not medical diagnosis.</footer>
+  <footer>Internal · read live from your backend. Wellness awareness, not medical diagnosis.</footer>
 </div>
 
 <script>
   var BACKEND_URL = (localStorage.getItem('samvaad.beUrl') || "https://samvaad-backend-gyk9.onrender.com").replace(/\/+$/, "");  // Render backend (override via Settings)
   var $ = function(id){ return document.getElementById(id); };
   var content = $('content');
+  var TAB = 'metrics';
+  var DATA = { kpis:null, nudges:null, users:null, settings:null };
 
   function esc(s){ s=(s==null?'':String(s)); return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function gate(html){ content.innerHTML = '<div class="glass gate">'+html+'</div>'; }
+  function gate(html){ $('tabs').classList.add('hide'); content.innerHTML = '<div class="glass gate">'+html+'</div>'; }
   function waNumber(p){ var d=String(p||'').replace(/\D/g,''); if(d.length===10) d='91'+d; return d; }
+  function headers(){ return Object.assign({'content-type':'application/json'}, SamvaadAuth.authHeaders()); }
+  function ago(iso){
+    if(!iso) return 'never';
+    var d=(Date.now()-new Date(iso).getTime())/86400000;
+    if(d<1) return 'today';
+    if(d<2) return 'yesterday';
+    if(d<30) return Math.floor(d)+'d ago';
+    return new Date(iso).toLocaleDateString([], {month:'short', day:'numeric'});
+  }
 
   async function load(){
-    if (!(SamvaadAuth.readSession())) {
-      gate('<h2 class="serif">Admin sign-in needed</h2><p class="note">Please <a href="login.html">sign in</a> with an admin account.</p>');
-      return;
-    }
-    if (!BACKEND_URL) {
-      gate('<h2 class="serif">Set your Backend URL</h2><p class="note">Open the app → <b>Settings</b> → paste your Render backend URL. The admin dashboard reads KPIs from there.</p>');
-      return;
-    }
-    gate('<p class="note">Loading KPIs…</p>');
-    try {
-      var headers = Object.assign({ 'content-type':'application/json' }, SamvaadAuth.authHeaders());
-      var [kRes, nRes] = await Promise.all([
-        fetch(BACKEND_URL + '/api/admin/kpis', { headers: headers }),
-        fetch(BACKEND_URL + '/api/admin/nudges', { headers: headers })
-      ]);
-      if (kRes.status === 403 || nRes.status === 403) {
-        gate('<h2 class="serif">Not an admin</h2><p class="note">This account isn’t in the backend allowlist (<code>ADMIN_USER_IDS</code>). Ask the owner to add your Supabase user id.</p>');
-        return;
+    try{
+      if(!SamvaadAuth.readSession()){
+        return gate('<h2 class="serif">Admin sign-in needed</h2><p class="note">Please <a href="login.html">sign in</a> with an admin account.</p>');
       }
-      if (!kRes.ok) throw new Error('KPIs failed ('+kRes.status+')');
-      var k = await kRes.json();
-      var n = nRes.ok ? await nRes.json() : { count:0, nudges:[], suggestedMessage:'' };
-      render(k, n);
-    } catch (e) {
+      if(!BACKEND_URL){
+        return gate('<h2 class="serif">Set your Backend URL</h2><p class="note">Open the app → <b>Settings</b> → paste your Render backend URL.</p>');
+      }
+      var h = headers();
+      var res = await Promise.all([
+        fetch(BACKEND_URL + '/api/admin/kpis',     { headers: h }),
+        fetch(BACKEND_URL + '/api/admin/nudges',   { headers: h }),
+        fetch(BACKEND_URL + '/api/admin/users',    { headers: h }),
+        fetch(BACKEND_URL + '/api/admin/settings', { headers: h })
+      ]);
+      if(res.some(function(r){ return r.status === 403; })){
+        return gate('<h2 class="serif">Not an admin</h2><p class="note">This account isn’t in the backend allowlist (<code>ADMIN_USER_IDS</code>). Ask the owner to add your Supabase user id.</p>');
+      }
+      var out = await Promise.all(res.map(function(r){ return r.json(); }));
+      DATA.kpis = out[0]; DATA.nudges = out[1]; DATA.users = out[2]; DATA.settings = out[3];
+      $('tabs').classList.remove('hide');
+      render();
+    }catch(e){
       gate('<h2 class="serif">Couldn’t load</h2><p class="note err">'+esc(e.message||String(e))+'</p><p class="note">Check the Backend URL and that the server is awake (Render free tier sleeps).</p>');
     }
   }
 
-  function render(k, n){
-    var s = k.sessions||{}, bm = s.byMode||{}, bs = s.bySubmode||{};
-    var conv = k.soloToCouple||{}; var ratePct = Math.round((conv.rate||0)*100);
-    var cards = ''
-      + kpi('Registered users', (k.users&&k.users.registered)||0, ((k.users&&k.users.suspended)||0)+' paused', true)
-      + kpi('WhatsApp opt-ins', (k.optins&&k.optins.total)||0, 'consented daily check-ins')
-      + kpi('Solo → Couple', ratePct+'%', (conv.converted||0)+' converted')
-      + kpi('Sessions', s.total||0, (bm.relationship||0)+' rel · '+(bm.self||0)+' self')
-      + kpi('Users', (k.users&&k.users.total)||0, 'distinct, signed-in')
-      + kpi('Couple · Solo', (bs.couple||0)+' · '+(bs.solo||0), 'by submode')
-      + voiceCard(k.voice);
+  function render(){ TAB === 'people' ? renderPeople() : renderMetrics(); }
 
-    var msg = n.suggestedMessage||'';
-    var list = (n.nudges&&n.nudges.length)
-      ? n.nudges.map(function(x){
-          var num = waNumber(x.phone);
-          var wa = 'https://wa.me/'+num+'?text='+encodeURIComponent(msg);
-          return '<div class="nudge"><div class="who"><b>'+esc(x.display_name||'—')+'</b><div class="ph">'+esc(x.phone)+(x.cadence?' · '+esc(x.cadence):'')+'</div></div>'
-            + '<a class="wa" href="'+wa+'" target="_blank" rel="noopener"><span class="mini wa">Send on WhatsApp</span></a>'
-            + '<button class="mini" data-copy="'+esc(x.phone)+'">Copy number</button></div>';
-        }).join('')
-      : '<div class="empty">No consented opt-ins yet.</div>';
-
-    content.innerHTML =
-      voiceBanner(k.voice)
-      + '<div class="grid">'+cards+'</div>'
-      + '<div class="glass sec"><h3>Today’s check-ins · '+((n&&n.count)||0)+'</h3>'
-      + '<p class="note">Manual send for now (consented users only — honor STOP). Tap “Send on WhatsApp”.</p>'
-      + (msg ? '<div class="msgbox" id="msgBox">'+esc(msg)+' <button class="mini" id="copyMsg" style="margin-left:8px">Copy message</button></div>' : '')
-      + list + '</div>';
-
-    var cm = $('copyMsg'); if (cm) cm.onclick = function(){ copy(msg, cm); };
-    Array.prototype.forEach.call(document.querySelectorAll('[data-copy]'), function(b){
-      b.onclick = function(){ copy(b.getAttribute('data-copy'), b); };
-    });
-  }
-
+  /* ---------------- Metrics ---------------- */
   function kpi(lab, val, hint, hero){
-    return '<div class="glass kpi'+(hero?' hero':'')+'"><div class="lab">'+esc(lab)+'</div><div class="val">'+esc(val)+'</div><div class="hint">'+esc(hint)+'</div></div>';
-  }
-  /* live ElevenLabs voice quota card */
-  function voiceCard(v){
-    v = v || {};
-    if(!v.ok){
-      return '<div class="glass kpi" style="border:1px solid rgba(192,70,60,.5)"><div class="lab">Voice · ElevenLabs</div><div class="val" style="color:#C0463C;font-size:22px">Down</div><div class="hint">'+esc(v.error||'error')+(v.detail?(' — '+esc(v.detail)):'')+'</div></div>';
-    }
-    var pct = v.limit ? Math.round((v.used/v.limit)*100) : 0;
-    var low = v.exhausted || (v.limit && v.remaining < v.limit*0.1);
-    var reset = v.resetUnix ? new Date(v.resetUnix*1000).toLocaleDateString() : '';
-    return '<div class="glass kpi" style="'+(low?'border:1px solid rgba(192,70,60,.55)':'')+'"><div class="lab">Voice · ElevenLabs'+(v.tier?(' · '+esc(v.tier)):'')+'</div><div class="val" style="'+(low?'color:#C0463C':'')+'">'+esc(v.remaining)+'</div><div class="hint">chars left of '+esc(v.limit)+' · '+pct+'% used'+(reset?(' · resets '+esc(reset)):'')+'</div></div>';
-  }
-  /* prominent banner only when voice is down or exhausted */
-  function voiceBanner(v){
-    v = v || {};
-    if(v.ok && !v.exhausted) return '';
-    var msg = !v.ok
-      ? ('Voice service error — '+esc(v.error||'unknown')+(v.detail?(': '+esc(v.detail)):'')+'. Replays fall back to the robotic browser voice.')
-      : ('ElevenLabs quota exhausted — 0 of '+esc(v.limit)+' characters left. Replays fall back to the robotic browser voice until you add credits'+(v.resetUnix?(' or the monthly reset on '+esc(new Date(v.resetUnix*1000).toLocaleDateString())):'')+'.');
-    return '<div class="glass" style="border:1px solid rgba(192,70,60,.6);background:rgba(192,70,60,.08);padding:14px 16px;margin-bottom:14px;color:#8f2d27;font-weight:600">🔇 '+msg+'</div>';
-  }
-  function copy(text, btn){
-    try { navigator.clipboard.writeText(text); var t=btn.textContent; btn.textContent='Copied ✓'; setTimeout(function(){ btn.textContent=t; }, 1400); } catch(e){}
+    return '<div class="glass kpi'+(hero?' hero':'')+'"><div class="lab">'+esc(lab)+'</div><div class="val">'+esc(val)+'</div>'
+      + (hint ? '<div class="hint">'+esc(hint)+'</div>' : '') + '</div>';
   }
 
+  function renderMetrics(){
+    var k = DATA.kpis || {}, f = k.funnel||{}, a = k.activity||{}, q = k.quality||{}, acc = k.accounts||{}, cap = k.capacity||{};
+    var html = '';
+
+    // The trial's actual funnel: signed up -> gave a number -> ran something -> came back.
+    html += '<div class="grid">'
+      + kpi('Signed up', f.signups||0, 'accounts created')
+      + kpi('Gave a number', f.withPhone||0, 'reachable on WhatsApp')
+      + kpi('Ran an analysis', f.activated||0, (f.activationRate||0)+'% of sign-ups', true)
+      + kpi('Came back', f.returning||0, (f.returnRate||0)+'% of those, 2+ analyses', true)
+      + '</div>';
+
+    html += '<div class="grid">'
+      + kpi('Analyses', a.analyses||0, (a.today||0)+' today · '+(a.last7||0)+' this week')
+      + kpi('Active this week', a.activeLast7||0, 'distinct people')
+      + kpi('Per active user', a.perActivatedUser||0, 'analyses each')
+      + kpi('Avg score', q.avgScore==null?'—':q.avgScore, 'across all reports')
+      + kpi('Avg escalation', q.avgEscalation==null?'—':q.avgEscalation, 'higher = more heat')
+      + kpi('Check-in opt-ins', f.optins||0, 'consented to WhatsApp')
+      + '</div>';
+
+    // The A/B this trial exists to settle.
+    html += '<div class="glass sec"><h3>Act 1: which opening works</h3>'
+      + '<p class="sub">The walk-through opens by replaying the real conversation. Three ways to deliver it, one question: does it make someone say they will actually try the suggested line? That “will try” rate is the comparison.</p>'
+      + expCards(k.experiment||{}, (DATA.settings&&DATA.settings.settings&&DATA.settings.settings.act1_mode)||'voiced')
+      + '<p class="note" style="margin-top:12px">Pin one account to a variant on the <b>People</b> tab, or change the default for everyone in Settings below.</p>'
+      + '</div>';
+
+    html += '<div class="glass sec"><h3>Accounts</h3><div class="grid" style="margin:10px 0 0">'
+      + kpi('Active', acc.active||0, '')
+      + kpi('Limited', acc.limited||0, '')
+      + kpi('Suspended', acc.suspended||0, '')
+      + '</div></div>';
+
+    html += settingsPanel();
+
+    // Capacity: the two ceilings that actually bite during a trial.
+    html += '<div class="glass sec"><h3>Capacity</h3>'
+      + '<p class="sub">Analysis engine: <b>'+esc(cap.model||'—')+'</b> at '+esc(cap.tpm||'—')+' tokens/min. '
+      + 'That sets the longest conversation the product can accept: <b>'+esc((cap.limits&&cap.limits.maxMinutes)||'—')+' minutes</b> '
+      + '('+esc((cap.limits&&cap.limits.maxWords)||'—')+' words). Raise GROQ_TPM on Render after upgrading the Groq plan to lift it.</p>'
+      + '<p class="note">Analysis minutes charged this month: <b>'+esc(cap.minutesThisMonth||0)+'</b> · long conversations trimmed: <b>'+esc(a.truncated||0)+'</b></p>'
+      + voiceCard(k.voice||{})
+      + '</div>';
+
+    html += nudgeSection();
+    content.innerHTML = voiceBanner(k.voice||{}) + html;
+    wireSettings();
+  }
+
+  function expCards(exp, live){
+    var labels = { voiced:'Voiced', real_audio:'Their real audio', silent:'Silent, bubbles only' };
+    var desc = { voiced:'Avatars speak their lines', real_audio:'Their own recording plays', silent:'No voice at all' };
+    var keys = ['voiced','real_audio','silent'];
+    return '<div class="exp">' + keys.map(function(k){
+      var e = exp[k] || { sessions:0, feedback:0, yes:0, willTryRate:null };
+      return '<div class="card'+(k===live?' live':'')+'">'
+        + (k===live ? '<div class="tag">Default</div>' : '<div class="tag" style="opacity:.35">&nbsp;</div>')
+        + '<h4>'+esc(labels[k])+'</h4>'
+        + '<div class="n">'+esc(desc[k])+'</div>'
+        + '<div class="big">'+(e.willTryRate==null ? '—' : e.willTryRate+'%')+'</div>'
+        + '<div class="n">said they’ll try it · '+esc(e.feedback||0)+' answered of '+esc(e.sessions||0)+' sessions</div>'
+        + '</div>';
+    }).join('') + '</div>';
+  }
+
+  function settingsPanel(){
+    var s = (DATA.settings && DATA.settings.settings) || {};
+    var sw = function(id, title, sub, on){
+      return '<div class="switch"><div class="t"><b>'+esc(title)+'</b><span>'+esc(sub)+'</span></div>'
+        + '<input type="checkbox" id="'+id+'"'+(on?' checked':'')+' style="width:18px;height:18px;cursor:pointer">'
+        + '<span class="saved" id="'+id+'Saved">Saved</span></div>';
+    };
+    return '<div class="glass sec"><h3>Settings</h3>'
+      + '<p class="sub">Global switches. These take effect immediately, without a deploy or an env var.</p>'
+      + '<div class="switch"><div class="t"><b>Act 1 default</b><span>Which opening a new account gets, unless pinned on the People tab.</span></div>'
+      + '<select id="setAct1">'
+      + ['voiced','real_audio','silent'].map(function(m){
+          return '<option value="'+m+'"'+(s.act1_mode===m?' selected':'')+'>'+({voiced:'Voiced',real_audio:'Their real audio',silent:'Silent'})[m]+'</option>';
+        }).join('')
+      + '</select><span class="saved" id="setAct1Saved">Saved</span></div>'
+      + sw('setGuest','Guest access','Lets someone try the app without an account. Turn off before inviting real testers.', s.guest_enabled!==false)
+      + sw('setIntro','Intro animation','Show the how-it-works animation to first-time visitors before the login page.', s.intro_enabled!==false)
+      + sw('setSelf','“Just me” mode','Self reflection is built but closed for the trial. Opens it for everyone.', s.self_reflection_enabled===true)
+      + '</div>';
+  }
+
+  function wireSettings(){
+    var bind = function(id, key, get){
+      var el = $(id); if(!el) return;
+      el.onchange = async function(){
+        var body = {}; body[key] = get(el);
+        var ok = await patchSettings(body);
+        var sv = $(id+'Saved'); if(sv && ok){ sv.classList.add('on'); setTimeout(function(){ sv.classList.remove('on'); }, 1400); }
+      };
+    };
+    bind('setAct1','act1_mode',  function(e){ return e.value; });
+    bind('setGuest','guest_enabled', function(e){ return e.checked; });
+    bind('setIntro','intro_enabled', function(e){ return e.checked; });
+    bind('setSelf','self_reflection_enabled', function(e){ return e.checked; });
+  }
+
+  async function patchSettings(body){
+    try{
+      var r = await fetch(BACKEND_URL + '/api/admin/settings', { method:'PATCH', headers: headers(), body: JSON.stringify(body) });
+      if(!r.ok){ var d = await r.json().catch(function(){ return {}; }); alert(d.error || 'Could not save that setting.'); return false; }
+      Object.assign(DATA.settings.settings, body);
+      return true;
+    }catch(e){ alert(String(e.message||e)); return false; }
+  }
+
+  function voiceCard(v){
+    if(!v || !v.ok) return '<p class="note" style="margin-top:8px">Voice quota unavailable'+(v&&v.error?' ('+esc(v.error)+')':'')+'.</p>';
+    var pct = v.limit ? Math.round((v.used / v.limit) * 100) : 0;
+    return '<p class="note" style="margin-top:8px">Voice characters: <b>'+Number(v.remaining).toLocaleString()+'</b> left of '
+      + Number(v.limit).toLocaleString() + ' ('+pct+'% used'+(v.tier?' · '+esc(v.tier):'')+').</p>';
+  }
+  function voiceBanner(v){
+    if(!v || !v.exhausted) return '';
+    return '<div class="glass sec" style="border-color:var(--risk)"><h3 style="color:var(--risk)">Voice quota exhausted</h3>'
+      + '<p class="note">ElevenLabs characters are used up for this cycle. Replays fall back to the browser voice until it resets.</p></div>';
+  }
+
+  function nudgeSection(){
+    var n = DATA.nudges || {};
+    var list = (n.nudges || []);
+    var msg = n.suggestedMessage || '';
+    var body = list.length ? list.map(function(p, i){
+      var num = waNumber(p.phone);
+      return '<div class="nudge"><div class="who"><b>'+esc(p.display_name || 'Friend')+'</b><div class="ph">+'+esc(num)+'</div></div>'
+        + '<a class="mini wa" target="_blank" rel="noopener" href="https://wa.me/'+encodeURIComponent(num)+'?text='+encodeURIComponent(msg)+'">Message on WhatsApp</a></div>';
+    }).join('') : '<div class="empty">No one has opted in to daily check-ins yet.</div>';
+    return '<div class="glass sec"><h3>Today’s check-ins · '+list.length+'</h3>'
+      + '<p class="sub">Consented opt-ins only, their own numbers. Sent by hand while the trial is small.</p>'
+      + (msg ? '<div class="msgbox">'+esc(msg)+'</div>' : '')
+      + body + '</div>';
+  }
+
+  /* ---------------- People ---------------- */
+  function renderPeople(){
+    var users = (DATA.users && DATA.users.users) || [];
+    if(!users.length){ content.innerHTML = '<div class="glass sec"><div class="empty">No accounts yet.</div></div>'; return; }
+    content.innerHTML = '<div class="glass sec"><h3>People · '+users.length+'</h3>'
+      + '<p class="sub">Pause someone, raise their limit, or pin them to one act-1 variant. Changes apply on their next request; nothing here needs a deploy.</p>'
+      + users.map(personRow).join('')
+      + '</div>';
+    users.forEach(wirePerson);
+  }
+
+  function personRow(u){
+    var id = u.id;
+    return '<div class="person" id="p_'+id+'">'
+      + '<div class="hd"><span class="em">'+esc(u.email || '(no email)')+'</span>'
+        + '<span class="pill '+esc(u.status)+'">'+esc(u.status)+'</span></div>'
+      + '<div class="meta">'
+        + (u.phone ? '+'+esc(waNumber(u.phone))+' · ' : 'no number · ')
+        + esc(u.analyses)+' analyses · last active '+esc(ago(u.lastActive))
+        + ' · '+esc(u.minutesUsed)+'/'+esc(u.minutesQuota)+' min this month'
+        + (u.avgScore!=null ? ' · avg '+esc(u.avgScore) : '')
+        + '</div>'
+      + '<div class="ctl">'
+        + '<label for="st_'+id+'">Status</label>'
+        + '<select id="st_'+id+'">'
+          + ['active','limited','suspended'].map(function(s){ return '<option value="'+s+'"'+(u.status===s?' selected':'')+'>'+s+'</option>'; }).join('')
+        + '</select>'
+        + '<label for="q_'+id+'">Minutes</label>'
+        + '<input type="number" id="q_'+id+'" min="0" step="10" value="'+esc(u.minutesQuota)+'">'
+        + '<button class="mini" id="qb_'+id+'">Save limit</button>'
+        + '<button class="mini" id="rb_'+id+'">Reset month</button>'
+        + '<label for="a1_'+id+'">Act 1</label>'
+        + '<select id="a1_'+id+'">'
+          + '<option value=""'+(!u.act1Override?' selected':'')+'>default ('+esc(u.act1)+')</option>'
+          + ['voiced','real_audio','silent'].map(function(m){ return '<option value="'+m+'"'+(u.act1Override===m?' selected':'')+'>'+m+'</option>'; }).join('')
+        + '</select>'
+        + (u.phone ? '<a class="mini wa" target="_blank" rel="noopener" href="https://wa.me/'+encodeURIComponent(waNumber(u.phone))+'">WhatsApp</a>' : '')
+        + '<span class="saved" id="sv_'+id+'">Saved</span>'
+        + '</div>'
+      + '</div>';
+  }
+
+  function wirePerson(u){
+    var id = u.id;
+    var flash = function(){ var s = $('sv_'+id); if(!s) return; s.classList.add('on'); setTimeout(function(){ s.classList.remove('on'); }, 1500); };
+    var send = async function(body, btn){
+      if(btn){ btn.disabled = true; }
+      try{
+        var r = await fetch(BACKEND_URL + '/api/admin/users/' + encodeURIComponent(id), { method:'PATCH', headers: headers(), body: JSON.stringify(body) });
+        var d = await r.json().catch(function(){ return {}; });
+        if(!r.ok){ alert(d.error || 'Could not apply that change.'); return; }
+        // keep the local copy honest so a tab switch does not show stale values
+        if(d.profile){
+          u.status = d.profile.status; u.minutesQuota = Number(d.profile.minutes_quota);
+          u.minutesUsed = d.profile.quota_month === new Date().toISOString().slice(0,7) ? Number(d.profile.minutes_used_month||0) : 0;
+          u.features = d.profile.features || {}; u.act1Override = u.features.act1 || null;
+        }
+        flash();
+      }catch(e){ alert(String(e.message||e)); }
+      finally{ if(btn){ btn.disabled = false; } }
+    };
+
+    var st = $('st_'+id); if(st) st.onchange = function(){ send({ status: st.value }); };
+    var qb = $('qb_'+id); if(qb) qb.onclick = function(){ send({ minutesQuota: Number($('q_'+id).value) }, qb); };
+    var rb = $('rb_'+id); if(rb) rb.onclick = function(){ send({ resetUsage: true }, rb); };
+    var a1 = $('a1_'+id); if(a1) a1.onchange = function(){ send({ act1: a1.value || null }); };
+  }
+
+  /* ---------------- boot ---------------- */
+  document.querySelectorAll('#tabs button').forEach(function(b){
+    b.onclick = function(){
+      document.querySelectorAll('#tabs button').forEach(function(x){ x.setAttribute('aria-selected','false'); });
+      b.setAttribute('aria-selected','true');
+      TAB = b.dataset.t; render(); window.scrollTo({ top:0, behavior:'smooth' });
+    };
+  });
   $('refreshBtn').onclick = load;
   load();
 </script>
