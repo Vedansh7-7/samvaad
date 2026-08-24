@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js",
     "funnel": "node --env-file-if-exists=.env test/funnel.mjs",
-    "schema:check": "node --env-file-if-exists=.env test/schema.mjs"
+    "schema:check": "node --env-file-if-exists=.env test/schema.mjs",
+    "funnel:signed-in": "node --env-file-if-exists=.env test/signed-in.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

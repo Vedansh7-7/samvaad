@@ -242,9 +242,13 @@ function riveResolve(inst, sm, name){
   return null;
 }
 function mountRigs(){
+  // Neither canvas is flipped. The rigs are drawn facing inward for these positions already:
+  // the female artboard looks right (correct on the left), the male looks left (correct on the
+  // right). app.html only flips a rig when it sits on the side it was not drawn for. Adding
+  // .flip here turned the man to face the same way as the woman, so they talked past each other.
   $('scene').insertAdjacentHTML('beforeend',
       '<div class="ch a" id="ch-a"><canvas class="rvc" id="rv-a" width="256" height="340"></canvas></div>'
-    + '<div class="ch b" id="ch-b"><canvas class="rvc flip" id="rv-b" width="256" height="340"></canvas></div>');
+    + '<div class="ch b" id="ch-b"><canvas class="rvc" id="rv-b" width="256" height="340"></canvas></div>');
   if(!riveReady()) return;
   ['a','b'].forEach(function(side){
     var gender = side === 'a' ? 'female' : 'male';

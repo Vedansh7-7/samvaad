@@ -190,12 +190,24 @@ Groq, the shape of what comes back (scores in range, names honoured, emotions th
 act-1 lines verbatim from the transcript, both people speaking), the allowance ticking down,
 feedback, history, and the database itself.
 
-Add `--full` to also drive an account to its limit and confirm the refusal. That one waits out the
-tokens-per-minute window between calls, so it takes a few minutes.
+Add `--full` to also drive an account to its limit and confirm the refusal.
 
-Last run against a local backend on your live Groq key: **39 passed, 1 failed, 2 skipped**. The
-single failure is the database, which is step 2 above. Point it at production with
-`npm run funnel https://samvaad-backend-gyk9.onrender.com`.
+There is a second, deeper one for the path a real tester takes:
+
+```bash
+npm run funnel:signed-in https://samvaad-backend-gyk9.onrender.com
+```
+
+It creates a throwaway account, runs three analyses, confirms the fourth is refused, checks the
+sessions come back in history with act 1, act 2 and the speaker map intact, stores feedback,
+suspends the account and confirms it is stopped, raises the limit and confirms it takes effect,
+then verifies through RLS that a user can read their own profile but **cannot** raise their own
+allowance or see anyone else's sessions. It deletes the account and everything it wrote when it
+finishes. It spends real Groq quota and waits out the per-minute window, so allow a few minutes.
+
+**Results against production, 2026-08-25, after the migration:**
+`npm run funnel` → **41 passed, 0 failed**.
+`npm run funnel:signed-in` → **37 passed, 0 failed**.
 
 ---
 
