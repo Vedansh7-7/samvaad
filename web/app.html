@@ -494,14 +494,14 @@
         <input type="text" id="waNumber" placeholder="+91 98765 43210" inputmode="tel" autocomplete="tel">
       </div>
       <div class="tabs">
-        <button class="tab" data-tab="text" aria-selected="true">Paste transcript</button>
+        <button class="tab" data-tab="text" aria-selected="true">Chats</button>
         <button class="tab" data-tab="rec" aria-selected="false">Record <span class="bonus">· Chrome/Edge</span></button>
         <button class="tab" data-tab="up" aria-selected="false">Upload audio</button>
       </div>
       <div id="tab-text">
-        <label class="fl" id="taLbl">Conversation</label>
-        <textarea id="transcript" maxlength="25000"></textarea>
-        <p class="hint" id="taHint">Format each line as <code>Name: what they said</code>. Hinglish and Devanagari welcome.</p>
+        <label class="fl" id="taLbl">Your chat</label>
+        <textarea id="transcript" maxlength="25000" placeholder="Kavya: Aaj phir tumne mummy ko call nahi kiya.&#10;Rohit: Yaar office mein kaam tha.&#10;Kavya: Hamesha koi excuse hota hai."></textarea>
+        <p class="hint" id="taHint">Copy the chat straight from WhatsApp and paste it here, or type it as <code>Name: what they said</code>. Hinglish and Devanagari welcome.</p>
         <p class="hint" id="taCount" style="text-align:right;margin:-6px 0 10px"></p>
         <div class="row"><button class="btn soft" id="sampleBtn">Load a sample</button></div>
       </div>
@@ -657,10 +657,18 @@ function renderHome(){
 document.querySelectorAll('#intentSeg button').forEach(function(b){b.onclick=function(){document.querySelectorAll('#intentSeg button').forEach(function(x){x.setAttribute('aria-selected','false');});b.setAttribute('aria-selected','true');S.mode=b.dataset.m;S.sub=b.dataset.s;document.body.setAttribute('data-mode',S.mode);syncMode();};});
 function syncMode(){
   var couple=S.mode==='relationship'&&S.sub==='couple';$('nameBWrap').classList.toggle('hide',!couple);$('consentBox').classList.toggle('hide',!couple);
-  var L={'relationship|couple':["A conversation between the two of you — we replay how it actually went, show where it caught, and give you the lines to try instead.","Conversation","Paste both sides as Name: line."],
-         'relationship|solo':["Just you. Describe a situation or speak a voice-journal — we read how you show up and gently infer the other side.","Your reflection","Speak or write freely about what happened."],
-         'self|solo':["The introspection space — your own words. A commute debrief or a journal entry; we surface your stress, self-talk and language, and help you cool down.","Your words","A debrief, a journal entry, a call transcript."]};
-  var c=L[S.mode+'|'+S.sub]||L['relationship|couple'];$('lede').textContent=c[0];$('taLbl').textContent=c[1];$('taHint').innerHTML=c[2];
+  var L={'relationship|couple':["A conversation between the two of you — we replay how it actually went, show where it caught, and give you the lines to try instead.","Your chat","Copy the chat straight from WhatsApp and paste it here, or type it as <code>Name: what they said</code>. Hinglish and Devanagari welcome."],
+         'relationship|solo':["Just you. Describe a situation or speak a voice-journal — we read how you show up and gently infer the other side.","Your words","Speak or write freely about what happened."],
+         'self|solo':["The introspection space — your own words. A commute debrief or a journal entry; we surface your stress, self-talk and language, and help you cool down.","Your words","A debrief, a journal entry, anything you want to think through."]};
+  var c=L[S.mode+'|'+S.sub]||L['relationship|couple'];$('lede').textContent=c[0];$('taLbl').textContent=c[1];
+  $('taHint').innerHTML=hintFor(c[2]);
+}
+/* The mode-specific line plus the ceiling, which is derived from the Groq plan and must never be
+   typed into the copy. Both syncMode() and applyMe() render through here so neither can silently
+   drop the other's half. */
+function hintFor(lead){
+  var m=(S.me&&S.me.limits&&S.me.limits.maxMinutes)||0;
+  return lead+(m?' We can read up to about '+m+' minutes at a time.':'');
 }
 syncMode();
 
@@ -693,8 +701,7 @@ function applyMe(){
   if(lim.maxChars){var ta=$('transcript');if(ta)ta.setAttribute('maxlength',lim.maxChars);}
   updateCount();
   renderAllowance();
-  var h=$('taHint');
-  if(h&&lim.maxMinutes)h.innerHTML='Format each line as <code>Name: what they said</code>. Hinglish and Devanagari welcome. We can read up to about '+lim.maxMinutes+' minutes of conversation at a time.';
+  syncMode();      // re-render the hint now that the real limits are known
   var d=$('drop');
   if(d&&lim.maxMinutes)d.innerHTML='<strong>Drop an audio file</strong> or click to browse<br><span class="hint">MP3, WAV, M4A · up to about '+lim.maxMinutes+' minutes</span><input type="file" id="file" accept="audio/*" class="hide">',bindFile();
 }
@@ -720,7 +727,7 @@ $('sampleBtn').onclick=function(){
 };
 
 /* record */
-(function(){var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('micHint').textContent='Live recording needs Chrome or Edge. Use Paste transcript instead.';$('micBtn').disabled=true;return;}
+(function(){var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('micHint').textContent='Live recording needs Chrome or Edge. Use Chats instead.';$('micBtn').disabled=true;return;}
  $('micBtn').onclick=function(){if(S.recording){S._r.stop();return;}var r=new SR();S._r=r;r.lang='en-IN';r.continuous=true;r.interimResults=true;r.onresult=function(e){var t='';for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;S.recT=t;$('liveT').textContent=t;};r.onend=function(){S.recording=false;$('micBtn').classList.remove('rec');$('micBtn').textContent='●';$('micHint').textContent='Recorded. Hit Analyse, or tap to redo.';};r.onerror=function(){S.recording=false;$('micBtn').classList.remove('rec');};r.start();S.recording=true;$('micBtn').classList.add('rec');$('micBtn').textContent='■';$('micHint').textContent='Listening… tap to stop.';};
 })();
 
