@@ -7,31 +7,31 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Mulish:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Nunito:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;500&display=swap');
 
   :root{
-    --peach:#FDEEF0; --blush:#F8D6DD; --lav:#F0DCE6; --sky:#E6D6E2;
-    --ink:#2E2024; --muted:#6E5258; --faint:#7A5E63;
-    /* cherry, the brand action colour */
-    --cherry:#C8324B; --cherry-2:#A52741; --cherry-soft:#F8DDE0;
-    --teal:#93C6BD; --line:#2C2622;
-    --glass:rgba(255,255,255,.46); --glass-brd:rgba(255,255,255,.7);
+    --peach:#F1F0F9; --blush:#F4E9E1; --lav:#EAE8F6; --sky:#EFEDF7;
+    --ink:#312E52; --muted:#686586; --faint:#686586;
+    /* primary action colour: the research-derived periwinkle (see tokens.css) */
+    --cherry:#7164C6; --cherry-2:#5848BF; --cherry-soft:#E1DEF7;
+    --teal:#9CCFC2; --line:#312E52;
+    --glass:rgba(255,255,255,.72); --glass-brd:rgba(214,211,227,.85);
     --r:18px;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
     margin:0; color:var(--ink);
-    font-family:'Mulish','Noto Sans Devanagari',system-ui,sans-serif;
+    font-family:'Nunito','Noto Sans Devanagari',system-ui,sans-serif;
     background:
-      radial-gradient(120% 90% at 12% 8%, #FDEEF0 0%, rgba(253,238,240,0) 46%),
-      radial-gradient(120% 100% at 92% 22%, #F8D6DD 0%, rgba(248,214,221,0) 50%),
-      radial-gradient(140% 120% at 78% 100%, #F0DCE6 0%, rgba(240,220,230,0) 55%),
-      linear-gradient(160deg, #FDF3F2 0%, #F9DEE3 48%, #F1DDE8 100%);
+      radial-gradient(120% 90% at 12% 8%, #F1F0F9 0%, rgba(241,240,249,0) 46%),
+      radial-gradient(120% 100% at 92% 22%, #F4E9E1 0%, rgba(244,233,225,0) 50%),
+      radial-gradient(140% 120% at 78% 100%, #EAE8F6 0%, rgba(234,232,246,0) 55%),
+      linear-gradient(160deg, #FAF8F4 0%, #F4F2F8 48%, #EFEDF7 100%);
     min-height:100%;
     display:grid; place-items:center; padding:28px 18px;
   }
-  .dv{font-family:'Noto Sans Devanagari','Mulish',sans-serif}
+  .dv{font-family:'Noto Sans Devanagari','Nunito',sans-serif}
 
   /* ambient line-art motifs */
   .amb{position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0}
@@ -40,9 +40,9 @@
   .birds{top:14%; left:9%; opacity:.85}
   .dots{bottom:12%; right:12%; opacity:.7}
   .blur-blob{position:absolute; border-radius:50%; filter:blur(46px); opacity:.5}
-  .b1{width:240px;height:240px;background:#F3C9CF;top:-40px;left:-50px}
-  .b2{width:260px;height:260px;background:#E3C9D6;bottom:-60px;right:-40px}
-  .b3{width:200px;height:200px;background:#F6D6DC;bottom:18%;left:6%;opacity:.4}
+  .b1{width:240px;height:240px;background:#E3E0F4;top:-40px;left:-50px}
+  .b2{width:260px;height:260px;background:#F2DFD2;bottom:-60px;right:-40px}
+  .b3{width:200px;height:200px;background:#EEDDEE;bottom:18%;left:6%;opacity:.4}
 
   /* glass card */
   .card{
@@ -52,7 +52,7 @@
     backdrop-filter:blur(22px) saturate(1.2);
     border:1px solid var(--glass-brd);
     border-radius:26px;
-    box-shadow:0 24px 60px -28px rgba(76,58,42,.45), inset 0 1px 0 rgba(255,255,255,.6);
+    box-shadow:0 24px 60px -28px rgba(49,46,82,.45), inset 0 1px 0 rgba(255,255,255,.6);
     padding:32px 30px 26px;
     text-align:center;
   }
@@ -78,18 +78,18 @@
     background:rgba(255,255,255,.62); border:1px solid rgba(255,255,255,.85);
     border-radius:14px; padding:13px 15px; transition:border-color .2s, box-shadow .2s;
   }
-  input::placeholder{color:#6E5258; opacity:1}
-  input:focus{outline:none; border-color:var(--cherry); box-shadow:0 0 0 4px rgba(200,50,75,.15); background:#fff}
+  input::placeholder{color:#686586; opacity:1}
+  input:focus{outline:none; border-color:var(--cherry); box-shadow:0 0 0 4px rgba(113,100,198,.15); background:#fff}
   input.otp{letter-spacing:.5em; text-align:center; font-weight:600; font-size:19px}
 
   .btn{
     width:100%; border:none; cursor:pointer; font:inherit; font-weight:600; font-size:15px; color:#fff;
     background:linear-gradient(180deg,var(--cherry),var(--cherry-2));
     border-radius:14px; padding:14px 18px; margin-top:4px;
-    box-shadow:0 12px 24px -12px rgba(165,39,65,.45);
+    box-shadow:0 12px 24px -12px rgba(88,72,191,.45);
     transition:transform .15s, box-shadow .2s, opacity .2s;
   }
-  .btn:hover{transform:translateY(-1px); box-shadow:0 16px 28px -12px rgba(165,39,65,.55)}
+  .btn:hover{transform:translateY(-1px); box-shadow:0 16px 28px -12px rgba(88,72,191,.55)}
   .btn:active{transform:translateY(0)}
   .btn[disabled]{opacity:.6; cursor:not-allowed; transform:none}
   .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;vertical-align:-2px;margin-right:8px;animation:sp .7s linear infinite}
@@ -102,8 +102,8 @@
   .ghost:hover{background:rgba(255,255,255,.6); border-color:var(--cherry)}
 
   .msg{font-size:13px; margin:12px 2px 0; min-height:18px; line-height:1.5}
-  .msg.err{color:#B4584E}
-  .msg.ok{color:#5C8A6F}
+  .msg.err{color:#B0523B}
+  .msg.ok{color:#367D69}
 
   .foot{margin-top:18px; font-size:11.5px; color:var(--faint); line-height:1.55}
   .foot a{color:var(--cherry-2); text-decoration:none}
@@ -123,19 +123,21 @@
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
   }
+  .how{display:block;text-align:center;margin-top:16px;font-size:14px;font-weight:700;color:var(--cherry-2);text-decoration:none;min-height:44px;line-height:44px}
+  @media (max-width:760px){ *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important} }
 </style>
 
 <div class="amb" aria-hidden="true">
   <div class="blur-blob b1"></div><div class="blur-blob b2"></div><div class="blur-blob b3"></div>
   <svg class="arc" width="260" height="260" viewBox="0 0 260 260" fill="none">
-    <path d="M250 10 A180 180 0 0 0 70 190" stroke="#D49AA6" stroke-width="1.2" opacity=".6"/>
-    <path d="M250 40 A150 150 0 0 0 100 190" stroke="#D49AA6" stroke-width="1.2" opacity=".4"/>
+    <path d="M250 10 A180 180 0 0 0 70 190" stroke="#C9C4E6" stroke-width="1.2" opacity=".6"/>
+    <path d="M250 40 A150 150 0 0 0 100 190" stroke="#C9C4E6" stroke-width="1.2" opacity=".4"/>
   </svg>
-  <svg class="birds" width="120" height="60" viewBox="0 0 120 60" fill="none" stroke="#C86B7E" stroke-width="2" stroke-linecap="round">
-    <path d="M8 26 q8 -9 16 0"/><path d="M30 16 q9 -10 18 0"/><circle cx="64" cy="12" r="2.4" fill="#C86B7E" stroke="none"/>
+  <svg class="birds" width="120" height="60" viewBox="0 0 120 60" fill="none" stroke="#A9A1D9" stroke-width="2" stroke-linecap="round">
+    <path d="M8 26 q8 -9 16 0"/><path d="M30 16 q9 -10 18 0"/><circle cx="64" cy="12" r="2.4" fill="#A9A1D9" stroke="none"/>
   </svg>
-  <svg class="dots" width="90" height="60" viewBox="0 0 90 60" fill="none" stroke="#D49AA6" stroke-width="2" stroke-linecap="round">
-    <path d="M58 40 q9 -10 18 0"/><path d="M70 52 q7 -8 14 0"/><circle cx="40" cy="30" r="2.2" fill="#D49AA6"/>
+  <svg class="dots" width="90" height="60" viewBox="0 0 90 60" fill="none" stroke="#C9C4E6" stroke-width="2" stroke-linecap="round">
+    <path d="M58 40 q9 -10 18 0"/><path d="M70 52 q7 -8 14 0"/><circle cx="40" cy="30" r="2.2" fill="#C9C4E6"/>
   </svg>
 </div>
 
@@ -155,7 +157,7 @@
   <div id="state-email">
     <p class="eyebrow dv">नमस्ते</p>
     <h1>Welcome back</h1>
-    <p class="sub">Sign in to continue your reflections, we'll send a secure link to your inbox.</p>
+    <p class="sub">Sign in to continue your reflections. We'll send a secure link to your inbox.</p>
     <div class="field">
       <label for="email">Email</label>
       <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
@@ -164,6 +166,7 @@
     <div class="divider">or</div>
     <button class="ghost" id="guestBtn">Continue as guest</button>
     <div class="msg" id="msg1"></div>
+    <a class="how" href="how-it-works.html">How does Samvaad work?</a>
   </div>
 
   <!-- STATE: check inbox / enter code -->
@@ -201,6 +204,11 @@
   var $ = function(id){ return document.getElementById(id); };
   var session = null, currentEmail = "";
   var validEmail = function(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); };
+  // Already signed in, and not in the middle of returning from a magic link: go straight to the app.
+  (function(){ try{ var ss = SamvaadAuth.readSession();
+    if (ss && ss.access_token && (!ss.expires_at || ss.expires_at * 1000 > Date.now()) && !/access_token=/.test(location.hash)) location.replace('app.html');
+  }catch(e){} })();
+
   function show(state){
     $('state-email').classList.toggle('hide', state!=='email');
     $('state-code').classList.toggle('hide', state!=='code');
@@ -259,13 +267,13 @@
       $('doneSub').textContent = 'Signed in as ' + currentEmail + '. Your reflections will be saved.';
       show('done');
     }catch(err){
-      m.className='msg err'; m.textContent = 'That code didn\u2019t work, check it, or use the link in the email.';
+      m.className='msg err'; m.textContent = 'That code didn\u2019t work. Check it, or use the link in the email.';
     }finally{ busy($('verifyBtn'), false); }
   };
 
   $('resendBtn').onclick = async function(){
     var m = $('msg2'); m.className='msg'; m.textContent='';
-    try{ await sbAuth(otpPath(), { email: currentEmail, create_user: true }); m.className='msg ok'; m.textContent='Sent again, check your inbox.'; }
+    try{ await sbAuth(otpPath(), { email: currentEmail, create_user: true }); m.className='msg ok'; m.textContent='Sent again. Check your inbox.'; }
     catch(err){ m.className='msg err'; m.textContent = err.message; }
   };
   $('backBtn').onclick = function(){ show('email'); $('msg1').textContent=''; };
@@ -290,7 +298,7 @@
   $('guestBtn').onclick = function(){
     SamvaadAuth.setGuest(); // app.html allows guests through (no persistence)
     $('doneH').textContent = 'Welcome, friend.';
-    $('doneSub').textContent = 'Exploring as a guest, your sessions won\u2019t be saved until you sign in.';
+    $('doneSub').textContent = 'Exploring as a guest. Your sessions won\u2019t be saved until you sign in.';
     show('done');
   };
   $('enterBtn').onclick = function(){

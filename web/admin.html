@@ -12,28 +12,28 @@
 <title>Samvaad · Admin</title>
 <script src="auth.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Mulish:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Nunito:wght@400;600;700;800&display=swap');
   :root{
-    --ink:#2E2024; --muted:#6E5258; --hair:rgba(46,32,36,.12);
-    --glass:rgba(255,255,255,.5); --glass-2:rgba(255,255,255,.66); --glass-brd:rgba(255,255,255,.72);
-    --cherry:#C8324B; --cherry-2:#A52741;
-    --good:#4F8A6B; --warn:#B8823C; --risk:#C0463C;
-    --accent:#C8324B; --accent-soft:#F8DDE0; --accent-ink:#9E2740;
+    --ink:#312E52; --muted:#686586; --hair:rgba(49,46,82,.12);
+    --glass:rgba(255,255,255,.78); --glass-2:rgba(255,255,255,.9); --glass-brd:rgba(214,211,227,.85);
+    --cherry:#7164C6; --cherry-2:#5848BF;
+    --good:#367D69; --warn:#98661B; --risk:#B0523B;
+    --accent:#7164C6; --accent-soft:#E1DEF7; --accent-ink:#5848BF;
   }
   *{box-sizing:border-box}
-  body{margin:0;color:var(--ink);font-family:'Mulish',system-ui,sans-serif;line-height:1.6;min-height:100vh;
-    background:radial-gradient(120% 90% at 12% 6%,#FDEEF0 0%,rgba(253,238,240,0) 46%),
-               radial-gradient(120% 100% at 92% 18%,#F8D6DD 0%,rgba(248,214,221,0) 50%),
-               linear-gradient(160deg,#FDF3F2 0%,#F9DEE3 48%,#F1DDE8 100%);}
+  body{margin:0;color:var(--ink);font-family:'Nunito',system-ui,sans-serif;line-height:1.6;min-height:100vh;
+    background:radial-gradient(120% 90% at 12% 6%,#F1F0F9 0%,rgba(241,240,249,0) 46%),
+               radial-gradient(120% 100% at 92% 18%,#F4E9E1 0%,rgba(244,233,225,0) 50%),
+               linear-gradient(160deg,#FAF8F4 0%,#F4F2F8 48%,#EFEDF7 100%);}
   .wrap{max-width:1080px;margin:0 auto;padding:26px 18px 80px}
   .serif{font-family:'Fraunces',serif}
   .glass{background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(1.2);backdrop-filter:blur(20px) saturate(1.2);
-    border:1px solid var(--glass-brd);border-radius:20px;box-shadow:0 20px 50px -30px rgba(76,58,42,.4),inset 0 1px 0 rgba(255,255,255,.55)}
+    border:1px solid var(--glass-brd);border-radius:20px;box-shadow:0 20px 50px -30px rgba(49,46,82,.4),inset 0 1px 0 rgba(255,255,255,.55)}
   header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
   .word{font-family:'Fraunces',serif;font-weight:600;font-size:22px}.word .d{color:var(--cherry)}
-  .word .sub{font-size:13px;color:var(--muted);font-family:'Mulish';font-weight:600;margin-left:8px}
+  .word .sub{font-size:13px;color:var(--muted);font-family:'Nunito';font-weight:600;margin-left:8px}
   .btn{border:none;border-radius:12px;padding:10px 18px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;color:#fff;
-    background:linear-gradient(180deg,var(--cherry),var(--cherry-2));box-shadow:0 12px 24px -12px rgba(165,39,65,.55)}
+    background:linear-gradient(180deg,var(--cherry),var(--cherry-2));box-shadow:0 12px 24px -12px rgba(88,72,191,.55)}
   .btn.soft{background:var(--glass);color:var(--ink);border:1px solid var(--glass-brd);box-shadow:none;font-weight:600}
   .btn:disabled{opacity:.55;cursor:progress}
   .note{font-size:13.5px;color:var(--muted);margin:0}
@@ -88,13 +88,13 @@
   select,input[type="number"]{font:inherit;font-size:13px;padding:6px 9px;border-radius:10px;border:1px solid var(--glass-brd);background:var(--glass);color:var(--ink)}
   input[type="number"]{width:84px}
   .pill{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:99px}
-  .pill.active{background:rgba(79,138,107,.16);color:var(--good)}
-  .pill.limited{background:rgba(184,130,60,.18);color:var(--warn)}
-  .pill.suspended{background:rgba(192,70,60,.16);color:var(--risk)}
-  .pill.out{background:rgba(158,39,64,.12);color:var(--accent-ink)}
+  .pill.active{background:rgba(54,125,105,.16);color:var(--good)}
+  .pill.limited{background:rgba(152,102,27,.18);color:var(--warn)}
+  .pill.suspended{background:rgba(176,82,59,.16);color:var(--risk)}
+  .pill.out{background:rgba(88,72,191,.12);color:var(--accent-ink)}
   .setup{padding:20px;margin-bottom:16px;border:1px solid var(--risk);background:rgba(255,255,255,.62)}
   .setup h3{color:var(--risk)}
-  .setup code{background:rgba(46,32,36,.07);padding:2px 6px;border-radius:6px;font-size:12.5px}
+  .setup code{background:rgba(49,46,82,.07);padding:2px 6px;border-radius:6px;font-size:12.5px}
   .setup ol{margin:10px 0 0;padding-left:20px;font-size:13.5px}
   .setup li{margin-bottom:4px}
   .setup .miss{font-size:13px;color:var(--muted);margin-top:10px}
@@ -107,17 +107,31 @@
   .switch .t span{font-size:12.5px;color:var(--muted)}
   .switch input[type="checkbox"]{accent-color:var(--cherry)}   /* default blue fights the palette */
   .hide{display:none!important}
+  .hdr-actions{display:flex;align-items:center;gap:12px}
+  .adv{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:700;color:var(--muted);cursor:pointer;min-height:44px}
+  .adv input{accent-color:var(--cherry);width:18px;height:18px}
+  .summary{font-size:16px;line-height:1.65;color:var(--ink);margin:0 0 16px}
+  .summary b{font-family:'Fraunces',serif;font-weight:600;font-size:19px;color:var(--accent-ink)}
+  .adv-head{font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin:28px 0 12px;padding-top:18px;border-top:1px solid var(--hair)}
+  .person .simple{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .act{border:none;border-radius:999px;padding:10px 18px;font:inherit;font-weight:800;font-size:14px;cursor:pointer;min-height:44px}
+  .act.give{background:var(--accent-soft);color:var(--accent-ink)}
+  .act.pause{background:#F6E3DD;color:var(--risk)}
+  .act.resume{background:#CFE7E1;color:var(--good)}
+  .act:disabled{opacity:.55;cursor:progress}
+  .btn,.tabs button{border-radius:999px}
+  @media (max-width:760px){ *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important} .glass{background:rgba(255,255,255,.92)!important} }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <div class="word serif">Samvaad<span class="d">.</span><span class="sub">Admin</span></div>
-    <div><button class="btn soft" id="refreshBtn">Refresh</button></div>
+    <div class="hdr-actions"><label class="adv"><input type="checkbox" id="advToggle"> Advanced</label><button class="btn soft" id="refreshBtn">Refresh</button></div>
   </header>
 
   <div class="tabs hide" id="tabs">
-    <button data-t="metrics" aria-selected="true">Metrics</button>
+    <button data-t="metrics" aria-selected="true">Overview</button>
     <button data-t="people" aria-selected="false">People</button>
   </div>
 
@@ -131,6 +145,9 @@
   var $ = function(id){ return document.getElementById(id); };
   var content = $('content');
   var TAB = 'metrics';
+  // The manager is not technical, so the console opens simple. Technical panels sit behind Advanced,
+  // and the choice is remembered on this device.
+  var ADV = false; try{ ADV = localStorage.getItem('samvaad.adminAdvanced') === '1'; }catch(e){}
   var DATA = { kpis:null, nudges:null, users:null, settings:null, schema:null };
 
   function esc(s){ s=(s==null?'':String(s)); return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -211,64 +228,81 @@
     var k = DATA.kpis || {}, f = k.funnel||{}, a = k.activity||{}, q = k.quality||{}, acc = k.accounts||{}, cap = k.capacity||{};
     var html = '';
 
-    // The trial's actual funnel: signed up -> gave a number -> ran something -> came back.
+    // The simple view: the few numbers a manager actually asks about, in plain words.
+    var joined = f.signups||0, tried = f.activated||0, back = f.returning||0, out = f.exhausted||0, week = a.last7||0;
+    html += '<p class="summary">'
+      + '<b>'+joined+'</b> '+(joined===1?'person has':'people have')+' joined. '
+      + '<b>'+tried+'</b> tried it at least once'+(joined?' ('+(f.activationRate||0)+'%)':'')+', and <b>'+back+'</b> came back for more. '
+      + '<b>'+week+'</b> conversation'+(week===1?' was':'s were')+' read this week.'
+      + '</p>';
     html += '<div class="grid">'
-      + kpi('Signed up', f.signups||0, 'accounts created')
-      + kpi('Gave a number', f.withPhone||0, 'reachable on WhatsApp')
-      + kpi('Ran an analysis', f.activated||0, (f.activationRate||0)+'% of sign-ups', true)
-      + kpi('Came back', f.returning||0, (f.returnRate||0)+'% of those, 2+ analyses', true)
-      + kpi('Used all 3', f.exhausted||0, 'hit the trial limit')
+      + kpi('People who joined', joined, 'signed up for the trial')
+      + kpi('Tried it', tried, 'ran at least one conversation', true)
+      + kpi('Came back', back, 'used it more than once', true)
+      + kpi('Out of free conversations', out, out ? 'give them more on the People tab' : 'nobody has hit the limit')
       + '</div>';
-
-    html += '<div class="grid">'
-      + kpi('Analyses', a.analyses||0, (a.today||0)+' today · '+(a.last7||0)+' this week')
-      + kpi('Active this week', a.activeLast7||0, 'distinct people')
-      + kpi('Per active user', a.perActivatedUser||0, 'analyses each')
-      + kpi('Avg score', q.avgScore==null?'…':q.avgScore, 'across all reports')
-      + kpi('Avg escalation', q.avgEscalation==null?'…':q.avgEscalation, 'higher = more heat')
-      + kpi('Check-in opt-ins', f.optins||0, 'consented to WhatsApp')
-      + '</div>';
-
-    // The A/B this trial exists to settle.
-    html += '<div class="glass sec"><h3>Act 1: which opening works</h3>'
-      + '<p class="sub">The walk-through opens by replaying the real conversation. Three ways to deliver it, one question: does it make someone say they will actually try the suggested line? That “will try” rate is the comparison.</p>'
-      + expCards(k.experiment||{}, (DATA.settings&&DATA.settings.settings&&DATA.settings.settings.act1_mode)||'voiced')
-      + '<p class="note" style="margin-top:12px">Pin one account to a variant on the <b>People</b> tab, or change the default for everyone in Settings below.</p>'
-      + '</div>';
-
-    var intro = k.intro || {};
-    html += '<div class="glass sec"><h3>The intro</h3>'
-      + '<p class="sub">Whether the opening film is earning its place, and whether the voice-over is actually being heard.</p>'
-      + '<div class="grid" style="margin:0">'
-      + kpi('Started', intro.started||0, 'people who saw it')
-      + kpi('Watched to the end', intro.completed||0, intro.completionRate==null?'…':intro.completionRate+'% of starts')
-      + kpi('Skipped', intro.skipped||0, intro.avgSceneOnSkip==null?'…':'average scene '+intro.avgSceneOnSkip)
-      + kpi('Voice blocked', intro.audioBlocked||0, 'browser refused autoplay')
-      + kpi('Muted it', intro.muted||0, 'chose silence')
-      + '</div></div>';
-
-    html += '<div class="glass sec"><h3>Accounts</h3><div class="grid" style="margin:10px 0 0">'
-      + kpi('Active', acc.active||0, '')
-      + kpi('Limited', acc.limited||0, '')
-      + kpi('Suspended', acc.suspended||0, '')
-      + '</div></div>';
-
-    html += settingsPanel();
-
-    // Capacity: the two ceilings that actually bite during a trial.
-    html += '<div class="glass sec"><h3>Capacity</h3>'
-      + '<p class="sub">Analysis engine: <b>'+esc(cap.model||'…')+'</b> at '+esc(cap.tpm||'…')+' tokens/min. '
-      + 'That sets the longest conversation the product can accept: <b>'+esc((cap.limits&&cap.limits.maxMinutes)||'…')+' minutes</b> '
-      + '('+esc((cap.limits&&cap.limits.maxWords)||'…')+' words). Raise GROQ_TPM on Render after upgrading the Groq plan to lift it.</p>'
-      + '<p class="note">Analysis minutes charged this month: <b>'+esc(cap.minutesThisMonth||0)+'</b> · long conversations trimmed: <b>'+esc(a.truncated||0)+'</b></p>'
-      + voiceCard(k.voice||{})
-      + '</div>';
-
+    html += simpleSwitches();
     html += nudgeSection();
-    content.innerHTML = schemaBanner() + voiceBanner(k.voice||{})
-      + (DATA.schema && DATA.schema.ok ? '<p class="okline">Database is up to date.</p>' : '')
+
+    if (ADV) {
+      html += '<div class="adv-head">Advanced</div>';
+      html += '<div class="grid">'
+        + kpi('Gave a number', f.withPhone||0, 'reachable on WhatsApp')
+        + kpi('Analyses', a.analyses||0, (a.today||0)+' today · '+(a.last7||0)+' this week')
+        + kpi('Active this week', a.activeLast7||0, 'distinct people')
+        + kpi('Per active user', a.perActivatedUser||0, 'analyses each')
+        + kpi('Avg score', q.avgScore==null?'…':q.avgScore, 'across all reports')
+        + kpi('Avg escalation', q.avgEscalation==null?'…':q.avgEscalation, 'higher = more heat')
+        + kpi('Check-in opt-ins', f.optins||0, 'consented to WhatsApp')
+        + '</div>';
+
+      html += '<div class="glass sec"><h3>Act 1: which opening works</h3>'
+        + '<p class="sub">The walk-through opens by replaying the real conversation. Three ways to deliver it, one question: does it make someone say they will actually try the suggested line?</p>'
+        + expCards(k.experiment||{}, (DATA.settings&&DATA.settings.settings&&DATA.settings.settings.act1_mode)||'voiced')
+        + '</div>';
+
+      var intro = k.intro || {};
+      html += '<div class="glass sec"><h3>The intro</h3>'
+        + '<div class="grid" style="margin:0">'
+        + kpi('Started', intro.started||0, 'people who saw it')
+        + kpi('Watched to the end', intro.completed||0, intro.completionRate==null?'…':intro.completionRate+'% of starts')
+        + kpi('Skipped', intro.skipped||0, intro.avgSceneOnSkip==null?'…':'average scene '+intro.avgSceneOnSkip)
+        + kpi('Voice blocked', intro.audioBlocked||0, 'browser refused autoplay')
+        + '</div></div>';
+
+      html += '<div class="glass sec"><h3>Accounts</h3><div class="grid" style="margin:10px 0 0">'
+        + kpi('Active', acc.active||0, '') + kpi('Limited', acc.limited||0, '') + kpi('Paused', acc.suspended||0, '')
+        + '</div></div>';
+
+      html += settingsPanel();
+
+      html += '<div class="glass sec"><h3>Capacity</h3>'
+        + '<p class="sub">Analysis engine: <b>'+esc(cap.model||'…')+'</b> at '+esc(cap.tpm||'…')+' tokens/min, which sets the longest conversation the product accepts: <b>'+esc((cap.limits&&cap.limits.maxMinutes)||'…')+' minutes</b>. Raise GROQ_TPM on Render after upgrading the Groq plan.</p>'
+        + '<p class="note">Analysis minutes this month: <b>'+esc(cap.minutesThisMonth||0)+'</b> · long conversations trimmed: <b>'+esc(a.truncated||0)+'</b></p>'
+        + voiceCard(k.voice||{})
+        + '</div>';
+    }
+
+    content.innerHTML = schemaBanner() + (ADV ? voiceBanner(k.voice||{}) : '')
+      + (ADV && DATA.schema && DATA.schema.ok ? '<p class="okline">Database is up to date.</p>' : '')
       + html;
     wireSettings();
+  }
+
+  // Only the two switches a manager decides. Advanced renders the full panel with the same ids, so
+  // the two are never drawn at the same time.
+  function simpleSwitches(){
+    if (ADV) return '';
+    var s = (DATA.settings && DATA.settings.settings) || {};
+    var sw = function(id, title, sub, on){
+      return '<div class="switch"><div class="t"><b>'+esc(title)+'</b><span>'+esc(sub)+'</span></div>'
+        + '<input type="checkbox" id="'+id+'"'+(on?' checked':'')+' style="width:20px;height:20px;cursor:pointer">'
+        + '<span class="saved" id="'+id+'Saved">Saved</span></div>';
+    };
+    return '<div class="glass sec"><h3>Switches</h3>'
+      + sw('setGuest','Let people try without an account','Guests can use the app, but nothing they do is saved.', s.guest_enabled!==false)
+      + sw('setIntro','Show the intro video','New visitors see a short film before signing in.', s.intro_enabled!==false)
+      + '</div>';
   }
 
   function expCards(exp, live){
@@ -372,26 +406,33 @@
     var users = (DATA.users && DATA.users.users) || [];
     if(!users.length){ content.innerHTML = schemaBanner() + '<div class="glass sec"><div class="empty">No accounts yet.</div></div>'; return; }
     content.innerHTML = schemaBanner() + '<div class="glass sec"><h3>People · '+users.length+'</h3>'
-      + '<p class="sub">Pause someone, raise their limit, or pin them to one act-1 variant. Changes apply on their next request; nothing here needs a deploy.</p>'
+      + '<p class="sub">'+(ADV
+          ? 'Change status, limits, or pin someone to one act-1 variant. Changes apply on their next request.'
+          : 'Give someone more free conversations, or pause their account. Changes apply straight away.')+'</p>'
       + users.map(personRow).join('')
       + '</div>';
     users.forEach(wirePerson);
   }
 
   function personRow(u){
-    var id = u.id;
-    return '<div class="person" id="p_'+id+'">'
+    var id = u.id, paused = u.status === 'suspended';
+    var left = Math.max(0, (Number(u.analysesQuota)||0) - (Number(u.analysesUsed)||0));
+    var word = paused ? 'Paused' : (u.status === 'limited' ? 'Limited' : 'Active');
+    var h = '<div class="person" id="p_'+id+'">'
       + '<div class="hd"><span class="em">'+esc(u.email || '(no email)')+'</span>'
-        + '<span class="pill '+esc(u.status)+'">'+esc(u.status)+'</span>'
-        + (u.analysesUsed >= u.analysesQuota ? '<span class="pill out">out of conversations</span>' : '')
-        + '</div>'
-      + '<div class="meta">'
-        + (u.phone ? '+'+esc(waNumber(u.phone))+' · ' : 'no number · ')
-        + esc(u.analysesUsed)+'/'+esc(u.analysesQuota)+' conversations used · last active '+esc(ago(u.lastActive))
-        + ' · '+esc(u.minutesUsed)+'/'+esc(u.minutesQuota)+' min this month'
-        + (u.avgScore!=null ? ' · avg '+esc(u.avgScore) : '')
-        + '</div>'
-      + '<div class="ctl">'
+        + '<span class="pill '+(paused ? 'suspended' : esc(u.status))+'">'+word+'</span>'
+        + (left === 0 ? '<span class="pill out">out of free conversations</span>' : '')
+      + '</div>'
+      + '<div class="meta">'+esc(u.analysesUsed)+' of '+esc(u.analysesQuota)+' conversations used · last active '+esc(ago(u.lastActive))
+        + (u.phone ? ' · +'+esc(waNumber(u.phone)) : '') + '</div>'
+      + '<div class="simple">'
+        + '<button class="act give" id="g3_'+id+'">Give 3 more</button>'
+        + (paused ? '<button class="act resume" id="ps_'+id+'">Resume</button>' : '<button class="act pause" id="ps_'+id+'">Pause</button>')
+        + (u.phone ? '<a class="mini wa" target="_blank" rel="noopener" href="https://wa.me/'+encodeURIComponent(waNumber(u.phone))+'">WhatsApp</a>' : '')
+        + '<span class="saved" id="sv_'+id+'">Saved</span>'
+      + '</div>';
+    if (ADV) {
+      h += '<div class="ctl">'
         + '<span class="grp"><label for="st_'+id+'">Status</label>'
         + '<select id="st_'+id+'">'
           + ['active','limited','suspended'].map(function(s){ return '<option value="'+s+'"'+(u.status===s?' selected':'')+'>'+s+'</option>'; }).join('')
@@ -409,10 +450,9 @@
           + '<option value=""'+(!u.act1Override?' selected':'')+'>default ('+esc(u.act1)+')</option>'
           + ['voiced','real_audio','silent'].map(function(m){ return '<option value="'+m+'"'+(u.act1Override===m?' selected':'')+'>'+m+'</option>'; }).join('')
         + '</select></span>'
-        + (u.phone ? '<a class="mini wa" target="_blank" rel="noopener" href="https://wa.me/'+encodeURIComponent(waNumber(u.phone))+'">WhatsApp</a>' : '')
-        + '<span class="saved" id="sv_'+id+'">Saved</span>'
-        + '</div>'
-      + '</div>';
+        + '</div>';
+    }
+    return h + '</div>';
   }
 
   function wirePerson(u){
@@ -436,6 +476,14 @@
       finally{ if(btn){ btn.disabled = false; } }
     };
 
+    var after = function(){ renderPeople(); var sv = $('sv_'+id); if(sv){ sv.classList.add('on'); setTimeout(function(){ sv.classList.remove('on'); }, 1500); } };
+    var g3 = $('g3_'+id); if(g3) g3.onclick = function(){ send({ analysesQuota: (Number(u.analysesQuota)||0) + 3 }, g3).then(after); };
+    var ps = $('ps_'+id); if(ps) ps.onclick = function(){
+      var pausing = u.status !== 'suspended';
+      // a stray tap should not lock someone out
+      if (pausing && !confirm('Pause ' + (u.email || 'this account') + '? They will not be able to run new conversations until you resume.')) return;
+      send({ status: pausing ? 'suspended' : 'active' }, ps).then(after);
+    };
     var st = $('st_'+id); if(st) st.onchange = function(){ send({ status: st.value }); };
     var acb = $('acb_'+id); if(acb) acb.onclick = function(){ send({ analysesQuota: Number($('ac_'+id).value) }, acb); };
     var arb = $('arb_'+id); if(arb) arb.onclick = function(){ send({ resetAnalyses: true }, arb); };
@@ -453,6 +501,8 @@
     };
   });
   $('refreshBtn').onclick = load;
+  $('advToggle').checked = ADV;
+  $('advToggle').onchange = function(){ ADV = this.checked; try{ localStorage.setItem('samvaad.adminAdvanced', ADV ? '1' : '0'); }catch(e){} render(); };
   load();
 </script>
 </body>
