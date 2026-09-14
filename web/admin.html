@@ -121,6 +121,7 @@
   .act:disabled{opacity:.55;cursor:progress}
   .btn,.tabs button{border-radius:999px}
   @media (max-width:760px){ *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important} .glass{background:rgba(255,255,255,.92)!important} }
+  .act.del{color:#B0523B;border-color:rgba(176,82,59,.35);margin-left:auto}
 </style>
 </head>
 <body>
@@ -429,6 +430,7 @@
         + '<button class="act give" id="g3_'+id+'">Give 3 more</button>'
         + (paused ? '<button class="act resume" id="ps_'+id+'">Resume</button>' : '<button class="act pause" id="ps_'+id+'">Pause</button>')
         + (u.phone ? '<a class="mini wa" target="_blank" rel="noopener" href="https://wa.me/'+encodeURIComponent(waNumber(u.phone))+'">WhatsApp</a>' : '')
+        + '<button class="act del" id="dl_'+id+'">Delete</button>'
         + '<span class="saved" id="sv_'+id+'">Saved</span>'
       + '</div>';
     if (ADV) {
@@ -483,6 +485,19 @@
       // a stray tap should not lock someone out
       if (pausing && !confirm('Pause ' + (u.email || 'this account') + '? They will not be able to run new conversations until you resume.')) return;
       send({ status: pausing ? 'suspended' : 'active' }, ps).then(after);
+    };
+    // Deleting removes the account and everything attached to it, for good, so it always asks first.
+    var dl = $('dl_'+id); if(dl) dl.onclick = async function(){
+      var who = u.email || 'this account';
+      if (!confirm('Delete ' + who + ' permanently?\n\nThis removes their account, every reflection, their consents and their check-in settings. It cannot be undone.')) return;
+      dl.disabled = true;
+      try{
+        var r = await fetch(BACKEND_URL + '/api/admin/users/' + encodeURIComponent(id), { method:'DELETE', headers: headers() });
+        var d = await r.json().catch(function(){ return {}; });
+        if(!r.ok){ alert(d.error || 'Could not delete that account.'); dl.disabled = false; return; }
+        DATA.users.users = DATA.users.users.filter(function(x){ return x.id !== id; });
+        renderPeople();
+      }catch(e){ alert(String(e.message||e)); dl.disabled = false; }
     };
     var st = $('st_'+id); if(st) st.onchange = function(){ send({ status: st.value }); };
     var acb = $('acb_'+id); if(acb) acb.onclick = function(){ send({ analysesQuota: Number($('ac_'+id).value) }, acb); };

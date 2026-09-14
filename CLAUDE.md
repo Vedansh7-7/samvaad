@@ -50,7 +50,10 @@ The two modes cross-fade smoothly (background + accent swap on `body[data-mode]`
 Browser (static HTML) → **Node/Express backend proxy** (holds ALL secrets) → external APIs.
 The browser must never hold provider secrets. The proxy is the key fix vs. the early demo.
 
-- **STT (audio → text):** Deepgram `nova-2`, `diarize=true`. (One-time $200 credit.)
+- **STT (audio → text):** Deepgram `nova-3` with `language=multi`, `diarize=true` (env `DEEPGRAM_MODEL`,
+  `DEEPGRAM_LANGUAGE`). Do not go back to `nova-2` without a language: it is English-only, and a Hinglish
+  recording of two people came back as one speaker saying nine English words, so nothing could be
+  replayed. (One-time $200 credit.)
 - **Analysis brain:** Groq, model string **`openai/gpt-oss-120b`** (env `GROQ_MODEL`).
   ONE call returning strict `json_schema` structured output. It used to be two calls (report,
   then improved conversation) split to avoid truncation; strict schemas removed that risk, and

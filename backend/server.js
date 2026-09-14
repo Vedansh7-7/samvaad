@@ -645,7 +645,12 @@ app.post('/api/transcribe', async (req, res) => {
 
     try { await checkQuota(principal, 1); } catch (e) { return quotaFail(res, e); }
 
-    const r = await fetch('https://api.deepgram.com/v1/listen?model=nova-2&diarize=true&punctuate=true&smart_format=true', {
+    // nova-3 in multilingual mode follows Hinglish code-switching and tells the two voices apart. nova-2
+    // with no language set is English-only: a two-person Hinglish recording came back as ONE speaker
+    // saying nine English words, so the walk-through had no conversation to replay. Env overrides exist
+    // so a future model can be tried without a code change.
+    const dgModel = process.env.DEEPGRAM_MODEL || 'nova-3', dgLang = process.env.DEEPGRAM_LANGUAGE || 'multi';
+    const r = await fetch('https://api.deepgram.com/v1/listen?model=' + encodeURIComponent(dgModel) + '&language=' + encodeURIComponent(dgLang) + '&diarize=true&punctuate=true&smart_format=true', {
       method: 'POST', headers: { Authorization: 'Token ' + DEEPGRAM_KEY, 'Content-Type': mime }, body: bytes });
     if (!r.ok) throw new Error('deepgram ' + r.status);
     const d = await r.json();
@@ -1027,6 +1032,24 @@ app.get('/api/admin/users', async (req, res) => {
 
     users.sort((a, b) => String(b.lastActive || b.signedUpAt || '').localeCompare(String(a.lastActive || a.signedUpAt || '')));
     res.json({ users, count: users.length });
+  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+});
+
+// ---- Admin: delete one account ----------------------------------------------
+// Removes the Supabase auth user. Every table holding their data (sessions, feedback, consents,
+// nudge_subscriptions, profiles, events) references auth.users ON DELETE CASCADE, so this one call
+// removes all of it. It cannot be undone, which is why admin.html asks first, and why an admin cannot
+// delete themselves or another admin from here.
+app.delete('/api/admin/users/:id', async (req, res) => {
+  try {
+    const me = await requireAdmin(req, res); if (!me) return;
+    if (!admin) return res.status(503).json({ error: 'Not configured.' });
+    const id = String(req.params.id || '');
+    const admins = (process.env.ADMIN_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (!id || id === me.id || admins.includes(id)) return res.status(400).json({ error: 'Admin accounts cannot be deleted from here.' });
+    const { error } = await admin.auth.admin.deleteUser(id);
+    if (error) return res.status(error.status === 404 ? 404 : 500).json({ error: error.message || 'Could not delete that account.' });
+    res.json({ ok: true, deleted: id });
   } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
 });
 
