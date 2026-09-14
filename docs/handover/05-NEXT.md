@@ -1,5 +1,8 @@
 # What to do next
 
+> **Launch checklist:** [`../product/LAUNCH-CHECKLIST.md`](../product/LAUNCH-CHECKLIST.md) tracks the site-basics and
+> security list item by item, with what is still needed before the public launch.
+
 The product is feature-rich and has no users. That asymmetry should drive every decision you make
 in the first month. Almost nothing on this list is "build another feature".
 

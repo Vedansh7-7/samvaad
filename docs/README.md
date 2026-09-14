@@ -27,6 +27,7 @@ Good thinking, written before real users. Treat it as a menu, not a queue:
 | File | Status |
 |---|---|
 | **[PLAN-PRELAUNCH.md](product/PLAN-PRELAUNCH.md)** | The pre-launch plan. Phase 0 is done. Phase 1 (deterministic scoring) and Phase 2 (async jobs) are not built. |
+| **[LAUNCH-CHECKLIST.md](product/LAUNCH-CHECKLIST.md)** | The site-basics and security checklist, item by item: what we have, what shipped, what waits for launch, what waits for a trigger, and what does not fit. Current. |
 | **[ROADMAP.md](product/ROADMAP.md)** | The older epic list (E1 to E6). Partly shipped, partly superseded. Historical. |
 | **[replay-rive-briefs.md](product/replay-rive-briefs.md)** | The original Rive replay briefs. R1 and R3 shipped; R2's goal, recorded audio with both speakers, is now met by the Record tab and multilingual transcription. |
 

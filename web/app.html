@@ -10,7 +10,13 @@
 <!-- Vercel Web Analytics: cookieless page views, no consent banner needed -->
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
 <script defer src="/_vercel/insights/script.js"></script>
-<script src="https://unpkg.com/@rive-app/canvas@2/rive.js"></script>
+<title>Your space · Samvaad</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#7164C6">
+<script src="https://unpkg.com/@rive-app/canvas@2.42.1/rive.js" integrity="sha384-9MHcJjW1KiwK2+8keWr1GXMPK5Pvqmd9bt4oDjlkrKZIYGShh2703YrKgwZN1pk3" crossorigin="anonymous"></script>
 <script src="auth.js"></script>
 <script>
   // Auth gate, runs before render. No session and not a guest -> back to login.
@@ -95,6 +101,8 @@
   .rv-stars button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .review-card textarea{width:100%;min-height:84px}
   .review .btn[disabled]{opacity:.5;cursor:not-allowed}
+  .rv-quote{display:flex;gap:8px;align-items:flex-start;margin:10px 0 0;font-size:13.5px;color:var(--muted);cursor:pointer}
+  .rv-quote input{margin-top:3px;accent-color:#7164C6}
   .rv-msg{min-height:18px;margin:6px 0 0;font-size:13px;color:var(--risk)}
   .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   /* The Talk screen's intro line, broken into points that rise slowly while someone fills this in and
@@ -648,6 +656,7 @@
       <div class="rv-stars" id="rvStars" role="radiogroup" aria-label="Your rating"></div>
       <label class="fl" for="rvText">A few words, if you like</label>
       <textarea id="rvText" maxlength="1000" rows="3" placeholder="What helped, what did not"></textarea>
+      <label class="rv-quote"><input type="checkbox" id="rvQuote"> Samvaad may quote this, with my first name only</label>
       <p class="rv-msg" id="rvMsg" role="status"></p>
       <div class="row" style="justify-content:flex-end;margin-top:8px">
         <button class="btn soft" id="rvLater" style="width:auto">Not now</button>
@@ -900,7 +909,7 @@ function reviewDue(){
 function maybeReview(){if(reviewDue())openReview();}
 function openReview(){
   RV.open=true;RV.shownThisLoad=true;RV.stars=0;
-  $('rvText').value='';$('rvMsg').textContent='';$('rvForm').classList.remove('hide');$('rvThanks').classList.add('hide');
+  $('rvText').value='';$('rvQuote').checked=false;$('rvMsg').textContent='';$('rvForm').classList.remove('hide');$('rvThanks').classList.add('hide');
   paintStars(0);$('review').classList.add('show');$('review').setAttribute('aria-hidden','false');
   setTimeout(function(){var c=document.querySelector('.review-card');if(c)c.focus();},60);   // focus the card, not a star, so nothing looks pre-chosen
   ev('review_prompt_shown');
@@ -914,7 +923,7 @@ async function sendReview(){
   if(RV.stars<1)return;var btn=$('rvSend');btn.disabled=true;$('rvMsg').textContent='';
   try{
     await ensureGuestToken();
-    var r=await fetch(be()+'/api/review',{method:'POST',headers:beHeaders(),body:JSON.stringify({stars:RV.stars,review:$('rvText').value.trim().slice(0,1000)})});
+    var r=await fetch(be()+'/api/review',{method:'POST',headers:beHeaders(),body:JSON.stringify({stars:RV.stars,review:$('rvText').value.trim().slice(0,1000),canQuote:$('rvQuote').checked})});
     if(!r.ok&&r.status!==429){var d=await r.json().catch(function(){return {};});throw new Error(d.error||'Could not send that right now.');}
     rvStore('samvaad.reviewDone','1');
     $('rvForm').classList.add('hide');$('rvThanks').classList.remove('hide');

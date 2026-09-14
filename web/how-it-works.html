@@ -6,6 +6,22 @@
 <!-- Vercel Web Analytics: cookieless page views, no consent banner needed -->
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
 <script defer src="/_vercel/insights/script.js"></script>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#7164C6">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Samvaad">
+<meta property="og:title" content="How Samvaad works">
+<meta property="og:description" content="How Samvaad reads a conversation, what you get back, and what happens to your data.">
+<meta property="og:url" content="https://samvaad-mu.vercel.app/how-it-works.html">
+<meta property="og:image" content="https://samvaad-mu.vercel.app/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Samvaad: see the conversation, not just the argument">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://samvaad-mu.vercel.app/how-it-works.html">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is my conversation private?", "acceptedAnswer": {"@type": "Answer", "text": "Your recording is turned into text and never stored, and the full chat is read once and not kept. Only your walkthrough is saved, to your own account, and only you can open it. As a guest, nothing is saved at all."}}, {"@type": "Question", "name": "Which languages work?", "acceptedAnswer": {"@type": "Answer", "text": "Hinglish, Hindi and English, including a mix of them in the same sentence. Upload a recording or paste a WhatsApp chat."}}, {"@type": "Question", "name": "How long can a conversation be?", "acceptedAnswer": {"@type": "Answer", "text": "A long evening argument is fine. If something is longer than we can read in one go, the app tells you before you upload and asks you to trim it to the part that matters. Recording inside the app stops at 10 minutes."}}, {"@type": "Question", "name": "Does the other person need to agree?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. If the conversation includes someone else, confirm you have their consent before you analyse it. Samvaad asks every time."}}, {"@type": "Question", "name": "What does it cost?", "acceptedAnswer": {"@type": "Answer", "text": "Every account starts with three free conversations. Need more during the trial? Message us and we will open up more."}}]}</script>
 <title>How Samvaad works</title>
 <meta name="description" content="How Samvaad reads a conversation, what you get back, and what happens to your data.">
 <link rel="stylesheet" href="tokens.css">
@@ -90,6 +106,21 @@
   .btn.primary:active{background:var(--primary-deep);transform:scale(.98)}
   .btn.ghost{background:transparent;color:var(--primary-deep);border:1.5px solid var(--line)}
 
+  .pill-link.primary{background:var(--primary);color:#fff}
+  .lead-links{margin:-30px 0 46px;font-weight:700;font-size:15px}
+  .faq details{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin:0 0 10px}
+  .faq summary{cursor:pointer;list-style:none;padding:16px 48px 16px 18px;font-weight:800;position:relative;min-height:48px}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";position:absolute;right:18px;top:12px;font-size:22px;font-weight:600;color:var(--primary)}
+  .faq details[open] summary::after{content:"\2212"}
+  .faq details p{margin:0;padding:0 18px 16px;color:var(--ink-soft)}
+  .sticky-cta{display:none}
+  @media (max-width:720px){
+    .sticky-cta{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+      background:rgba(250,248,244,.97);border-top:1px solid var(--line)}
+    .sticky-cta .btn{flex:1}
+    body{padding-bottom:84px}
+  }
   footer{margin-top:40px;text-align:center;font-size:13px;color:var(--ink-soft)}
 
   @media (min-width:720px){
@@ -114,12 +145,13 @@
 
   <div class="top">
     <a class="brand" href="index.html">Samvaad<span>.</span></a>
-    <a class="pill-link" href="intro.html">Watch the intro</a>
+    <a class="pill-link primary" href="login.html">Start free</a>
   </div>
 
   <p class="eyebrow">How it works</p>
   <h1>See the conversation, <em>not just the argument.</em></h1>
   <p class="lead">Samvaad reads a real conversation between the two of you and shows you what happened, what changed it, and what you could say instead. Here is exactly how, and what happens to your words.</p>
+  <p class="lead-links"><a href="intro.html">Watch the 45-second intro</a> · <a href="#faq">Questions</a></p>
 
   <!-- 1. the journey -->
   <section>
@@ -193,6 +225,17 @@
     <div class="note"><b>Three free conversations.</b> Each account gets three during the trial. If a lot of people are reflecting at the same moment, you may wait a few seconds. Nothing is lost while you wait, and it will carry on by itself.</div>
   </section>
 
+  <!-- 5. questions -->
+  <section class="faq" id="faq">
+    <p class="eyebrow">Questions</p>
+    <h2>Things people <em>ask first</em></h2>
+    <details><summary>Is my conversation private?</summary><p>Your recording is turned into text and never stored, and the full chat is read once and not kept. Only your walkthrough is saved, to your own account, and only you can open it. As a guest, nothing is saved at all.</p></details>
+    <details><summary>Which languages work?</summary><p>Hinglish, Hindi and English, including a mix of them in the same sentence. Upload a recording or paste a WhatsApp chat.</p></details>
+    <details><summary>How long can a conversation be?</summary><p>A long evening argument is fine. If something is longer than we can read in one go, the app tells you before you upload and asks you to trim it to the part that matters. Recording inside the app stops at 10 minutes.</p></details>
+    <details><summary>Does the other person need to agree?</summary><p>Yes. If the conversation includes someone else, confirm you have their consent before you analyse it. Samvaad asks every time.</p></details>
+    <details><summary>What does it cost?</summary><p>Every account starts with three free conversations. Need more during the trial? Message us and we will open up more.</p></details>
+  </section>
+
   <div class="cta">
     <h2>Ready to look at <em>yours?</em></h2>
     <p>One conversation, a few minutes, and you will see it differently.</p>
@@ -202,7 +245,8 @@
     </div>
   </div>
 
-  <footer>Samvaad. Private by design. <a href="privacy.html">Privacy</a></footer>
+  <footer>Samvaad. Private by design. <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></footer>
+  <div class="sticky-cta"><a class="btn primary" href="login.html">Start free · three conversations</a></div>
 </div>
 </body>
 </html>

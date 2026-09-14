@@ -9,6 +9,14 @@ import { createClient } from '@supabase/supabase-js';
 
 const app = express();
 
+// Security headers on every API response. JSON only, never framed, never cached: analysis results are
+// personal, and a shared device or proxy should not keep a copy.
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.set({ 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Frame-Options': 'DENY', 'Cache-Control': 'no-store' });
+  next();
+});
+
 // CORS should be pinned to the frontend origin in production. We warn loudly rather than refusing
 // to boot: a live backend going down over a config nit is worse than the wildcard it replaces.
 if (!process.env.ALLOWED_ORIGIN || process.env.ALLOWED_ORIGIN === '*') {
@@ -171,7 +179,7 @@ async function getPrincipal(req) {
   const u = await getUser(req);
   if (u) return { kind: 'user', id: u.id, user: u };
   const g = verifyGuest(req.headers['x-guest-token']);
-  return g ? { kind: 'guest', id: g.id } : null;
+  return g ? { kind: 'guest', id: g.id, ip: clientIp(req) } : null;
 }
 
 // Guard for every endpoint that spends money. Sends the 401 itself and returns null.
@@ -249,6 +257,13 @@ async function checkQuota(principal, minutes) {
     const day = new Date().toISOString().slice(0, 10);
     const u = guestUse.get(principal.id);
     const count = (u && u.day === day) ? u.count : 0;
+    // A new guest token is one click away, so the per-guest allowance alone is not a limit. The network
+    // address is: generous enough for a shared home or office connection, low enough that a script
+    // cannot turn the free tier into an open tab on Groq, Deepgram and ElevenLabs.
+    if (principal.ip && dailyCount('gip:' + principal.ip) >= GUEST_ANALYSES_PER_IP_PER_DAY) {
+      throw { status: 429, code: 'analyses_exhausted',
+              message: 'That is the limit for guests on this network today. Sign in to keep going, and your reflections start being saved, too.' };
+    }
     if (count >= GUEST_ANALYSES_PER_DAY) {
       // Same code as the signed-in wall so the app renders one kind of screen, different message
       // because the way out is different: a guest signs in, a member asks us for more.
@@ -287,6 +302,7 @@ async function chargeQuota(principal, minutes, countsAsAnalysis = false) {
     const day = new Date().toISOString().slice(0, 10);
     const u = guestUse.get(principal.id);
     guestUse.set(principal.id, { day, count: (u && u.day === day ? u.count : 0) + 1 });
+    if (principal.ip) bumpDaily('gip:' + principal.ip);
     return;
   }
   if (!admin) return;
@@ -324,6 +340,32 @@ function rateLimit(id, perMinute) {
   const arr = (hits.get(id) || []).filter(t => now - t < win);
   arr.push(now); hits.set(id, arr);
   return arr.length <= perMinute;
+}
+
+// ---- Input hygiene -----------------------------------------------------------------
+// Anything a browser sends is a suggestion. Enumerations are checked against their real values, names
+// are short plain text (they go into the model prompt and back onto the page), and the caller's network
+// address backs coarse limits that a fresh guest token cannot reset.
+const pick = (v, allowed, fallback) => (allowed.includes(v) ? v : fallback);
+function cleanName(v, fallback) {
+  const t = String(v ?? '').replace(/[\u0000-\u001f\u007f"`<>\\]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+  return t || fallback;
+}
+function clientIp(req) {
+  return String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'anon').split(',')[0].trim();
+}
+const GUEST_ANALYSES_PER_IP_PER_DAY = 9;   // three people on one home or office connection
+const dayCounts = new Map();                // key -> {day, count}; in memory, like guest allowances
+const today = () => new Date().toISOString().slice(0, 10);
+function dailyCount(key) { const u = dayCounts.get(key); return (u && u.day === today()) ? u.count : 0; }
+function bumpDaily(key) { dayCounts.set(key, { day: today(), count: dailyCount(key) + 1 }); }
+function underDailyCap(key, cap) { if (dailyCount(key) >= cap) return false; bumpDaily(key); return true; }
+
+// Unexpected failures: the log gets the detail, the caller only learns that it failed. Provider and
+// stack messages carry internals (upstream status codes, model names) a browser has no use for.
+function fail(res, e) {
+  console.error('[samvaad]', e && (e.stack || e.message || e));
+  if (!res.headersSent) res.status(500).json({ error: 'Something went wrong on our side. Please try again in a moment.' });
 }
 
 // ============================================================================
@@ -625,11 +667,11 @@ app.post('/api/review', async (req, res) => {
     const { error } = await admin.from('events').insert({
       user_id: principal.kind === 'user' ? principal.id : null,
       anon_id: principal.kind === 'guest' ? String(principal.id).slice(0, 64) : null,
-      name: 'trial_review', props: { stars, review, guest: principal.kind === 'guest' }
+      name: 'trial_review', props: { stars, review, guest: principal.kind === 'guest', canQuote: req.body?.canQuote === true }
     });
     if (error) return res.status(500).json({ error: 'Could not save that right now.' });
     res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+  } catch (e) { fail(res, e); }
 });
 
 // ---- Public config -----------------------------------------------------------
@@ -650,12 +692,15 @@ app.get('/api/config', async (req, res) => {
 // ---- Guest token issue (P0-T1) ----
 app.post('/api/guest', async (req, res) => {
   try {
+    // tokens cost nothing to mint, so minting is what gets limited per network address
+    const ip = clientIp(req);
+    if (!rateLimit('gt:' + ip, 10) || !underDailyCap('gtd:' + ip, 60)) return res.status(429).json({ error: 'Too many guest sessions from this network. Please sign in instead.' });
     if (!GUEST_SECRET) return res.status(503).json({ error: 'Guest access is not configured.' });
     const s = await settings();
     if (s.guest_enabled === false) return res.status(403).json({ error: 'Guest access is currently closed.' });
     const token = signGuest({ id: 'g_' + crypto.randomBytes(9).toString('hex'), exp: Date.now() + 2 * 3600 * 1000 });
     res.json({ token, expiresIn: 7200 });
-  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+  } catch (e) { fail(res, e); }
 });
 
 // ---- Transcribe (Deepgram, diarized) -> speaker-labelled transcript ----
@@ -664,8 +709,17 @@ app.post('/api/transcribe', async (req, res) => {
     const principal = await requirePrincipal(req, res); if (!principal) return;
     if (!rateLimit('tr:' + principal.id, 6)) return res.status(429).json({ error: 'Slow down a moment, then try again.' });
 
-    const { audioBase64, mime = 'audio/mpeg', nameA = 'A', nameB = 'B' } = req.body;
-    const bytes = Buffer.from(audioBase64, 'base64');
+    const body = req.body || {};
+    const nameA = cleanName(body.nameA, 'A'), nameB = cleanName(body.nameB, 'B');
+    // audio only: the type goes straight into Deepgram's Content-Type, so it is checked, not trusted
+    let mime = String(body.mime || '').split(';')[0].trim().toLowerCase();
+    if (!mime) mime = 'audio/*';                       // some files (WhatsApp .opus) arrive with no type
+    if (!(mime === 'audio/*' || /^audio\/[a-z0-9.+-]{1,40}$/.test(mime) || mime === 'video/webm' || mime === 'video/mp4')) {
+      return res.status(415).json({ error: 'That file does not look like audio. Upload a voice note or a call recording.' });
+    }
+    if (typeof body.audioBase64 !== 'string' || !body.audioBase64) return res.status(400).json({ error: 'Choose an audio file first.' });
+    const bytes = Buffer.from(body.audioBase64, 'base64');
+    if (bytes.length > 18 * 1024 * 1024) return res.status(413).json({ error: 'That file is too large. Trim it to the part that matters most.' });
 
     try { await checkQuota(principal, 1); } catch (e) { return quotaFail(res, e); }
 
@@ -710,7 +764,7 @@ app.post('/api/transcribe', async (req, res) => {
       truncated: cap.truncated, wordsKept: cap.wordsKept, wordsTotal: cap.wordsTotal,
       seconds
     });
-  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+  } catch (e) { fail(res, e); }
 });
 
 // ---- Analyse (Groq x2) + persist ----
@@ -719,7 +773,12 @@ app.post('/api/analyze', async (req, res) => {
     const principal = await requirePrincipal(req, res); if (!principal) return;
     if (!rateLimit('an:' + principal.id, 6)) return res.status(429).json({ error: 'Slow down a moment, then try again.' });
 
-    const { mode = 'relationship', submode = 'couple', nameA = 'Partner A', nameB = 'Partner B', consent, source = 'text' } = req.body;
+    const body = req.body || {};
+    const mode = pick(body.mode, ['relationship', 'self'], 'relationship');
+    const submode = pick(body.submode, ['couple', 'solo'], 'couple');
+    const source = pick(body.source, ['text', 'audio'], 'text');
+    const consent = pick(body.consent, ['both_partners', 'self_only'], null);
+    const nameA = cleanName(body.nameA, 'Partner A'), nameB = cleanName(body.nameB, 'Partner B');
     const user = principal.kind === 'user' ? principal.user : null;
 
     const cap = capTranscript(String(req.body.transcript || ''));
@@ -796,7 +855,13 @@ For every turn in BOTH arrays: "speaker" is exactly "A" or "B" and never a name;
     res.json({ ...rep, original, improved, sessionId, truncated: cap.truncated, wordsKept: cap.wordsKept, wordsTotal: cap.wordsTotal, limits: LIMITS, allowance: await allowance(principal) });
   } catch (e) {
     if (e && e.retryAfter) res.set('retry-after', String(e.retryAfter));
-    res.status((e && e.status) || 500).json({ error: String(e.message || e), code: (e && e.code) || null, retryAfter: (e && e.retryAfter) || null });
+    // deliberate refusals (busy, too long, allowance) carry a status and a message meant for people; keep
+    // those, but never pass a provider's own error text through
+    if (e && e.status) {
+      const msg = /groq|deepgram|eleven|supabase|econn|api key/i.test(String(e.message || '')) ? 'Something went wrong on our side. Please try again in a moment.' : String(e.message || e);
+      return res.status(e.status).json({ error: msg, code: e.code || null, retryAfter: e.retryAfter || null });
+    }
+    fail(res, e);
   }
 });
 
@@ -806,15 +871,15 @@ app.post('/api/tts', async (req, res) => {
     const principal = await requirePrincipal(req, res); if (!principal) return;
     if (!rateLimit('tts:' + principal.id, 40)) return res.status(429).json({ error: 'Too many voice requests.' });
 
-    const { text, speaker = 'A' } = req.body;
+    const text = req.body?.text, speaker = pick(req.body?.speaker, ['A', 'B'], 'A');
     if (!text || String(text).length > 1000) return res.status(400).json({ error: 'Nothing to say, or the line is too long.' });
     const vid = speaker === 'A' ? ELEVEN_VOICE_A : ELEVEN_VOICE_B;
     const r = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + vid, {
       method: 'POST', headers: { 'xi-api-key': ELEVENLABS_KEY, 'content-type': 'application/json' },
       body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.4, similarity_boost: 0.7 } }) });
-    if (!r.ok) { let detail = ''; try { detail = await r.text(); } catch (_) {} return res.status(502).json({ error: 'eleven ' + r.status, detail: detail.slice(0, 700) }); }
+    if (!r.ok) { let detail = ''; try { detail = await r.text(); } catch (_) {} console.warn('[samvaad] tts upstream', r.status, detail.slice(0, 300)); return res.status(502).json({ error: 'The voice is unavailable right now.' }); }
     res.set('content-type', 'audio/mpeg'); res.send(Buffer.from(await r.arrayBuffer()));
-  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+  } catch (e) { fail(res, e); }
 });
 
 // ---- Feedback loop ----
@@ -832,7 +897,7 @@ app.post('/api/feedback', async (req, res) => {
     });
     if (error) { console.error('[samvaad] feedback insert failed:', error.message); return res.status(500).json({ error: 'Could not save that.' }); }
     res.json({ ok: true, stored: true });
-  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+  } catch (e) { fail(res, e); }
 });
 
 // ---- History for the dashboard ----
@@ -843,7 +908,7 @@ app.get('/api/history', async (req, res) => {
     if (!q) return res.json({ sessions: [] });
     const { data } = await q.order('created_at', { ascending: false }).limit(100);
     res.json({ sessions: data || [] });
-  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+  } catch (e) { fail(res, e); }
 });
 
 // ---- Who am I: profile, quota and feature flags for the app shell ----
@@ -874,7 +939,7 @@ app.get('/api/me', async (req, res) => {
       // explicitly flagged in. Global switch first, per-user flag can open it for one tester.
       selfMode: (prof?.features?.self_reflection === true) || s.self_reflection_enabled === true
     });
-  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+  } catch (e) { fail(res, e); }
 });
 
 // ---- WhatsApp daily check-in opt-in (STUB — no messages sent yet) ----
@@ -897,7 +962,7 @@ app.post('/api/optin', async (req, res) => {
     }
     // TODO(provider): register/queue the daily template send here once WhatsApp is configured.
     res.json({ ok: true, stub: true, message: 'Saved — your daily check-in begins once messaging goes live. 🌼' });
-  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+  } catch (e) { fail(res, e); }
 });
 
 // ---- Phone: the account key -------------------------------------------------
@@ -931,7 +996,7 @@ app.post('/api/profile/phone', async (req, res) => {
     if (error) { console.error('[samvaad] phone save failed:', error.message); return res.status(500).json({ error: 'Could not save that number.' }); }
 
     res.json({ ok: true, phone, verified: false });
-  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
+  } catch (e) { fail(res, e); }
 });
 
 // ---- Admin gate: allowlist of Supabase auth user ids in env ADMIN_USER_IDS ----
@@ -1311,7 +1376,7 @@ app.get('/api/admin/kpis', async (req, res) => {
         const emails = new Map(authUsers.map(u => [u.id, u.email]));
         reviews.count = rows.length;
         reviews.average = rows.length ? Math.round((rows.reduce((a, r) => a + Number(r.props.stars), 0) / rows.length) * 10) / 10 : null;
-        reviews.latest = rows.slice(0, 20).map(r => ({ stars: Number(r.props.stars), review: r.props.review || '', at: r.created_at,
+        reviews.latest = rows.slice(0, 20).map(r => ({ stars: Number(r.props.stars), review: r.props.review || '', at: r.created_at, canQuote: !!r.props.canQuote,
           email: r.user_id ? (emails.get(r.user_id) || null) : null }));
       }
     }

@@ -9,6 +9,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#7164C6">
 <title>Samvaad · Admin</title>
 <script src="auth.js"></script>
 <style>
@@ -258,7 +263,7 @@
                 var n = Math.max(1, Math.min(5, Number(x.stars)||0));
                 return '<div class="review-row"><div class="stars" aria-label="'+n+' out of 5">'+'★★★★★'.slice(0,n)+'<span class="off">'+'★★★★★'.slice(0,5-n)+'</span></div>'
                   + (x.review ? '<p class="rv-text">'+esc(x.review)+'</p>' : '<p class="rv-text muted">No written review</p>')
-                  + '<div class="rv-meta">'+esc(x.email || 'guest')+' · '+esc(ago(x.at))+'</div></div>';
+                  + '<div class="rv-meta">'+esc(x.email || 'guest')+' · '+esc(ago(x.at))+(x.canQuote?' · <b>OK to quote</b>':'')+'</div></div>';
               }).join('')
           : '<p class="sub">No reviews yet. People are asked for one when they finish their free conversations.</p>')
       + '</div>';

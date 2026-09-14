@@ -244,4 +244,8 @@ so a missing migration looks like "quotas do nothing", not like an error.
   governor in `server.js` rather than failing.
 - Every signed-in account gets **3 analyses** (`profiles.analyses_quota`), guests 3 per day. It is
   charged only after a report succeeds, so a failure never costs someone one of their three.
+- The site's security headers live in `web/vercel.json`, including a Content-Security-Policy. A new third-party
+  script, font, media or API host must be added there, or the browser will silently block it on the live site.
+  The public address `https://samvaad-mu.vercel.app` is written into meta tags, `web/sitemap.xml` and
+  `web/robots.txt`; replace it there when a custom domain arrives. See `docs/product/LAUNCH-CHECKLIST.md`.
 - Preserve the design system above; don't replace the aesthetic.
