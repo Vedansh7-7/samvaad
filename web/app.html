@@ -1433,6 +1433,8 @@ function buildScene(a,b,tr){var single=S.mode==='self',couple=S.mode==='relation
   S._nm={a:a,b:bName,solo:(single?'Sathi':a)};
   S._alt=(!single)&&TR.length>1&&TR.every(function(x){return (((x.speaker||'')+'').trim().toUpperCase())===(((TR[0].speaker||'')+'').trim().toUpperCase());});
   var ga=('A' in sp)?gfem(sp.A):true,gb=('B' in sp)?gfem(sp.B):false;
+  // the voice must follow the same gender as the drawing, not the side it stands on
+  S._g={a:(single||ga)?'female':'male',b:gb?'female':'male'};
   // tear down any prior Rive instances before rebuilding the scene
   if(S._rive){for(var _k in S._rive){try{S._rive[_k]&&S._rive[_k].rive&&S._rive[_k].rive.cleanup();}catch(e){}}}
   S._rive=null;
@@ -1475,8 +1477,11 @@ function speak(text,cls,done){
   if(S._silent){var ms=Math.max(1300,Math.min(6500,(''+text).length*62));talkStart(cls,null);setTimeout(function(){talkStop();done();},ms);return;}
   speakBackend(text,cls,done,function(){browser(text,cls,done);});
 }
-function browser(text,cls,done){try{window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);var vs=window.speechSynthesis.getVoices();var p=vs.filter(function(v){return /en-IN|hi-IN/i.test(v.lang);});if(!p.length)p=vs.filter(function(v){return /en-/i.test(v.lang);});if(p.length)u.voice=cls==='a'?(p.find(function(v){return /female|heera|aria|kalpana/i.test(v.name);})||p[0]):(p.find(function(v){return /male|ravi|prabhat/i.test(v.name);})||p[p.length-1]);u.lang='en-IN';u.pitch=cls==='a'?1.18:0.85;u.rate=0.88;u.onend=done;u.onerror=done;window.speechSynthesis.speak(u);talkStart(cls,null);}catch(e){setTimeout(done,900);}}
-async function speakBackend(text,cls,done,fb){var sv=sampleVoice(text);if(sv){try{var sa=new Audio(sv);S._au=sa;sa.playbackRate=0.9;try{sa.preservesPitch=true;}catch(e){}sa.onended=done;sa.onerror=function(){fb();};if(!S.playing)return;var pp=sa.play();if(pp&&pp.catch)pp.catch(function(){fb();});talkStart(cls,sa);}catch(e){fb();}return;}try{var r=await fetch(be()+'/api/tts',{method:'POST',headers:beHeaders(),body:JSON.stringify({text:text,speaker:cls==='a'?'A':'B'})});if(!r.ok)throw 0;var u=URL.createObjectURL(await r.blob());var au=new Audio(u);S._au=au;au.playbackRate=0.9;try{au.preservesPitch=true;}catch(e){}au.onended=function(){URL.revokeObjectURL(u);done();};au.onerror=done;if(!S.playing){try{au.pause();}catch(e){}URL.revokeObjectURL(u);return;}au.play();talkStart(cls,au);}catch(e){fb();}}
+function browser(text,cls,done){var fem=(S._g&&S._g[cls])?S._g[cls]==='female':cls==='a';try{window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);var vs=window.speechSynthesis.getVoices();var p=vs.filter(function(v){return /en-IN|hi-IN/i.test(v.lang);});if(!p.length)p=vs.filter(function(v){return /en-/i.test(v.lang);});if(p.length)u.voice=fem?(p.find(function(v){return /female|heera|aria|kalpana/i.test(v.name);})||p[0]):(p.find(function(v){return /male|ravi|prabhat/i.test(v.name);})||p[p.length-1]);u.lang='en-IN';u.pitch=fem?1.18:0.85;u.rate=0.88;u.onend=done;u.onerror=done;window.speechSynthesis.speak(u);talkStart(cls,null);}catch(e){setTimeout(done,900);}}
+/* The proxy's voice A is the female voice and B the male one. Sides used to map straight onto them, so
+   swapping the names (Rohit as person A) redrew the characters but kept a woman's voice on the man. */
+function voiceFor(cls){var g=S._g&&S._g[cls];if(!g)return cls==='a'?'A':'B';return g==='male'?'B':'A';}
+async function speakBackend(text,cls,done,fb){var sv=sampleVoice(text);if(sv){try{var sa=new Audio(sv);S._au=sa;sa.playbackRate=0.9;try{sa.preservesPitch=true;}catch(e){}sa.onended=done;sa.onerror=function(){fb();};if(!S.playing)return;var pp=sa.play();if(pp&&pp.catch)pp.catch(function(){fb();});talkStart(cls,sa);}catch(e){fb();}return;}try{var r=await fetch(be()+'/api/tts',{method:'POST',headers:beHeaders(),body:JSON.stringify({text:text,speaker:voiceFor(cls)})});if(!r.ok)throw 0;var u=URL.createObjectURL(await r.blob());var au=new Audio(u);S._au=au;au.playbackRate=0.9;try{au.preservesPitch=true;}catch(e){}au.onended=function(){URL.revokeObjectURL(u);done();};au.onerror=done;if(!S.playing){try{au.pause();}catch(e){}URL.revokeObjectURL(u);return;}au.play();talkStart(cls,au);}catch(e){fb();}}
 
 /* ---------- act 1: the conversation as it actually happened ----------
    The walk-through opens by playing the pivotal moment back in the couple's own words, before it
