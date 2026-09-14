@@ -55,22 +55,32 @@ testers only.
 ```
 samvaad/
 ├─ backend/              Node/Express proxy. Holds every secret. Deployed on Render.
-│  ├─ server.js          The whole backend, ~1,300 lines, deliberately one file
+│  ├─ server.js          The whole backend, deliberately one file
 │  ├─ schema.sql         Reference copy of the database shape
 │  ├─ migrations/        000-bring-schema-current.sql is the only one you need
 │  └─ test/              funnel.mjs, signed-in.mjs, schema.mjs
 ├─ web/                  Static frontend. No framework, no build step. Deployed on Vercel.
-│  ├─ index.html         Entry: routes first-time visitors to the intro
-│  ├─ intro.html         9:16 intro reel: real product clips, voiced, Rive close
+│  ├─ index.html         Entry: signed-in people to the app, everyone else to the intro
+│  ├─ intro.html         9:16 intro reel: real product clips, voice, soft music, Rive close
 │  ├─ login.html         Magic link / OTP / guest. The canonical design reference.
-│  ├─ app.html           The product: analyse, report, walk-through, replay, dashboard
-│  ├─ admin.html         Internal console: metrics and per-user controls
+│  ├─ app.html           The product: upload or paste, report, walk-through, replay, dashboard
+│  ├─ admin.html         Internal console: metrics, reviews and per-user controls
+│  ├─ how-it-works.html  The short explainer people reach from the intro and the You page
 │  ├─ privacy.html       Privacy notice
 │  ├─ rive/              The two avatar rigs (.riv)
-│  └─ audio/intro/       Narration for the intro
-├─ docs/                 Longer-form documents and the decks
-│  └─ media/             The marketing cut of the intro
-├─ handover/             You are here
+│  ├─ audio/intro/       Voice lines and the music bed for the intro
+│  ├─ media/intro/       The five product clips in the intro
+│  └─ samples/           The free sample's pre-made analysis and voice lines
+├─ docs/
+│  ├─ handover/          You are here
+│  ├─ operations/        Pre-launch ops, the 2026-08 audit, email templates
+│  ├─ product/           Plans and the older roadmap
+│  ├─ decks/             Board brief and technical overview
+│  ├─ media/             The marketing cut of the intro
+│  └─ archive/           Superseded prototypes
+├─ tools/
+│  ├─ intro/             Records, cuts and checks the intro reel
+│  └─ rive-test/         Test harness for the avatar rigs
 ├─ CLAUDE.md             Auto-loaded by Claude Code. Project rules and guardrails.
 ├─ PRODUCT.md            Brand, tone and design register
 └─ render.yaml           Render blueprint for the backend

@@ -2,7 +2,7 @@
 
 Status: **planned, not started** (2026-07-02). Execution model: **one agent per file** (app.html
 collisions are real — R2–R5 are the SAME file and must run as ONE agent, sequentially). Format
-mirrors ROADMAP.md: Goal · Files · Approach · Done-when. No code until the owner says go.
+mirrors docs/product/ROADMAP.md: Goal · Files · Approach · Done-when. No code until the owner says go.
 
 ## The thesis (locked in discussion)
 Input type decides the replay:

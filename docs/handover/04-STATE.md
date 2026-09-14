@@ -78,7 +78,7 @@ npm run funnel:signed-in  37 passed, 0 failed
 
 ## Not built
 
-- **Deterministic scoring engine.** `docs/PLAN-PRELAUNCH.md` Phase 1 describes replacing
+- **Deterministic scoring engine.** `docs/product/PLAN-PRELAUNCH.md` Phase 1 describes replacing
   model-generated scores with a code-computed engine (the model emits discrete Gottman-style
   labels; arithmetic produces every number). Not started. The current scores come from the model,
   now stabilised by temperature 0 + fixed seed + low reasoning effort, which addressed the

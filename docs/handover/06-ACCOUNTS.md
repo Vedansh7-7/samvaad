@@ -16,7 +16,7 @@ a chat message that will still exist next year.
 | **Deepgram** | Speech to text, diarized | `DEEPGRAM_KEY` | yes |
 | **ElevenLabs** | Replay and intro voices | `ELEVENLABS_KEY`, scoped to text-to-speech only | yes |
 | **Render** | Backend hosting | env vars set in its dashboard | yes — service ownership |
-| **Vercel** | Frontend hosting | none | yes — project ownership |
+| **Vercel** | Frontend hosting and Web Analytics (cookieless page views) | none | yes — project ownership |
 | **GitHub** | This repository | none | yes |
 | **SMTP provider** | Sign-in emails | configured inside Supabase Auth | yes |
 
@@ -97,7 +97,7 @@ not decorative:
 - `web/audio/intro/*.mp3` — generated narration. Regenerable from `script.json` with an
   ElevenLabs key; see [02-OPERATIONS.md](02-OPERATIONS.md).
 - `docs/media/samvaad-intro.mp4` — the marketing cut, recorded from `intro.html?film=1`.
-- `docs/Samvaad-Board-Brief.html` and `docs/Samvaad-Technical-Overview.html` — print-ready
+- `docs/decks/Samvaad-Board-Brief.html` and `docs/decks/Samvaad-Technical-Overview.html` — print-ready
   reference decks. Print with *Background graphics* enabled.
 
 ---

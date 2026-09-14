@@ -2,7 +2,7 @@
 
 _Written 2026-08-10 by reading the whole repo (code, not docs) at commit `f8b2775`.
 Purpose: one place that says what actually exists, what the docs claim that the code doesn't do,
-and what the real next decisions are. Where this file and `CLAUDE.md` / `ROADMAP.md` disagree,
+and what the real next decisions are. Where this file and `CLAUDE.md` / `docs/product/ROADMAP.md` disagree,
 **this file describes the code**._
 
 ---
@@ -17,7 +17,7 @@ consent required), **A relationship** (solo), **Just me** (self/introspection, r
 "say these out loud" affirmations with a companion, Sathi). Hinglish + Devanagari first-class.
 Wellness framing throughout. India / DPDP posture throughout.
 
-Strategic thesis (from `ROADMAP.md`, still correct): the product is feature-rich; the open
+Strategic thesis (from `docs/product/ROADMAP.md`, still correct): the product is feature-rich; the open
 question is **whether strangers will pay and return**. Everything should be judged against that.
 
 ---
@@ -143,7 +143,7 @@ need revisiting. Either way, one string should be true in all four places.
 ### 4.3 Recording still drops the second speaker
 `app.html` line 641 uses the Web Speech API (`SpeechRecognition`). It is single-speaker: for a
 **couple** recording it merges both voices into one unlabelled stream. Upload does it correctly
-(Deepgram, diarized). This is exactly the bug `docs/replay-rive-briefs.md` R2 was written to
+(Deepgram, diarized). This is exactly the bug `docs/product/replay-rive-briefs.md` R2 was written to
 fix; R1 (server-side `turns`) and R3 (Rive engine) shipped, **R2 / R4 / R5 did not**. So the
 "real voices reflection" narrative arc (Act 1 real audio → Act 2 kinder version) — described in
 the briefs as the USP — does not exist yet; only the kinder-version act is built.
@@ -187,7 +187,7 @@ resurfacing risk for the "never show users API-key fields" rule.
 - `backend/README.md` and `schema.sql` describe a private `audio` Storage bucket and a 24h purge
   job. Neither exists — audio is streamed through the request body and never persisted, which is
   actually the *stronger* DPDP position. The docs should say what the code does.
-- `ROADMAP.md` marks E2-T2 done; the dashboard is real, but the KPI list it promises (DAU,
+- `docs/product/ROADMAP.md` marks E2-T2 done; the dashboard is real, but the KPI list it promises (DAU,
   D1/D7 retention, completion rate) is not computable without E2-T1 event logging.
 
 ---

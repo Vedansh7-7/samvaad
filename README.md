@@ -1,36 +1,56 @@
 # Samvaad
 
-Talk, reflect, breathe. A conversation-analysis web app for the Indian market.
+Talk, reflect, breathe. Upload a conversation and get a calm reading of it: a score, what went wrong,
+the lines to try instead, and the moment played back and replayed kinder. Built for the Indian market,
+in Hinglish, Hindi and English.
 
-> **New here, or taking this project over? Start with [`handover/README.md`](handover/README.md).**
-> It is a six-document pack covering the architecture, the runbook, the decisions behind the
-> non-obvious code, the current state, what to do next, and what has to be transferred.
+> **New here, or taking this project over? Start with [`docs/handover/README.md`](docs/handover/README.md).**
 > `CLAUDE.md` carries the working rules and is auto-loaded by Claude Code.
 
-## Layout
-- `web/` — the frontend. Pure static HTML, no build step. Deployed on Vercel.
-- `backend/` — Node/Express proxy that holds all API secrets. Deployed on Render.
-- `handover/` — the handover pack. Read this first.
-- `docs/` — longer-form plans, audits and the reference decks. See [`docs/README.md`](docs/README.md).
+## Where things are
 
-## Run the frontend (demo)
-Just open `web/app.html` in Chrome or Edge. Use **Load a sample → Analyse**. For audio
-recording, Chrome/Edge only. Without a Backend URL it runs standalone (paste keys in Settings —
-demo only; do not ship keys in the browser).
+```
+samvaad/
+├─ web/            The site. Static HTML, no build step. Vercel serves this folder.
+├─ backend/        Node/Express proxy that holds every secret. Render runs this folder.
+├─ docs/           Everything written down (index: docs/README.md)
+│  ├─ handover/    The six-part handover pack. Read first.
+│  ├─ operations/  Running it: pre-launch ops, the code audit, email templates
+│  ├─ product/     Plans and the older roadmap
+│  ├─ decks/       Board brief and technical overview (print-ready HTML)
+│  ├─ media/       The marketing cut of the intro
+│  └─ archive/     Superseded prototypes
+├─ tools/          Scripts that are not part of the site
+│  ├─ intro/       Records, cuts and checks the intro reel
+│  └─ rive-test/   Test harness for the avatar rigs
+├─ CLAUDE.md       Agent rules, auto-loaded
+├─ PRODUCT.md      Brand, tone and design register
+└─ render.yaml     Render blueprint for the backend
+```
 
-## Run the backend
+**Do not rename or move `web/` or `backend/`.** Vercel and Render deploy from them, and those
+settings live in their dashboards, not in this repository.
+
+## Run it locally
+
+Frontend: `cd web && python -m http.server 8123`, then open http://localhost:8123/app.html. It uses
+the live backend by default.
+
+Backend:
 ```bash
 cd backend
 npm install
-cp .env.example .env      # then fill in the keys (SUPABASE_URL is pre-filled)
+cp .env.example .env      # fill in the keys (SUPABASE_URL is pre-filled)
 npm start                 # serves on PORT (default 8787)
 ```
-Then in `web/app.html` → Settings → set **Backend URL** to your backend origin.
+To point the local site at a local backend, run
+`localStorage.setItem('samvaad.beUrl', 'http://localhost:8787')` in the browser console.
 
-## The keys you need (all have a no-card free start)
-- Supabase — already provisioned (free). Only the service_role key must be copied from the dashboard.
-- Deepgram — $200 one-time credit (audio → text).
-- ElevenLabs — 10k chars/month free (voices); key scoped to Text-to-Speech only.
-- Groq — free tier (analysis); model `openai/gpt-oss-120b`, set via `GROQ_MODEL`.
+## Services
+- **Supabase**: database and sign-in, Mumbai region. Only the service_role key goes in `backend/.env`.
+- **Deepgram**: speech to text, `nova-3` multilingual. $200 one-time credit.
+- **Groq**: the analysis, `openai/gpt-oss-120b`, free tier.
+- **ElevenLabs**: the voices, with a key scoped to Text-to-Speech only.
+- **Vercel** hosts the site and its Web Analytics; **Render** hosts the backend.
 
 Never commit `.env`. It is git-ignored.

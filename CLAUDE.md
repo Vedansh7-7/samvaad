@@ -3,10 +3,10 @@
 This file is auto-loaded into every Claude Code session in this directory. It carries the working
 rules and guardrails.
 
-> **Before your first edit, read [`handover/03-DECISIONS.md`](handover/03-DECISIONS.md).**
+> **Before your first edit, read [`docs/handover/03-DECISIONS.md`](docs/handover/03-DECISIONS.md).**
 > Several things in this codebase look like mistakes and are not — each was learned by something
 > breaking against a live API, and changing one back costs roughly a day. The full pack lives in
-> [`handover/`](handover/README.md): architecture, runbook, decisions, current state, what is next,
+> [`docs/handover/`](docs/handover/README.md): architecture, runbook, decisions, current state, what is next,
 > and the account transfer checklist.
 >
 > Verification is `cd backend && npm run schema:check && npm run funnel && npm run funnel:signed-in`.
@@ -93,7 +93,7 @@ The browser must never hold provider secrets. The proxy is the key fix vs. the e
   `getUser`. All secrets from env.
 - `backend/.env.example` — copy to `backend/.env` and fill in. `SUPABASE_URL` is pre-filled.
 - `backend/schema.sql` — the exact tables/RLS already applied to the live DB.
-- `docs/_archive-*.html` — superseded prototypes, for reference only.
+- `docs/archive/prototype-*.html` — superseded prototypes, for reference only.
 
 ## Compliance posture (India DPDP Act 2023 + 2025 Rules)
 Consent-first; purpose limitation; auto-delete raw audio after transcription; two-party
@@ -114,11 +114,11 @@ not implemented.
 6. Later: dashboard "patterns over time" visualization; smarter breathing (4-7-8 vs box);
    feedback → contextual-bandit recommender ({context → intervention → outcome}); Razorpay.
 
-## Roadmap & validation thesis (2026-06-27) — see ROADMAP.md
+## Roadmap & validation thesis (2026-06-27) — see docs/product/ROADMAP.md
 The product is already feature-rich; the #1 risk is **whether real strangers will pay and return**,
 not more features. Plan is **validation-first**: instrument → small paid cohort → prove a retention
 loop → then scale. The always-on voice-biomarker **wearable is parked** (Series-A later).
-Full agent-executable task briefs live in **`ROADMAP.md`** (epics E1–E6, each Goal·Files·Approach·
+Full agent-executable task briefs live in **`docs/product/ROADMAP.md`** (epics E1–E6, each Goal·Files·Approach·
 Done-when). Current phase = **A (validate)**: founding pre-sell (₹199, Razorpay/UPI), explicit
 guest-vs-paid, and a manual consented WhatsApp daily check-in for ~10 founding users → goal: 10
 paying strangers + a daily loop. North-star KPI = **solo→couple conversion** (PDF's core Phase-1
@@ -139,7 +139,7 @@ Pages in `web/` and polish status:
 - `founding.html` — NEW ₹199 pre-sell landing (functional, **needs a design-polish pass**).
 - `admin.html` — NEW internal KPI + WhatsApp-nudge dashboard (functional, lower-priority polish).
 - `privacy.html` — NEW privacy notice (simple, fine). `index.html` — Vercel redirect (ignore).
-- `docs/Samvaad-Board-Brief.html` + `docs/Samvaad-Technical-Overview.html` — NEW generated reference
+- `docs/decks/Samvaad-Board-Brief.html` + `docs/decks/Samvaad-Technical-Overview.html` — NEW generated reference
   decks (currently untracked), not part of the app.
 
 Intentional flows — do NOT "fix" these, they are by design:
@@ -193,8 +193,8 @@ custom SMTP (Gmail app password) is set — demo via "Continue as guest". `.clau
 `worktree.bgIsolation:none` so background agents edit this checkout directly (not a worktree).
 
 ## Pre-launch trial state (2026-08-24) — read this before touching the app
-The product is being taken to a small invited cohort. `docs/PRELAUNCH-OPS.md` is the live handover:
-what is done, and the dashboard steps only the founder can do. `docs/STATE-OF-PLAY.md` still
+The product is being taken to a small invited cohort. `docs/operations/PRELAUNCH-OPS.md` is the live handover:
+what is done, and the dashboard steps only the founder can do. `docs/operations/STATE-OF-PLAY.md` still
 describes the architecture accurately; its findings 4.1 (dashboard amnesia), 4.2 (model drift) and
 4.6 (feedback insert) are now fixed.
 
@@ -210,7 +210,7 @@ Decisions taken with the founder on 2026-08-24:
   which variant each session ran under.
 - **An intro reel** (`web/intro.html`) greets every signed-out visitor: 9:16, sound on by default,
   real product footage in `web/media/intro/`, skippable to the blog or to sign-in. Re-record the
-  clips whenever the app's look changes (`handover/02-OPERATIONS.md`, "Regenerating the intro").
+  clips whenever the app's look changes (`docs/handover/02-OPERATIONS.md`, "Regenerating the intro").
 - **Two sides.** Admin (`web/admin.html`) = Metrics + People, with pause/suspend/extend/reset and
   per-user feature pinning. It is unlinked by design; `ADMIN_USER_IDS` gates it.
 - Phone (WhatsApp) is the account key: `profiles.phone`, unique, saved via `/api/profile/phone`.

@@ -49,7 +49,7 @@ list.
 
 **2. Scores come from the model.**
 They are now *stable* (same conversation, same number) but not *grounded* — a 70B model is still
-inventing four numbers. `docs/PLAN-PRELAUNCH.md` Phase 1 describes the alternative in detail: the
+inventing four numbers. `docs/product/PLAN-PRELAUNCH.md` Phase 1 describes the alternative in detail: the
 model emits discrete behavioural labels from a closed vocabulary, and code computes every score
 from published weights. That is what makes a score defensible to a user who asks "why 64?".
 
@@ -87,7 +87,7 @@ problem and the fix is obvious.
 
 ## A word on scope
 
-There is a long, thoughtful roadmap in `docs/PLAN-PRELAUNCH.md` and `ROADMAP.md`. Much of it is
+There is a long, thoughtful roadmap in `docs/product/PLAN-PRELAUNCH.md` and `docs/product/ROADMAP.md`. Much of it is
 good. All of it was written before anyone outside the team had used the product.
 
 Treat those documents as a menu, not a queue. The next ten real users will tell you more about

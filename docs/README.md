@@ -1,37 +1,45 @@
-# docs — index
+# docs
 
-Not everything here is current. This index says which is which, so you do not act on a document
-that was overtaken months ago.
+Everything written down about Samvaad. Not all of it is current, so each section says what it is.
 
-**If you are new to the project, read [`../handover/README.md`](../handover/README.md) first.**
-This folder is the longer-form material behind it.
+**New to the project? Read [`handover/README.md`](handover/README.md) first.**
 
----
+## handover/: start here
 
-## Current
+The six-part pack, kept current: [architecture](handover/01-ARCHITECTURE.md),
+[operations](handover/02-OPERATIONS.md), [decisions](handover/03-DECISIONS.md),
+[current state](handover/04-STATE.md), [what is next](handover/05-NEXT.md) and
+[accounts](handover/06-ACCOUNTS.md).
+
+## operations/: running it
 
 | File | What it is |
 |---|---|
-| **[PRELAUNCH-OPS.md](PRELAUNCH-OPS.md)** | The live operational handover: what is done, and the dashboard steps only an account owner can perform. Kept up to date. |
-| **[media/samvaad-intro.mp4](media/) ** | The marketing cut of the intro, recorded from `web/intro.html?film=1`. |
-| **[email-templates/](email-templates/)** | Branded sign-in and confirmation emails. Paste into Supabase → Auth → Email Templates. |
-| **[Samvaad-Board-Brief.html](Samvaad-Board-Brief.html)** | Non-technical brief: the product, the USP, the Phase-A KPI *targets*. Print with background graphics on. |
-| **[Samvaad-Technical-Overview.html](Samvaad-Technical-Overview.html)** | Architecture, data flow, security layers, stack. Same print note. |
+| **[PRELAUNCH-OPS.md](operations/PRELAUNCH-OPS.md)** | The live operational handover: what is done, and the dashboard steps only an account owner can perform. |
+| **[email-templates/](operations/email-templates/)** | Branded sign-in and confirmation emails. Paste into Supabase, Authentication, Email Templates. |
+| **[STATE-OF-PLAY.md](operations/STATE-OF-PLAY.md)** | A full code audit from 2026-08-10. Findings 4.1, 4.2, 4.4 and 4.6 have since been fixed. For current state use [handover/04-STATE.md](handover/04-STATE.md). |
 
-## Planning — good thinking, written before real users
+## product/: plans
 
-Treat these as a menu, not a queue. Both predate anyone outside the team using the product, and
-[`../handover/05-NEXT.md`](../handover/05-NEXT.md) supersedes their sequencing.
+Good thinking, written before real users. Treat it as a menu, not a queue:
+[handover/05-NEXT.md](handover/05-NEXT.md) sets the order.
 
 | File | Status |
 |---|---|
-| **[PLAN-PRELAUNCH.md](PLAN-PRELAUNCH.md)** | The pre-launch plan. **Phase 0 is done.** Phase 1 (deterministic scoring engine) and Phase 2 (async job pipeline) are **not built** and are still the best description of what they would involve. Phase 3's funnel work is largely shipped. |
-| **[../ROADMAP.md](../ROADMAP.md)** | The older epic list (E1-E6). Partly shipped, partly superseded. Historical. |
+| **[PLAN-PRELAUNCH.md](product/PLAN-PRELAUNCH.md)** | The pre-launch plan. Phase 0 is done. Phase 1 (deterministic scoring) and Phase 2 (async jobs) are not built. |
+| **[ROADMAP.md](product/ROADMAP.md)** | The older epic list (E1 to E6). Partly shipped, partly superseded. Historical. |
+| **[replay-rive-briefs.md](product/replay-rive-briefs.md)** | The original Rive replay briefs. R1 and R3 shipped; R2's goal, recorded audio with both speakers, is now met by the Record tab and multilingual transcription. |
 
-## Historical — accurate about their moment, not about now
+## decks/: print-ready
 
-| File | Status |
+| File | What it is |
 |---|---|
-| **[STATE-OF-PLAY.md](STATE-OF-PLAY.md)** | A full code audit from 2026-08-10. Its findings 4.1 (dashboard amnesia), 4.2 (model drift), 4.4 (dead pre-sell funnel) and 4.6 (feedback insert) have all since been **fixed**. Still the best written description of how the system got here. For current state, use [`../handover/04-STATE.md`](../handover/04-STATE.md). |
-| **[replay-rive-briefs.md](replay-rive-briefs.md)** | The original briefs for the Rive replay work. R1 and R3 shipped. R2 (MediaRecorder capture, to fix single-speaker recording) is still open and is the top build item in [`../handover/05-NEXT.md`](../handover/05-NEXT.md). |
-| **[_archive-v1.html](_archive-v1.html), [_archive-v2.html](_archive-v2.html)** | Superseded prototypes. Reference only. |
+| **[Samvaad-Board-Brief.html](decks/Samvaad-Board-Brief.html)** | Non-technical brief: the product, the USP, the Phase-A KPI targets. Print with background graphics on. |
+| **[Samvaad-Technical-Overview.html](decks/Samvaad-Technical-Overview.html)** | Architecture, data flow, security layers, stack. Same print note. |
+
+## media/ and archive/
+
+| File | What it is |
+|---|---|
+| **[media/samvaad-intro.mp4](media/samvaad-intro.mp4)** | The marketing cut of the intro, recorded from `web/intro.html?film=1` by `tools/intro`. |
+| **[archive/prototype-v1.html](archive/prototype-v1.html), [archive/prototype-v2.html](archive/prototype-v2.html)** | Superseded prototypes. Reference only. |

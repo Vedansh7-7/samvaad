@@ -4,3 +4,8 @@ node_modules/
 *.log
 .DS_Store
 tools/intro/out/
+.impeccable/hook.cache.json
+**/.impeccable/hook.cache.json
+.impeccable/config.local.json
+.claude/settings.local.json
+__pycache__/

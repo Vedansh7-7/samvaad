@@ -1,7 +1,7 @@
 # Samvaad — Pre-launch Plan (Trial Cohort)
 
-_Written 2026-08-11. Supersedes `ROADMAP.md` Phase A. Companion to `docs/STATE-OF-PLAY.md`
-(what exists today). Task format matches `ROADMAP.md`: **Goal · Files · Approach · Done-when**,
+_Written 2026-08-11. Supersedes `docs/product/ROADMAP.md` Phase A. Companion to `docs/operations/STATE-OF-PLAY.md`
+(what exists today). Task format matches `docs/product/ROADMAP.md`: **Goal · Files · Approach · Done-when**,
 one agent per file._
 
 ---
@@ -435,7 +435,7 @@ Business API becomes unavoidable.
 3. **Phase 2** — async jobs + WhatsApp delivery. This is what makes 30-minute audio possible at all.
 4. **Phase 3** — the funnel: intro video, phone handshake, one mode, reordered walk-through,
    admin v2.
-5. **Then** — real-voice replay (R2/R4 from `docs/replay-rive-briefs.md`): replace the Web Speech
+5. **Then** — real-voice replay (R2/R4 from `docs/product/replay-rive-briefs.md`): replace the Web Speech
    API capture with `MediaRecorder`, and build the two-act narrative (their real voices → the
    kinder version). The 2-day retention decision exists specifically to make this possible.
 

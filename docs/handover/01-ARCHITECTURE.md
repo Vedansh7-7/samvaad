@@ -59,6 +59,7 @@ holds.
 | `POST /api/analyze` | principal | one Groq call; persists to `sessions` + `consents` when signed in |
 | `POST /api/tts` | principal | ElevenLabs, one line at a time |
 | `POST /api/feedback` | user | the `{context → intervention → outcome}` signal |
+| `POST /api/review` | principal | end-of-trial stars (1 to 5) and up to 1,000 characters, stored as a `trial_review` event; shown in admin as "What people said" |
 | `GET /api/history` | user | past sessions, used to rebuild the dashboard on load |
 | `GET /api/me` | principal | status, allowance, act-1 variant, feature flags, **the real input limits** |
 | `POST /api/profile/phone` | user | phone as the account key; unique, normalised to `91XXXXXXXXXX` |
