@@ -34,11 +34,15 @@ The two modes cross-fade smoothly (background + accent swap on `body[data-mode]`
 - Soft wellness aesthetic from a reference meditation app: pastel gradients, **glassmorphism**
   cards (`backdrop-filter: blur`), single-continuous-line **lotus** signature, floating ochre
   birds / gold arcs.
-- Type: **Fraunces** (serif headings) + **Mulish** (body) + **Noto Sans Devanagari**.
-- Action color = **cherry** `#C8324B` (deep `#A52741`) — constant across both modes. (Was
-  ochre `#C79A60`; redesigned 2026-06-27 because the warm-earth palette read as a meditation/
-  "adhyatma" app, wrong for a couples product.) Relationship accent = cherry + warm blush-rose.
-  Self accent = dusty plum-mauve `#9E6A86` (was amber). Risk/error = brick `#C0463C`.
+- Type: **Fraunces** (serif headings) + **Nunito** (body) + **Noto Sans Devanagari**.
+- Palette (2026-09-14, research-derived; source of truth is `web/tokens.css`): base **periwinkle**
+  `#7164C6` (deep `#5848BF`) replaced cherry red. Red is among the most emotionally charged colours
+  across cultures and carries anger as well as love, which is the wrong signal for someone who has
+  just been in a conflict. Golden-angle accents: warm peach `#F1C6A7`, sea green `#CFE7E1` (ink
+  `#367D69`), orchid `#EEDDEE` (self mode, ink `#9D559D`). Canvas `#FAF8F4`, ink `#312E52`, risk clay
+  `#B0523B`. Every text pairing meets WCAG AA. The legacy variable names in app.html (`--cherry`,
+  `--accent`) are kept on purpose and hold the new values. The bindi in the avatar art stays red.
+- On phones (max-width 760px) backdrop blur is off for Android smoothness; panels are solid.
 - The login page (`web/login.html`) is the canonical reference for the look. The main app
   (`web/app.html`) already matches it.
 
