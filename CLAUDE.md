@@ -152,6 +152,10 @@ Intentional flows — do NOT "fix" these, they are by design:
 - The WhatsApp check-in slide is asked once per browser (`samvaad.checkinAsked`), never after a number
   is given.
 - Sign-in codes are accepted at 6 to 10 digits: Supabase's OTP length is a dashboard setting.
+- The **Record** tab records audio (MediaRecorder, any modern browser), with no live transcript. Tap to
+  start and stop; it auto-stops at 10 minutes (founder's call) or at `limits.maxAudioSeconds` from
+  `/api/me` if that is ever shorter, because the backend refuses audio it cannot analyse. The recording then goes through the
+  same Deepgram path as Upload audio.
 - Self / "Just me" mode reframes the scripts section as **"Say these out loud"** affirmations
   (express-your-way), not prescriptive rewrites. Relationship mode keeps "try saying".
 

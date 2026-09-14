@@ -129,7 +129,8 @@
   .mic{width:78px;height:78px;border-radius:50%;border:none;cursor:pointer;background:var(--accent);color:#fff;font-size:26px;display:grid;place-items:center;margin:6px auto;box-shadow:0 12px 26px -12px var(--accent)}
   .mic.rec{animation:pulse 1.3s ease-in-out infinite}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(113,100,198,.35)}50%{box-shadow:0 0 0 16px rgba(113,100,198,0)}}
-  .live{min-height:50px;background:var(--glass);border:1px solid var(--glass-brd);border-radius:12px;padding:10px 12px;color:var(--muted);font-size:14px;margin-top:12px}
+  .rec-clock{font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent-ink);font-size:15px;min-height:20px;margin:2px 0 4px}
+  #recPlay audio{width:100%;max-width:420px;margin-top:12px}
 
   /* processing */
   .breath-loader{display:grid;place-items:center;padding:26px 0 8px}
@@ -545,7 +546,7 @@
       </div>
       <div class="tabs">
         <button class="tab" data-tab="text" aria-selected="true">Chats</button>
-        <button class="tab" data-tab="rec" aria-selected="false">Record <span class="bonus">· Chrome/Edge</span></button>
+        <button class="tab" data-tab="rec" aria-selected="false">Record</button>
         <button class="tab" data-tab="up" aria-selected="false">Upload audio</button>
       </div>
       <div id="tab-text">
@@ -556,9 +557,10 @@
         <div class="row"><button class="btn soft" id="sampleBtn">Load a sample</button></div>
       </div>
       <div id="tab-rec" class="hide" style="text-align:center">
-        <button class="mic" id="micBtn">●</button>
-        <div class="hint" id="micHint">Tap to record, then speak. In-browser, nothing uploaded.</div>
-        <div class="live" id="liveT">Live transcript appears here…</div>
+        <button class="mic" id="micBtn" aria-label="Start recording">●</button>
+        <div class="rec-clock" id="recClock"></div>
+        <div class="hint" id="micHint">Tap to start recording, and tap again when you are done.</div>
+        <div id="recPlay"></div>
       </div>
       <div id="tab-up" class="hide">
         <div class="drop" id="drop"><strong>Drop an audio file</strong> or click to browse<br><span class="hint">MP3, WAV, M4A · via your backend or Deepgram key</span><input type="file" id="file" accept="audio/*" class="hide"></div>
@@ -684,6 +686,7 @@ function stopReplay(){try{S.playing=false;if(window.speechSynthesis)window.speec
 var VIEWS={home:'viewHome',analyse:'viewAnalyse',dash:'viewDash',you:'viewYou'};
 function view(v){
   stopReplay();
+  if(v!=='analyse'&&typeof REC!=='undefined'&&REC.state==='recording')recStop();
   Object.keys(VIEWS).forEach(function(k){var el=$(VIEWS[k]);if(el)el.classList.toggle('hide',k!==v);});
   document.querySelectorAll('.bottomnav button').forEach(function(b){b.setAttribute('aria-current',String(b.dataset.tab===v));});
   if(v==='home')renderHome();
@@ -808,6 +811,7 @@ function applyMe(){
   if(lim.maxChars){var ta=$('transcript');if(ta)ta.setAttribute('maxlength',lim.maxChars);}
   updateCount();
   renderAllowance();
+  if(typeof REC!=='undefined'&&REC.state==='idle'&&!REC.has)recPaint('idle');
   syncMode();      // re-render the hint now that the real limits are known
   var d=$('drop');
   if(d&&lim.maxMinutes)d.innerHTML='<strong>Drop an audio file</strong> or click to browse<br><span class="hint">MP3, WAV, M4A · up to about '+lim.maxMinutes+' minutes</span><input type="file" id="file" accept="audio/*" class="hide">',bindFile();
@@ -885,10 +889,87 @@ async function runSample(){
   finally{S.busy=false;}
 }
 
-/* record */
-(function(){var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('micHint').textContent='Live recording needs Chrome or Edge. Use Chats instead.';$('micBtn').disabled=true;return;}
- $('micBtn').onclick=function(){if(S.recording){S._r.stop();return;}var r=new SR();S._r=r;r.lang='en-IN';r.continuous=true;r.interimResults=true;r.onresult=function(e){var t='';for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;S.recT=t;$('liveT').textContent=t;};r.onend=function(){S.recording=false;$('micBtn').classList.remove('rec');$('micBtn').textContent='●';$('micHint').textContent='Recorded. Hit Analyse, or tap to redo.';};r.onerror=function(){S.recording=false;$('micBtn').classList.remove('rec');};r.start();S.recording=true;$('micBtn').classList.add('rec');$('micBtn').textContent='■';$('micHint').textContent='Listening… tap to stop.';};
-})();
+/* ---------- record ----------
+   Records the conversation itself, with no live transcript: tap to start, tap to stop. It stops on its own
+   at 10 minutes, or sooner if the analysis can read less than that today (maxAudioSeconds from /api/me,
+   which follows the Groq plan; the backend refuses longer audio, so recording past it would only waste
+   the person's time). The recording is then handled exactly like an uploaded file: transcribed by
+   Deepgram with the speakers told apart, and playable in the walk-through. */
+var REC={mr:null,stream:null,chunks:[],t0:0,timer:0,wake:null,state:'idle',done:null,has:false,autoCut:false};
+function recLimitSec(){var srv=(S.me&&S.me.limits&&S.me.limits.maxAudioSeconds)||0;return Math.min(10*60,srv||10*60);}
+function fmtClock(x){x=Math.max(0,Math.floor(x));return Math.floor(x/60)+':'+String(x%60).padStart(2,'0');}
+function recPaint(state,sec,auto){
+  var btn=$('micBtn'),hint=$('micHint'),clock=$('recClock'),play=$('recPlay');if(!btn)return;
+  btn.classList.toggle('rec',state==='recording');
+  btn.textContent=state==='recording'?'■':'●';
+  btn.setAttribute('aria-label',state==='recording'?'Stop recording':'Start recording');
+  if(state==='recording'){hint.textContent='Recording. Tap to stop when you are done.';play.innerHTML='';return;}
+  clock.textContent='';
+  if(state==='done'){
+    hint.textContent='Recorded '+fmtClock(sec)+(auto?', stopped at the limit':'')+'. Hit Analyse, or tap to record again.';
+    play.innerHTML='<audio controls preload="metadata" src="'+S.audioURL+'"></audio>';
+    return;
+  }
+  play.innerHTML='';
+  hint.textContent=state==='short'?'That was too short to use. Tap to try again.'
+    :state==='blocked'?'Microphone access was blocked. Allow it for this site, then tap again.'
+    :state==='unsupported'?'This browser cannot record. Use Upload audio or Chats instead.'
+    :'Tap to start recording, and tap again when you are done. It stops on its own at '+fmtClock(recLimitSec())+'.';
+}
+async function recStart(){
+  if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder)){recPaint('unsupported');return;}
+  REC.state='starting';
+  try{REC.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});}
+  catch(e){REC.state='idle';recPaint('blocked');return;}
+  var types=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus'],type='';
+  for(var i=0;i<types.length;i++){if(MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(types[i])){type=types[i];break;}}
+  // speech at 32 kbps stays clear for transcription and keeps a long recording small enough to send
+  var opts={audioBitsPerSecond:32000};if(type)opts.mimeType=type;
+  try{REC.mr=new MediaRecorder(REC.stream,opts);}catch(e){REC.mr=new MediaRecorder(REC.stream);}
+  REC.chunks=[];REC.autoCut=false;
+  REC.mr.ondataavailable=function(e){if(e.data&&e.data.size)REC.chunks.push(e.data);};
+  REC.mr.onstop=recFinish;
+  REC.mr.start(1000);
+  REC.t0=Date.now();REC.state='recording';recPaint('recording');
+  // a phone that dims and locks mid-conversation would cut the recording off
+  try{if(navigator.wakeLock)REC.wake=await navigator.wakeLock.request('screen');}catch(e){}
+  REC.timer=setInterval(recTick,250);recTick();
+  ev('record_started',{limit:recLimitSec()});
+}
+function recTick(){
+  if(REC.state!=='recording')return;
+  var sec=(Date.now()-REC.t0)/1000,lim=recLimitSec();
+  $('recClock').textContent=fmtClock(sec)+' / '+fmtClock(lim);
+  if(sec>=lim){REC.autoCut=true;recStop();}
+}
+function recStop(){
+  return new Promise(function(res){
+    if(REC.state!=='recording'){res();return;}
+    REC.done=res;REC.state='stopping';clearInterval(REC.timer);
+    try{REC.mr.stop();}catch(e){recFinish();}
+  });
+}
+function recFinish(){
+  var sec=(Date.now()-REC.t0)/1000,auto=REC.autoCut;
+  try{REC.stream.getTracks().forEach(function(t){t.stop();});}catch(e){}
+  try{if(REC.wake)REC.wake.release();}catch(e){}REC.wake=null;
+  var type=((REC.mr&&REC.mr.mimeType)||'audio/webm').split(';')[0],ext=/mp4/.test(type)?'m4a':/ogg/.test(type)?'ogg':'webm';
+  var blob=new Blob(REC.chunks,{type:type});
+  REC.state='idle';REC.chunks=[];REC.autoCut=false;
+  if(blob.size<2000||sec<3){REC.has=false;recPaint('short');}
+  else{
+    var f=new File([blob],'recording-'+Date.now()+'.'+ext,{type:type});
+    releaseAudio();S.audioFile=f;S.audioURL=URL.createObjectURL(f);S.audioSeconds=sec;S._tr=null;S._trFile=null;
+    $('fileName').textContent='';
+    REC.has=true;recPaint('done',sec,auto);
+    ev('record_finished',{seconds:Math.round(sec),auto:auto});
+  }
+  if(REC.done){var d=REC.done;REC.done=null;d();}
+}
+$('micBtn').onclick=function(){if(REC.state==='recording')recStop();else if(REC.state==='idle')recStart();};
+// leaving the Record tab keeps what was recorded so far rather than running on unseen
+document.querySelectorAll('.tabs .tab').forEach(function(t){t.addEventListener('click',function(){if(t.dataset.tab!=='rec'&&REC.state==='recording')recStop();});});
+recPaint('idle');
 
 /* upload */
 $('drop').onclick=function(){$('file').click();};
@@ -915,6 +996,7 @@ function setFile(f){
       showErr('That recording is '+Math.round(mins)+' minutes. Right now we can read up to about '+lim+' minutes in one go. Trim it to the part that matters most.');
       return;
     }
+    if(REC.has){REC.has=false;recPaint('idle');}
     S.audioFile=f;
     // Kept, not revoked: the "real audio" act-1 variant plays this very file back during the
     // walk-through. releaseAudio() cleans it up when the session is replaced.
@@ -967,10 +1049,11 @@ async function run(){
   S._trunc=null;
   try{
     await ensureGuestToken();   // guests need a signed token before any paid endpoint will answer
-    var transcript=(S.tab==='text')?$('transcript').value.trim():(S.tab==='rec')?S.recT.trim():null;
+    if(S.tab==='rec'&&REC.state!=='idle')await recStop();   // Analyse pressed mid-recording: finish it first
+    var transcript=(S.tab==='text')?$('transcript').value.trim():null;
     screen('proc');setProc(0);
-    if(S.tab==='up'){
-      if(!S.audioFile)throw new Error('Choose an audio file first.');
+    if(S.tab==='up'||S.tab==='rec'){
+      if(!S.audioFile)throw new Error(S.tab==='rec'?'Record the conversation first.':'Choose an audio file first.');
       if(!(S._tr&&S._trFile===S.audioFile))setProc(0);
       // Reuse a transcript we already paid Deepgram for. If the ANALYSIS fails, the per-minute
       // budget being momentarily full is the common one, pressing Analyse again should not
@@ -1025,7 +1108,7 @@ function queueWait(secs,attempt){
   });
 }
 async function analyse(transcript,a,b){
-  var r=await fetch(be()+'/api/analyze',{method:'POST',headers:beHeaders(),body:JSON.stringify({transcript:transcript,mode:S.mode,submode:S.sub,nameA:a,nameB:b,source:S.tab==='up'?'audio':'text',consent:S.sub==='couple'?'both_partners':'self_only'})});
+  var r=await fetch(be()+'/api/analyze',{method:'POST',headers:beHeaders(),body:JSON.stringify({transcript:transcript,mode:S.mode,submode:S.sub,nameA:a,nameB:b,source:(S.tab==='up'||S.tab==='rec')?'audio':'text',consent:S.sub==='couple'?'both_partners':'self_only'})});
   if(r.status===401)return authLapsed();
   var d=await r.json();
   // Out of conversations: not an error, a boundary. Update the counter so the page reflects it.
