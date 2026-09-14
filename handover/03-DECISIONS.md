@@ -111,15 +111,22 @@ they talked past each other for the entire film. There is a comment in the sourc
 
 ---
 
-## 9. The intro opens on a poster with a play button
+## 9. The intro starts on its own, with sound on
 
-Browsers refuse to autoplay audio without a user gesture. Starting the film automatically would
-mean a large share of the audience watching a **silent** movie and never knowing there was a
-voice-over at all.
+It used to open on a poster with a play button, because browsers refuse audible autoplay and a
+silent film seemed worse than a tap. That cost more than it bought: a play button is one more
+decision in front of a visitor who has not yet decided to care. The founder's call (September
+2026) is that the reel starts immediately, sound on at 75% of the device volume.
 
-One tap buys audio for the whole run. If audio is blocked anyway, the intro falls back to a timed
-silent run rather than freezing, and fires `intro_audio_blocked` so you can see how often it
-happens.
+Browsers still refuse audible autoplay before the first interaction, so the page tries sound and,
+if refused, keeps running silently with the speaker icon pulsing; the first tap anywhere brings the
+sound in at the right point of the current line. The story does not depend on the audio: the
+kinetic captions carry it on their own. `intro_audio_blocked` and `intro_sound_unlocked` show how
+often each path happens.
+
+Do not treat a rejected `play()` as blocked unless the error is `NotAllowedError`. Moving to the
+next card pauses the previous line, which rejects its pending play with `AbortError`; counting that
+as a refusal silently switches the sound off halfway through the reel.
 
 ---
 

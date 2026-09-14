@@ -190,8 +190,9 @@ Decisions taken with the founder on 2026-08-24:
   deliveries (`voiced`, `real_audio`, `silent`) are live at once and being A/B'd per account from
   the admin console; the losers get deleted once the founder picks. `sessions.act1_mode` records
   which variant each session ran under.
-- **An animated intro** (`web/intro.html`) precedes the login page for first-time visitors.
-  CSS/SVG, not an MP4, so there is nothing to host or buffer. Swappable for a real film later.
+- **An intro reel** (`web/intro.html`) greets every signed-out visitor: 9:16, sound on by default,
+  real product footage in `web/media/intro/`, skippable to the blog or to sign-in. Re-record the
+  clips whenever the app's look changes (`handover/02-OPERATIONS.md`, "Regenerating the intro").
 - **Two sides.** Admin (`web/admin.html`) = Metrics + People, with pause/suspend/extend/reset and
   per-user feature pinning. It is unlinked by design; `ADMIN_USER_IDS` gates it.
 - Phone (WhatsApp) is the account key: `profiles.phone`, unique, saved via `/api/profile/phone`.

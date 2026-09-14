@@ -213,27 +213,27 @@ finishes. It spends real Groq quota and waits out the per-minute window, so allo
 
 ## 10. The intro
 
-`web/intro.html` is now the two official Rive rigs introducing the product themselves. Whoever is
-speaking is lip-synced to real ElevenLabs narration; the other one listens. Two narrators, Meera
-and Aarav, alternate across six scenes, about 45 seconds.
+`web/intro.html` is a 9:16 reel, about 46 seconds, built so nobody has to sit through an
+explanation: a fast chat hook, five clips of the real product (paste, score, the moment played
+back, the line that turned it and the kinder one, the score tracked over time), a privacy card,
+then the two Rive rigs and Get started. Every card has its own timed voice line.
 
-**Why it opens on a poster with a play button.** Browsers refuse to autoplay audio without a
-gesture. Starting the film automatically would mean a large share of your audience watching a
-silent movie and never knowing there was a voice. One tap buys the audio for the whole run.
+**Sound is on by default**, at 75% of the device volume, with an icon-only toggle. Browsers refuse
+audible autoplay before someone has touched the page, so on a first visit many people will see it
+start silently; the first tap anywhere brings the sound in. A music bed plays under the voice once
+`web/audio/intro/music.mp3` exists.
 
-**How skipping and the voice-over are tracked.** Every viewer gets an anonymous id in
-localStorage. The page emits `intro_started`, an `intro_scene` for each scene reached,
-`intro_muted` if they silence it, `intro_audio_blocked` if the browser refuses anyway, and either
-`intro_completed` or `intro_skipped` carrying the scene they left on and the seconds elapsed. The
-leaving events go out with `sendBeacon`, so a skip that navigates away still gets counted.
-Admin → Metrics → **The intro** shows started, watched-to-the-end, skipped with the average scene
-people bail at, blocked and muted. If most people leave on the same scene, that scene is the
-problem and the fix is obvious.
+**Two ways out at every moment:** Skip to blog (the How it works page) and Skip to sign in.
+Signed-in people can rewatch it, or read the blog, from the You page.
 
-Regenerate the voice-over after editing the script: the lines live in
-`web/audio/intro/script.json`, the audio in `web/audio/intro/*.mp3` (271 KB total, mono 48 kbps).
+**How it is tracked.** Every viewer gets an anonymous id in localStorage. The page emits
+`intro_started`, an `intro_scene` for each card reached, `intro_audio_blocked` when the browser
+held the sound back, `intro_sound_unlocked` when a tap brought it in, `intro_muted` when someone
+turns it off, and either `intro_completed` or `intro_skipped` carrying the card they left on, the
+seconds elapsed and where they went (`blog` or `signin`). Leaving events go out with `sendBeacon`,
+so a skip that navigates away still counts. Admin, Metrics, **The intro** shows the funnel.
 
-**Marketing cut:** `docs/media/samvaad-intro.mp4`, 720×1280 vertical, 45.9s, 1.8 MB, recorded from
+**Marketing cut:** `docs/media/samvaad-intro.mp4`, 720x1280 vertical, recorded from
 `intro.html?film=1` so the clip can never drift from the product it advertises.
 
 ---

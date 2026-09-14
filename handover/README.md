@@ -61,7 +61,7 @@ samvaad/
 │  └─ test/              funnel.mjs, signed-in.mjs, schema.mjs
 ├─ web/                  Static frontend. No framework, no build step. Deployed on Vercel.
 │  ├─ index.html         Entry: routes first-time visitors to the intro
-│  ├─ intro.html         Animated, voiced introduction (Rive + ElevenLabs)
+│  ├─ intro.html         9:16 intro reel: real product clips, voiced, Rive close
 │  ├─ login.html         Magic link / OTP / guest. The canonical design reference.
 │  ├─ app.html           The product: analyse, report, walk-through, replay, dashboard
 │  ├─ admin.html         Internal console: metrics and per-user controls

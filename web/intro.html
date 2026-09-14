@@ -1,239 +1,323 @@
 <!doctype html>
 <!--
-  Samvaad — the first thing a new visitor sees.
+  Samvaad: the first thing a new visitor sees. A 9:16 reel that tells the story even with the sound off.
 
-  The two official Rive rigs introduce the product themselves: whoever is speaking is lip-synced
-  to real ElevenLabs narration (audio/intro/*.mp3), the other one listens. Same rigs, same
-  expression and phoneme wiring as the replay inside the app, so the intro is not a separate
-  illusion — it is the product, talking.
+  Why it looks like this:
+  - Nobody has the patience to be told about a product, so the kinetic on-screen text carries the
+    story on its own. Sound is ON by default: every card has its own timed voice line at 75% of the
+    device volume, with a music bed underneath that dips while someone speaks. Browsers refuse audible
+    autoplay before a first interaction; when that happens the reel runs silently and the first tap
+    anywhere brings the sound in.
+  - It opens on a fast hook, jumps straight into REAL footage of the product (media/intro/s1-s5.mp4,
+    recorded from app.html with every loading frame cut out), then winds down into illustration:
+    a privacy beat and the two Rive rigs.
+  - The privacy beat claims only what is true today: audio is never stored, the full chat is not
+    kept, and only the finished walkthrough is saved, to the user's own account.
 
-  Why a live page and not an MP4: it is 271KB of audio instead of a multi-megabyte video, the
-  vector rigs stay sharp at any size, the copy can be edited without re-rendering, and we can
-  measure exactly where someone stopped watching. An MP4 export of this same page lives in
-  docs/ for marketing.
-
-  Autoplay: browsers refuse audio without a gesture, so this opens on a poster frame with one
-  play button. That is not a workaround — it is the only honest way to guarantee the voice
-  actually plays instead of half the audience meeting a silent film.
-
-  Shown once per browser (localStorage 'samvaad.introSeen'), skippable at every moment, and the
-  admin can switch it off for everyone (app_settings.intro_enabled).
+  Shown to every signed-out visitor (index.html sends signed-in people straight to the app), skippable
+  at every moment, admin can switch it off for everyone (app_settings.intro_enabled). intro.html?film=1 hides the controls; that
+  is how docs/media/samvaad-intro.mp4 is recorded, so the marketing cut cannot drift from the product.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Samvaad · How it works</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Samvaad · See it in 45 seconds</title>
 <script src="https://unpkg.com/@rive-app/canvas@2/rive.js"></script>
+<link rel="preload" as="video" href="media/intro/s1.mp4">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Mulish:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Nunito:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600&display=swap');
   :root{
-    --ink:#2E2024; --muted:#6E5258;
-    --glass:rgba(255,255,255,.52); --glass-2:rgba(255,255,255,.7); --glass-brd:rgba(255,255,255,.74);
-    --cherry:#C8324B; --cherry-2:#A52741; --accent-soft:#F8DDE0; --accent-ink:#9E2740;
-    --good:#4F8A6B;
+    --ink:#312E52; --muted:#686586;
+    --glass:rgba(255,255,255,.55); --glass-2:rgba(255,255,255,.74); --glass-brd:rgba(255,255,255,.8);
+    --cherry:#7164C6; --cherry-2:#5848BF; --accent-soft:#E1DEF7; --accent-ink:#5848BF; --good:#367D69;
+    --blush:#FAF8F4;
   }
   *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;color:var(--ink);font-family:'Mulish',system-ui,sans-serif;line-height:1.6;overflow:hidden;
-    background:radial-gradient(120% 90% at 12% 6%,#FDEEF0 0%,rgba(253,238,240,0) 46%),
-               radial-gradient(120% 100% at 92% 18%,#F8D6DD 0%,rgba(248,214,221,0) 50%),
-               linear-gradient(160deg,#FDF3F2 0%,#F9DEE3 48%,#F1DDE8 100%);}
+  html,body{height:100%;margin:0}
+  body{color:var(--ink);font-family:'Nunito',system-ui,sans-serif;overflow:hidden;display:grid;place-items:center;
+    background:radial-gradient(120% 90% at 12% 6%,#F1F0F9 0%,rgba(241,240,249,0) 46%),
+               radial-gradient(120% 100% at 92% 18%,#F4E9E1 0%,rgba(244,233,225,0) 50%),
+               linear-gradient(160deg,#FAF8F4 0%,#F4F2F8 48%,#EFEDF7 100%);}
   .serif{font-family:'Fraunces',serif}
-  .dv{font-family:'Mulish','Noto Sans Devanagari',sans-serif}
-  .arc{position:fixed;border-radius:50%;border:1px solid rgba(200,50,75,.13);pointer-events:none}
-  .a1{width:520px;height:520px;top:-190px;right:-160px}
-  .a2{width:360px;height:360px;bottom:-150px;left:-120px}
+  .dv{font-family:'Nunito','Noto Sans Devanagari',sans-serif}
 
-  .wrap{position:relative;height:100dvh;display:grid;grid-template-rows:auto 1fr auto;padding:14px 18px 20px;max-width:600px;margin:0 auto}
+  /* The reel: a 9:16 column that fills a phone and sits centred, framed, on a desktop. */
+  .reel{position:relative;height:100dvh;aspect-ratio:9/16;max-width:100vw;overflow:hidden;container-type:size;
+    background:linear-gradient(160deg,#FAF8F4 0%,#F4F2F8 55%,#EFEDF7 100%)}
+  @media (min-aspect-ratio:10/16){ .reel{height:min(100dvh,920px);border-radius:28px;box-shadow:0 40px 90px -40px rgba(49,46,82,.55)} }
 
-  /* progress + controls */
-  .top{display:flex;align-items:center;gap:10px}
-  .bars{flex:1;display:flex;gap:5px}
-  .bars i{flex:1;height:3px;border-radius:99px;background:rgba(70,40,50,.14);overflow:hidden;position:relative}
-  .bars i b{position:absolute;inset:0;background:var(--cherry);transform:scaleX(0);transform-origin:left;border-radius:99px;transition:transform .12s linear}
-  .ic{border:1px solid var(--glass-brd);background:var(--glass);border-radius:99px;width:32px;height:32px;display:grid;place-items:center;font-size:14px;cursor:pointer;padding:0;line-height:1}
-  .skip{border:none;background:none;font:inherit;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;padding:4px 2px}
-  .skip:hover{color:var(--accent-ink)}
+  .layer{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .2s ease,visibility 0s linear .2s}
+  .layer.on{opacity:1;visibility:visible;transition:opacity .2s ease}
+  .layer video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:50% 45%}
+  .layer.on video{animation:kb var(--d,5s) linear forwards}
+  @keyframes kb{from{transform:scale(1)}to{transform:scale(1.07)}}
 
-  /* stage: the two rigs */
-  .mid{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:0;padding:6px 0}
-  .stage{position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--glass-brd);
-    background:linear-gradient(170deg,#FCF3EA,#F6E2D6);box-shadow:0 26px 60px -34px rgba(70,30,45,.55)}
-  .scene{position:relative;height:clamp(240px,44dvh,400px);overflow:hidden}
-  .scene-bg{position:absolute;inset:0}
-  .ch{position:absolute;bottom:-4px;width:clamp(160px,44%,230px);text-align:center;z-index:1;transition:filter .5s,opacity .5s,transform .5s}
-  .ch.a{left:4%}.ch.b{right:4%}
-  .ch.idle{filter:saturate(.72) brightness(.99);opacity:.82;transform:translateY(4px) scale(.97)}
-  .rvc{display:block;width:100%;height:clamp(200px,36dvh,330px);transform:scale(1.02);transform-origin:bottom center}
-  .rvc.flip{transform:scaleX(-1) scale(1.02)}
-  @media (max-height:700px){ .scene{height:min(220px,30dvh)} .rvc{height:184px} .ch{width:150px} .say{margin-top:10px} }
+  /* scrims give the kinetic text a calm band to sit on over busy product UI */
+  .scrim{position:absolute;left:0;right:0;pointer-events:none;opacity:0;transition:opacity .25s}
+  .scrim.top{top:0;height:50%;background:linear-gradient(to bottom,rgba(250,248,244,.97) 0%,rgba(250,248,244,.93) 62%,rgba(250,248,244,0) 100%)}
+  .scrim.bottom{bottom:0;height:52%;background:linear-gradient(to top,rgba(250,248,244,.98) 0%,rgba(250,248,244,.93) 60%,rgba(250,248,244,0) 100%)}
+  .scrim.show{opacity:1}
 
-  /* the line being spoken */
-  .cap{padding:13px 16px 15px;background:var(--glass-2);border-top:1px solid var(--glass-brd);min-height:78px;display:flex;align-items:center;gap:10px}
-  .cap .who{flex:0 0 auto;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--accent-ink);
-    background:var(--accent-soft);border-radius:99px;padding:3px 10px}
-  .cap .txt{font-size:14.5px;line-height:1.5}
+  /* kinetic text */
+  .kin{position:absolute;left:0;right:0;padding:0 7cqw;z-index:4;pointer-events:none}
+  .kin.top{top:15cqh}
+  .kin.bottom{bottom:11cqh}
+  .kin .big{font-family:'Fraunces',serif;font-weight:600;font-size:9.4cqw;line-height:1.08;letter-spacing:-.02em;margin:0}
+  .kin .big em{font-style:normal;color:var(--cherry)}
+  .kin .small{margin-top:1.6cqh;font-size:4.1cqw;font-weight:700;color:var(--accent-ink);letter-spacing:.01em}
+  .w{display:inline-block;opacity:0;transform:translateY(40%) scale(.96);filter:blur(6px);animation:pop .46s cubic-bezier(.16,1,.3,1) forwards}
+  @keyframes pop{to{opacity:1;transform:none;filter:blur(0)}}
+  .small.in{animation:fadeup .5s .28s ease both}
+  @keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-  /* headline under the stage */
-  .say{text-align:center;margin-top:16px}
-  .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);font-weight:700}
-  h1{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(21px,5.2vw,28px);line-height:1.24;margin:6px 0 0;letter-spacing:-.01em}
-  .anim{animation:rise .55s cubic-bezier(.22,1,.36,1) both}
-  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  /* HUD */
+  .hud{position:absolute;left:0;right:0;top:0;z-index:10;padding:3.2cqw 4cqw 0}
+  .bars{display:flex;gap:1.2cqw}
+  .bars i{flex:1;height:.75cqw;min-height:3px;border-radius:99px;background:rgba(49,46,82,.14);overflow:hidden;position:relative}
+  .bars i b{position:absolute;inset:0;background:var(--cherry);transform:scaleX(0);transform-origin:left;border-radius:99px}
+  .hudrow{display:flex;align-items:center;gap:2cqw;margin-top:2.6cqw}
+  .hudrow .sp{flex:1}
+  .skip{border:none;background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-radius:99px;
+    font:inherit;font-size:3.4cqw;font-weight:800;color:var(--ink);padding:1.8cqw 3.2cqw;min-height:40px;cursor:pointer;white-space:nowrap;
+    box-shadow:0 6px 18px -12px rgba(49,46,82,.45)}
+  .skip.blog{color:var(--accent-ink)}
+  .sound{flex:0 0 auto;width:10.5cqw;height:10.5cqw;min-width:40px;min-height:40px;padding:0;border-radius:50%;cursor:pointer;
+    border:1px solid var(--glass-brd);background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 8px 22px -12px rgba(88,72,191,.55)}
+  .sound svg{width:56%;height:56%}
+  .sound.off{animation:nudge 2.4s ease-in-out infinite}
+  @keyframes nudge{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 
-  .bottom{display:flex;flex-direction:column;align-items:center;gap:10px}
-  .btn{border:none;border-radius:14px;padding:14px 30px;font:inherit;font-weight:700;font-size:15px;cursor:pointer;color:#fff;
-    background:linear-gradient(180deg,var(--cherry),var(--cherry-2));box-shadow:0 16px 30px -14px rgba(165,39,65,.6);transition:transform .2s}
-  .btn:hover{transform:translateY(-2px)}
-  .tapnote{font-size:12.5px;color:var(--muted);min-height:19px}
+  .ctaWrap{position:absolute;left:0;right:0;bottom:5.5cqh;z-index:12;display:flex;flex-direction:column;align-items:center;gap:1.6cqh;
+    opacity:0;pointer-events:none;transform:translateY(12px);transition:opacity .4s,transform .4s}
+  .ctaWrap.show{opacity:1;pointer-events:auto;transform:none}
+  .btn{border:none;border-radius:4cqw;padding:3.6cqw 9cqw;font:inherit;font-weight:800;font-size:4.4cqw;cursor:pointer;color:#fff;
+    background:linear-gradient(180deg,var(--cherry),var(--cherry-2));box-shadow:0 18px 34px -14px rgba(88,72,191,.65)}
+  .fine{font-size:3.1cqw;color:var(--muted);font-weight:600}
 
-  /* poster frame: the gesture that buys us audio */
-  .poster{position:fixed;inset:0;z-index:20;display:grid;place-items:center;text-align:center;padding:24px;
-    background:radial-gradient(120% 90% at 12% 6%,#FDEEF0 0%,rgba(253,238,240,0) 46%),
-               radial-gradient(120% 100% at 92% 18%,#F8D6DD 0%,rgba(248,214,221,0) 50%),
-               linear-gradient(160deg,#FDF3F2 0%,#F9DEE3 48%,#F1DDE8 100%)}
-  .poster .lotus{margin-bottom:16px}
-  .poster h2{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(24px,6.4vw,34px);margin:0 0 8px;line-height:1.2}
-  .poster p{color:var(--muted);margin:0 0 22px;font-size:15px;max-width:34ch}
-  .poster .row{display:flex;gap:12px;align-items:center;flex-direction:column}
-  .poster .len{font-size:12.5px;color:var(--muted);margin-top:2px}
+  /* ── scene 0: the hook ── */
+  .hook{height:100%;display:flex;flex-direction:column;justify-content:center;padding:17cqh 7cqw 6cqh;gap:2.4cqh}
+  .hook .bub{max-width:74%;padding:2.6cqw 3.8cqw;border-radius:4.2cqw;font-size:4.3cqw;font-weight:600;opacity:0;
+    box-shadow:0 12px 26px -16px rgba(49,46,82,.5)}
+  .hook .bub.l{align-self:flex-start;background:#fff;border-bottom-left-radius:1cqw}
+  .hook .bub.r{align-self:flex-end;background:#F6E3DD;color:#B0523B;border-bottom-right-radius:1cqw}
+  .layer.on .hook .bub{animation:slam .34s cubic-bezier(.16,1,.3,1) forwards}
+  @keyframes slam{0%{opacity:0;transform:scale(.6) translateY(20px)}100%{opacity:1;transform:none}}
+  .hook .punch{margin-top:3cqh;font-family:'Fraunces',serif;font-weight:700;font-size:12cqw;line-height:1.02;letter-spacing:-.03em;opacity:0}
+  .hook .punch em{font-style:normal;color:var(--cherry)}
+  .layer.on .hook .punch{animation:punch .5s 1.05s cubic-bezier(.16,1,.3,1) forwards}
+  @keyframes punch{0%{opacity:0;transform:scale(1.45)}100%{opacity:1;transform:none}}
+  .layer.on .hook{animation:shake .32s 1.4s ease}
+  @keyframes shake{25%{transform:translateX(-1.4cqw)}50%{transform:translateX(1.2cqw)}75%{transform:translateX(-.6cqw)}}
 
-  @media (prefers-reduced-motion: reduce){ .anim{animation:none!important} }
+  /* ── scene 6: privacy ── */
+  .priv{height:100%;display:flex;flex-direction:column;justify-content:center;padding:17cqh 7cqw 6cqh;gap:2.2cqh}
+  .priv .eyebrow{font-size:3.2cqw;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);font-weight:800}
+  .priv h2{font-family:'Fraunces',serif;font-weight:600;font-size:10.5cqw;line-height:1.04;letter-spacing:-.02em;margin:0 0 1cqh}
+  .priv h2 em{font-style:normal;color:var(--cherry)}
+  .row{display:flex;align-items:center;gap:3.6cqw;padding:3.2cqw 3.8cqw;border-radius:4.4cqw;background:var(--glass-2);
+    border:1px solid var(--glass-brd);box-shadow:0 18px 40px -26px rgba(49,46,82,.5);opacity:0;transform:translateY(14px)}
+  .row.in{animation:rowin .5s cubic-bezier(.16,1,.3,1) forwards}
+  @keyframes rowin{to{opacity:1;transform:none}}
+  .row .ic{flex:0 0 auto;width:12cqw;height:12cqw;border-radius:3.4cqw;display:grid;place-items:center;background:var(--accent-soft)}
+  .row .ic svg{width:7.4cqw;height:7.4cqw}
+  .row .t{font-size:3.4cqw;color:var(--muted);font-weight:700}
+  .row .s{font-family:'Fraunces',serif;font-size:5.2cqw;font-weight:600;line-height:1.15}
+  .row.gone .s{color:var(--ink)}
+  .row .tick{margin-left:auto;flex:0 0 auto;width:6.4cqw;height:6.4cqw;opacity:0;transform:scale(.4)}
+  .row.done .tick{animation:tick .36s cubic-bezier(.16,1,.3,1) forwards}
+  @keyframes tick{to{opacity:1;transform:none}}
+  /* waveform collapses to a flat line: the recording, not kept */
+  .wave rect{transform-box:fill-box;transform-origin:center;transition:transform .6s cubic-bezier(.6,0,.2,1)}
+  .row.done .wave rect{transform:scaleY(.08)}
+  /* the chat outline dissolves to dashes: read once, then gone */
+  .chatline{stroke-dasharray:60;stroke-dashoffset:0;transition:stroke-dashoffset 1s ease,opacity 1s ease}
+  .row.done .chatline{stroke-dasharray:3 5;opacity:.45}
+  .chips{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .chip{position:absolute;font-size:3cqw;font-weight:800;color:rgba(88,72,191,.34);border:1px solid rgba(113,100,198,.18);
+    border-radius:99px;padding:1.2cqw 2.8cqw;white-space:nowrap;animation:drift 12s linear infinite}
+  @keyframes drift{from{transform:translateY(8cqh)}to{transform:translateY(-8cqh)}}
 
-  /* Film mode (intro.html?film=1): the same page with the interactive chrome removed, used to
-     record docs/media/samvaad-intro.mp4. Exporting FROM the product rather than building a
-     separate video means the marketing clip can never drift from what people actually see. */
-  body.film .top,body.film .bottom{display:none!important}
-  body.film .wrap{grid-template-rows:1fr;padding:26px 22px;max-width:660px}
-  body.film .scene{height:clamp(340px,50dvh,560px)}
-  body.film .rvc{height:clamp(300px,44dvh,480px)}
-  body.film .ch{width:clamp(210px,46%,300px)}
-  body.film .cap{min-height:96px;padding:16px 20px 18px}
-  body.film .cap .txt{font-size:17px}
-  body.film h1{font-size:clamp(26px,4.4vw,38px)}
-  body.film .eyebrow{font-size:12.5px}
-  body.film .say{margin-top:22px}
+  /* ── scene 7: the close, with the Rive rigs ── */
+  .close .head{position:absolute;left:0;right:0;top:15cqh;padding:0 7cqw;text-align:center}
+  .close .eyebrow{font-size:3.2cqw;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);font-weight:800}
+  .close h2{font-family:'Fraunces',serif;font-weight:600;font-size:9cqw;line-height:1.06;letter-spacing:-.02em;margin:1.2cqh 0 0}
+  .close h2 em{font-style:normal;color:var(--cherry)}
+  .close .room{position:absolute;left:5cqw;right:5cqw;top:38cqh;height:38cqh;border-radius:6cqw;overflow:hidden;
+    border:1px solid var(--glass-brd);box-shadow:0 30px 60px -34px rgba(49,46,82,.6)}
+  .close .room svg.bg{position:absolute;inset:0;width:100%;height:100%}
+  .close .ch{position:absolute;bottom:-1%;width:48%;height:92%;transition:filter .5s,opacity .5s,transform .5s}
+  .close .ch.a{left:1%}.close .ch.b{right:1%}
+  .close .ch.idle{filter:saturate(.75);opacity:.85;transform:translateY(1.5%) scale(.97)}
+  .close canvas{display:block;width:100%;height:100%}
+
+  /* film mode: the same page, controls removed, for recording the marketing cut */
+  body.film .hud,body.film .sound{display:none!important}
+  body.film .reel{height:100dvh;border-radius:0;box-shadow:none}
+
+  @media (prefers-reduced-motion: reduce){
+    .layer.on video,.layer.on .hook,.chip,.sound.off{animation:none!important}
+    .w,.row,.hook .bub,.hook .punch{animation-duration:.01s!important;animation-delay:0s!important}
+  }
 </style>
 </head>
 <body>
-<div class="arc a1"></div><div class="arc a2"></div>
+<div class="reel" id="reel">
+  <div id="layers"></div>
+  <div class="scrim top" id="scrimTop"></div>
+  <div class="scrim bottom" id="scrimBot"></div>
+  <div class="kin" id="kin"></div>
 
-<!-- Poster. One tap here is what lets the voice-over actually play. -->
-<div class="poster" id="poster">
-  <div>
-    <svg class="lotus" width="86" height="66" viewBox="0 0 120 90" fill="none" stroke="var(--cherry)" stroke-width="1.6" stroke-linecap="round">
-      <path d="M60 79 C44 56 38 40 32 30 C46 36 54 54 60 79"/><path d="M60 79 C76 56 82 40 88 30 C74 36 66 54 60 79"/>
-      <path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/><path d="M16 80 Q60 89 104 80"/>
-    </svg>
-    <h2 class="serif">Understand the conversation<br>that keeps replaying</h2>
-    <p>Forty-five seconds, from two people who use it.</p>
-    <div class="row">
-      <button class="btn" id="play">▶ Watch how it works</button>
-      <div class="len">45 seconds · or <a href="#" id="posterSkip" style="color:var(--accent-ink);font-weight:700">skip to sign in</a></div>
-    </div>
-  </div>
-</div>
-
-<div class="wrap">
-  <div class="top">
+  <div class="hud">
     <div class="bars" id="bars"></div>
-    <button class="ic" id="mute" aria-label="Mute the voice-over" title="Mute">🔊</button>
-    <button class="skip" id="skip">Skip</button>
-  </div>
-
-  <div class="mid">
-    <div class="stage">
-      <div class="scene" id="scene">
-        <div class="scene-bg" id="sceneBg"></div>
-      </div>
-      <div class="cap"><span class="who" id="capWho">—</span><span class="txt dv" id="capTxt"></span></div>
-    </div>
-    <div class="say">
-      <div class="eyebrow" id="eyebrow"></div>
-      <h1 class="serif" id="head"></h1>
+    <div class="hudrow">
+      <button class="sound" id="sound" aria-label="Turn sound off" aria-pressed="true"></button>
+      <span class="sp"></span>
+      <button class="skip blog" id="skipBlog">Skip to blog</button>
+      <button class="skip" id="skip">Skip to sign in</button>
     </div>
   </div>
 
-  <div class="bottom">
-    <button class="btn" id="cta">Next</button>
-    <div class="tapnote" id="tapnote"></div>
+  <div class="ctaWrap" id="ctaWrap">
+    <button class="btn" id="cta">Get started</button>
+    <div class="fine">Private by design. Three free conversations. <a href="how-it-works.html" style="color:var(--accent-ink);font-weight:800">How it works</a></div>
   </div>
 </div>
 
 <script>
 var $ = function(id){ return document.getElementById(id); };
-var LOGIN = 'login.html';
-var SEEN_KEY = 'samvaad.introSeen';
+// ?from=app: a signed-in person replaying it from the You page goes back to the app, not to sign-in
+var FROM_APP = /[?&]from=app/.test(location.search);
+var LOGIN = FROM_APP ? 'app.html' : 'login.html', BLOG = 'how-it-works.html';
+var VOL = 0.75;                                   // voice at 75% of whatever the device volume is
+var MUSIC_SRC = 'audio/intro/music.mp3';          // optional; without the file the reel plays without music
+var MUSIC_BED = 0.22, MUSIC_DUCK = 0.08;          // music level, relative to VOL, between and under voice lines
+var FILM = /[?&]film=1/.test(location.search);
 var BACKEND = (function(){ try{ return localStorage.getItem('samvaad.beUrl'); }catch(e){ return null; } })()
               || 'https://samvaad-backend-gyk9.onrender.com';
 
 /* ---------------------------------------------------------------------------
-   Measurement. The question the intro has to answer is not "did we ship it" but
-   "does anyone watch it, and does the voice reach them". So: one anonymous id per
-   browser, an event when it starts, one per scene, and one when they leave —
-   sent with sendBeacon so a skip that navigates away still gets counted.
+   Measurement. Sound starts on: intro_audio_blocked counts visitors whose browser held it back,
+   intro_muted {muted:true} counts people who chose silence, intro_skipped {to} says where they went.
 --------------------------------------------------------------------------- */
 var ANON = (function(){
-  try{
-    var k='samvaad.anon', v=localStorage.getItem(k);
+  try{ var k='samvaad.anon', v=localStorage.getItem(k);
     if(!v){ v='a_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4); localStorage.setItem(k,v); }
-    return v;
-  }catch(e){ return 'a_nostore'; }
+    return v; }catch(e){ return 'a_nostore'; }
 })();
 var T0 = Date.now();
+var elapsedAll = function(){ return Math.round((Date.now()-T0)/100)/10; };
 function track(name, props, beacon){
-  var body = JSON.stringify({ name: name, anonId: ANON, props: props || {} });
+  if(FILM) return;
+  var body = JSON.stringify({ name:name, anonId:ANON, props:props||{} });
   try{
-    if(beacon && navigator.sendBeacon){
-      navigator.sendBeacon(BACKEND + '/api/event', new Blob([body], { type: 'application/json' }));
-      return;
-    }
-    fetch(BACKEND + '/api/event', { method:'POST', headers:{'content-type':'application/json'}, body: body, keepalive: true }).catch(function(){});
+    if(beacon && navigator.sendBeacon){ navigator.sendBeacon(BACKEND+'/api/event', new Blob([body],{type:'application/json'})); return; }
+    fetch(BACKEND+'/api/event',{method:'POST',headers:{'content-type':'application/json'},body:body,keepalive:true}).catch(function(){});
   }catch(e){}
 }
-var elapsed = function(){ return Math.round((Date.now() - T0) / 100) / 10; };
 
 /* ---------------------------------------------------------------------------
-   The film. Each scene is one narration file, one speaker, and the expression the
-   pair wear while it plays. `dur` is the measured length of the mp3 and is only a
-   fallback — the real clock is the audio element's own currentTime.
+   The reel. Durations of narrated scenes are the measured length of each mp3 plus a
+   short breath, so muted and unmuted viewers share one clock.
 --------------------------------------------------------------------------- */
-var RIVE_SRC = { female:'rive/samvaad_female.riv', male:'rive/samvaad_male.riv' };
-var EXPR_NUM = { neutral:0, attentive:1, tense:3, sad:4, happy:5, warm:8, sorry:8 };
-
+var PAD = 0.3;
 var SCENES = [
-  { audio:'audio/intro/01-f.mp3', dur:6.13, who:'f', name:'Meera',
-    expr:{ a:'sad', b:'sad' },
-    eyebrow:'Samvaad', h:'Every couple has that one conversation',
-    line:'Every couple has that one conversation. The one that went sideways, and neither of you is quite sure where.' },
-  { audio:'audio/intro/02-m.mp3', dur:8.96, who:'m', name:'Aarav',
-    expr:{ a:'attentive', b:'neutral' },
-    eyebrow:'Bring it in', h:'Paste the chat, or upload the recording',
-    line:'That is where Samvaad starts. Paste the chat, or upload the recording. Hinglish, Hindi, English, it reads all of them.' },
-  { audio:'audio/intro/03-f.mp3', dur:9.52, who:'f', name:'Meera',
-    expr:{ a:'warm', b:'attentive' },
-    eyebrow:'Watch it back', h:'The moment, in your own words',
-    line:'And then it does the thing I did not expect. It plays the moment back to you, in your own words, acted out. You see it from the outside for the first time.' },
-  { audio:'audio/intro/04-m.mp3', dur:9.20, who:'m', name:'Aarav',
-    expr:{ a:'attentive', b:'warm' },
-    eyebrow:'Say it differently', h:'The exact line, and a kinder one',
-    line:'It is specific, too. Not just, you were harsh. It shows the exact line that turned it, and a kinder one you could actually say next time.' },
-  { audio:'audio/intro/05-f.mp3', dur:5.90, who:'f', name:'Meera',
-    expr:{ a:'warm', b:'attentive' },
-    eyebrow:'When it is heated', h:'It breathes with you first',
-    line:'If it got heated, it stops and breathes with you before anything else. Settle first, talk second.' },
-  { audio:'audio/intro/06-m.mp3', dur:5.94, who:'m', name:'Aarav',
-    expr:{ a:'happy', b:'happy' },
-    eyebrow:'Your turn', h:'Shall we look at yours?',
-    line:'One conversation, a few minutes, and you understand it differently. Shall we look at yours?',
-    cta:'Get started' }
+  { kind:'hook', audio:'audio/intro/v2-00-f.mp3', dur:2.56+PAD },
+  { kind:'video', src:'media/intro/s1.mp4', audio:'audio/intro/v2-01-f.mp3', dur:3.48+PAD, pos:'top',
+    big:'Paste the <em>chat.</em>', small:'Hinglish · Hindi · English' },
+  { kind:'video', src:'media/intro/s2.mp4', audio:'audio/intro/v2-02-m.mp3', dur:5.99+PAD, pos:'top',
+    big:'A real <em>score.</em>', small:'In seconds. Not a guess.' },
+  { kind:'video', src:'media/intro/s3.mp4', audio:'audio/intro/v2-03-f.mp3', dur:6.27+PAD, pos:'top',
+    big:'Your moment, <em>played back.</em>', small:'In your own words' },
+  { kind:'video', src:'media/intro/s4.mp4', audio:'audio/intro/v2-04-m.mp3', dur:5.62+PAD, pos:'bottom',
+    big:'The line that <em>turned it.</em>', small:'What went wrong',
+    swap:{ at:3.45, big:'And the <em>kinder</em> one.', small:'What to say instead' } },
+  { kind:'video', src:'media/intro/s5.mp4', audio:'audio/intro/v2-05-f.mp3', dur:4.32+PAD, pos:'bottom',
+    big:'Watch yourselves <em>get better.</em>', small:'Your score, tracked every time' },
+  { kind:'privacy', audio:'audio/intro/v2-06-m.mp3', dur:10.4+PAD, beats:[0.15, 2.3, 5.9] },
+  { kind:'close', audio:'audio/intro/v2-07-f.mp3', dur:5.15+PAD, speaker:'a' }
 ];
 
-var i = 0, au = null, muted = false, timer = null, raf = 0, ended = false, audioOK = true;
-var R = { a:null, b:null };
+var i = -1, t0 = 0, raf = 0, au = null, soundOn = !FILM, blocked = false, ended = false, completed = false, swapped = false;
+var layers = [];
+
+/* ---------- building each layer ---------- */
+function hookHTML(){
+  return '<div class="hook">'
+    + '<div class="bub r dv" style="animation-delay:.05s">Tum hamesha busy rehte ho.</div>'
+    + '<div class="bub l dv" style="animation-delay:.32s">Main kaam kar raha hoon!</div>'
+    + '<div class="bub r dv" style="animation-delay:.6s">Phir wahi baat...</div>'
+    + '<div class="punch">Every couple has<br><em>that</em> chat.</div>'
+    + '</div>';
+}
+function icon(name){
+  if(name==='rec') return '<svg class="wave" viewBox="0 0 32 32" fill="var(--cherry)">'
+    + [4,9,14,19,24].map(function(x,k){ var h=[10,18,24,16,8][k]; return '<rect x="'+x+'" y="'+(16-h/2)+'" width="3.2" height="'+h+'" rx="1.6"/>'; }).join('')
+    + '</svg>';
+  if(name==='chat') return '<svg viewBox="0 0 32 32" fill="none" stroke="var(--cherry)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path class="chatline" d="M6 8.5h20a2.5 2.5 0 0 1 2.5 2.5v10a2.5 2.5 0 0 1-2.5 2.5H14l-6 4.5v-4.5H6A2.5 2.5 0 0 1 3.5 21V11A2.5 2.5 0 0 1 6 8.5z"/>'
+    + '</svg>';
+  return '<svg viewBox="0 0 32 32" fill="none" stroke="var(--cherry)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<rect x="4" y="5" width="18" height="22" rx="3"/><path d="M8.5 11h9M8.5 15.5h9M8.5 20h5"/>'
+    + '<rect x="18.5" y="17" width="10" height="9" rx="2" fill="var(--accent-soft)"/><path d="M21 17v-2.4a2.5 2.5 0 0 1 5 0V17"/>'
+    + '</svg>';
+}
+var TICK = '<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="var(--good)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="rgba(54,125,105,.12)" stroke="none"/><path d="M7 12.5l3.2 3.2L17 9"/></svg>';
+function privacyHTML(){
+  var chips = [['No recordings kept',8,14],['Private by design',60,26],['Only you can open it',14,70],['Deleted as you go',58,82],['Yours alone',30,44]]
+    .map(function(c,k){ return '<span class="chip" style="left:'+c[1]+'%;top:'+c[2]+'%;animation-delay:-'+(k*2.3)+'s">'+c[0]+'</span>'; }).join('');
+  return '<div class="chips">'+chips+'</div><div class="priv">'
+    + '<div class="eyebrow">Private by design</div>'
+    + '<h2 class="serif">Yours. <em>Only yours.</em></h2>'
+    + '<div class="row gone" id="pr0"><div class="ic">'+icon('rec')+'</div><div><div class="t">Your recording</div><div class="s">never saved</div></div>'+TICK+'</div>'
+    + '<div class="row gone" id="pr1"><div class="ic">'+icon('chat')+'</div><div><div class="t">Your chat</div><div class="s">read once, then gone</div></div>'+TICK+'</div>'
+    + '<div class="row" id="pr2"><div class="ic">'+icon('walk')+'</div><div><div class="t">Your walkthrough</div><div class="s">kept, and only you can open it</div></div>'+TICK+'</div>'
+    + '</div>';
+}
+function roomSVG(){
+  return '<svg class="bg" viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid slice">'
+    + '<defs><linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F9F1E8"/><stop offset="1" stop-color="#F2E2D6"/></linearGradient>'
+    + '<linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EAD4C3"/><stop offset="1" stop-color="#DEC2AD"/></linearGradient>'
+    + '<radialGradient id="g" cx="24%" cy="22%" r="58%"><stop offset="0" stop-color="#FFE9C6" stop-opacity=".5"/><stop offset="1" stop-color="#FFE9C6" stop-opacity="0"/></radialGradient></defs>'
+    + '<rect width="1000" height="800" fill="url(#w)"/><rect width="1000" height="800" fill="url(#g)"/>'
+    + '<rect y="600" width="1000" height="200" fill="url(#f)"/><ellipse cx="500" cy="720" rx="400" ry="60" fill="#E1DEF7" opacity=".55"/>'
+    + '<rect x="90" y="120" width="170" height="130" rx="12" fill="#FCF5EC"/><rect x="102" y="132" width="146" height="106" rx="8" fill="#FDEFD6"/>'
+    + '<rect x="720" y="150" width="140" height="170" rx="5" fill="#8A6B57"/><rect x="730" y="160" width="120" height="150" rx="3" fill="#F5E9DF"/>'
+    + '<path d="M752 280 Q790 215 826 280" fill="none" stroke="#7164C6" stroke-width="3" opacity=".45"/>'
+    + '</svg>';
+}
+function closeHTML(){
+  return '<div class="close">'
+    + '<div class="head"><div class="eyebrow">Smart analysis</div>'
+    + '<h2 class="serif">A partner that actually <em>pays attention.</em></h2></div>'
+    + '<div class="room">'+roomSVG()
+    + '<div class="ch a" id="ch-a"><canvas id="rv-a" width="300" height="400"></canvas></div>'
+    + '<div class="ch b idle" id="ch-b"><canvas id="rv-b" width="300" height="400"></canvas></div>'
+    + '</div></div>';
+}
+function build(){
+  var host = $('layers');
+  SCENES.forEach(function(s, k){
+    var el = document.createElement('div');
+    el.className = 'layer';
+    if(s.kind === 'hook') el.innerHTML = hookHTML();
+    else if(s.kind === 'video'){
+      el.style.setProperty('--d', s.dur + 's');
+      el.innerHTML = '<video muted playsinline preload="'+(k<=2?'auto':'metadata')+'" src="'+s.src+'"></video>';
+    }
+    else if(s.kind === 'privacy') el.innerHTML = privacyHTML();
+    else if(s.kind === 'close') el.innerHTML = closeHTML();
+    host.appendChild(el);
+    layers.push(el);
+  });
+  $('bars').innerHTML = SCENES.map(function(){ return '<i><b></b></i>'; }).join('');
+}
 
 /* ---------- Rive: same wiring as the replay inside the app ---------- */
+var RIVE_SRC = { female:'rive/samvaad_female.riv', male:'rive/samvaad_male.riv' };
+var EXPR_NUM = { neutral:0, attentive:1, sad:4, happy:5, warm:8 };
+var R = { a:null, b:null };
 function riveReady(){ return typeof rive !== 'undefined' && rive && rive.Rive; }
 function riveSet(ref, v){ try{ if(!ref) return; if(ref.input) ref.input.value = v; else if(ref.vm) ref.vm.value = v; }catch(e){} }
 function riveResolve(inst, sm, name){
@@ -242,240 +326,272 @@ function riveResolve(inst, sm, name){
   return null;
 }
 function mountRigs(){
-  // Neither canvas is flipped. The rigs are drawn facing inward for these positions already:
-  // the female artboard looks right (correct on the left), the male looks left (correct on the
-  // right). app.html only flips a rig when it sits on the side it was not drawn for. Adding
-  // .flip here turned the man to face the same way as the woman, so they talked past each other.
-  $('scene').insertAdjacentHTML('beforeend',
-      '<div class="ch a" id="ch-a"><canvas class="rvc" id="rv-a" width="256" height="340"></canvas></div>'
-    + '<div class="ch b" id="ch-b"><canvas class="rvc" id="rv-b" width="256" height="340"></canvas></div>');
+  // Neither canvas is flipped: the female artboard already faces right, the male faces left,
+  // which is exactly right for these positions. Flipping one makes them talk past each other.
   if(!riveReady()) return;
   ['a','b'].forEach(function(side){
     var gender = side === 'a' ? 'female' : 'male';
     try{
-      var lay; try{ lay = new rive.Layout({ fit: rive.Fit.Cover, alignment: rive.Alignment.BottomCenter }); }catch(e){ lay = undefined; }
+      var lay; try{ lay = new rive.Layout({ fit: rive.Fit.Cover, alignment: rive.Alignment.BottomCenter }); }catch(e){}
       var inst = new rive.Rive({
-        src: RIVE_SRC[gender], canvas: document.getElementById('rv-'+side), artboard:'Artboard', layout: lay,
+        src: RIVE_SRC[gender], canvas: $('rv-'+side), artboard:'Artboard', layout: lay,
         stateMachines:['Expression','mouthOps'], autoplay:true, autoBind:true,
         onLoad: function(){
           try{ inst.resizeDrawingSurfaceToCanvas(); }catch(e){}
-          R[side] = { rive: inst, exp: riveResolve(inst,'Expression','expNum'), ph: riveResolve(inst,'mouthOps','phonemeNum'), ready:true };
-          riveSet(R[side].exp, 0); riveSet(R[side].ph, 0);
+          R[side] = { rive:inst, exp:riveResolve(inst,'Expression','expNum'), ph:riveResolve(inst,'mouthOps','phonemeNum'), ready:true };
+          riveSet(R[side].exp, side==='a' ? EXPR_NUM.happy : EXPR_NUM.warm);
         },
         onLoadError: function(){ R[side] = null; }
       });
-    }catch(e){ R[side] = null; }
+    }catch(e){}
   });
 }
-function setExpr(side, emo){ var r = R[side]; if(r && r.ready) riveSet(r.exp, EXPR_NUM[emo] === undefined ? 0 : EXPR_NUM[emo]); }
 
-/* ---------- lip-sync: the narration's own loudness drives the mouth ---------- */
-var LS = { ctx:null, an:null, src:null, buf:null, raf:0, side:null };
+/* ---------- lip-sync: loudness drives the mouth; a flap when there is no sound ---------- */
+var LS = { ctx:null, an:null, src:null, buf:null, raf:0, flap:0, side:null };
 function lipStart(side, audioEl){
-  lipStop();
-  LS.side = side;
+  lipStop(); LS.side = side;
   var Ctx = window.AudioContext || window.webkitAudioContext;
-  if(!Ctx || !audioEl) return flap(side);
+  if(!audioEl || !Ctx) return flap(side);
   try{
     var ctx = LS.ctx || (LS.ctx = new Ctx()); if(ctx.state === 'suspended') ctx.resume();
     var src = audioEl.__svSrc || (audioEl.__svSrc = ctx.createMediaElementSource(audioEl));
-    var an = ctx.createAnalyser(); an.fftSize = 256;
-    src.connect(an); an.connect(ctx.destination);
+    var g = ctx.createGain(); g.gain.value = VOL; audioEl.volume = 1; LS.g = g;
+    var an = ctx.createAnalyser(); an.fftSize = 256; src.connect(g); g.connect(an); an.connect(ctx.destination);
     LS.an = an; LS.src = src; LS.buf = new Uint8Array(an.frequencyBinCount);
     var frame = 0, hold = 0;
-    var loop = function(){
+    (function loop(){
       if(LS.side !== side || !LS.an) return;
       LS.an.getByteTimeDomainData(LS.buf);
-      var s = 0, b = LS.buf; for(var n=0;n<b.length;n++){ var v = (b[n]-128)/128; s += v*v; }
-      var rms = Math.sqrt(s/b.length);
+      var s = 0, b = LS.buf; for(var n=0;n<b.length;n++){ var v=(b[n]-128)/128; s+=v*v; }
+      var rms = Math.sqrt(s/b.length) / VOL;
       if(frame >= hold){
-        var p, pool;
-        if(rms < 0.035) p = 0;
-        else { pool = rms < 0.09 ? [1,4,1,0] : rms < 0.17 ? [1,3,2,1] : [3,2,3,4]; p = pool[(Math.random()*pool.length)|0]; }
-        var r = R[side]; if(r && r.ready) riveSet(r.ph, p);
+        var p = rms < 0.035 ? 0 : (function(pool){ return pool[(Math.random()*pool.length)|0]; })(rms<0.09?[1,4,1,0]:rms<0.17?[1,3,2,1]:[3,2,3,4]);
+        if(R[side] && R[side].ready) riveSet(R[side].ph, p);
         frame = 0; hold = 4 + ((Math.random()*4)|0);
       }
       frame++; LS.raf = requestAnimationFrame(loop);
-    };
-    loop();
+    })();
   }catch(e){ flap(side); }
 }
-/* no audio (muted, or the browser refused): still move the mouth so nobody looks frozen */
 function flap(side){
-  var tick = function(){
+  (function tick(){
     if(LS.side !== side) return;
-    var r = R[side], pool = [1,3,2,1,4,3,0,0];
-    if(r && r.ready) riveSet(r.ph, pool[(Math.random()*pool.length)|0]);
+    var pool = [1,3,2,1,4,3,0,0];
+    if(R[side] && R[side].ready) riveSet(R[side].ph, pool[(Math.random()*pool.length)|0]);
     LS.flap = setTimeout(tick, 80 + ((Math.random()*90)|0));
-  };
-  tick();
+  })();
 }
 function lipStop(){
   if(LS.raf) cancelAnimationFrame(LS.raf); LS.raf = 0;
   if(LS.flap) clearTimeout(LS.flap); LS.flap = 0;
   if(LS.src){ try{ LS.src.disconnect(); }catch(e){} } LS.src = null;
   if(LS.an){ try{ LS.an.disconnect(); }catch(e){} } LS.an = null;
-  if(LS.side){ var r = R[LS.side]; if(r && r.ready) riveSet(r.ph, 0); }
+  if(LS.g){ try{ LS.g.disconnect(); }catch(e){} } LS.g = null;
+  if(LS.side && R[LS.side] && R[LS.side].ready) riveSet(R[LS.side].ph, 0);
   LS.side = null;
 }
 
-/* ---------- the room behind them ---------- */
-function sceneBg(){
-  return '<svg viewBox="0 0 1000 480" preserveAspectRatio="xMidYMid slice" width="100%" height="100%">'
-    + '<defs>'
-    + '<linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F9F1E8"/><stop offset="1" stop-color="#F2E2D6"/></linearGradient>'
-    + '<linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EAD4C3"/><stop offset="1" stop-color="#DEC2AD"/></linearGradient>'
-    + '<radialGradient id="g" cx="24%" cy="22%" r="58%"><stop offset="0" stop-color="#FFE9C6" stop-opacity=".5"/><stop offset="1" stop-color="#FFE9C6" stop-opacity="0"/></radialGradient>'
-    + '</defs>'
-    + '<rect width="1000" height="480" fill="url(#w)"/><rect width="1000" height="480" fill="url(#g)"/>'
-    + '<rect y="356" width="1000" height="124" fill="url(#f)"/><rect y="354" width="1000" height="3" fill="rgba(255,255,255,.35)"/>'
-    + '<ellipse cx="500" cy="440" rx="372" ry="44" fill="#F8DDE0" opacity=".55"/>'
-    + '<rect x="86" y="52" width="132" height="100" rx="10" fill="#FCF5EC"/><rect x="95" y="61" width="114" height="82" rx="6" fill="#FDEFD6"/>'
-    + '<line x1="152" y1="61" x2="152" y2="143" stroke="#FCF5EC" stroke-width="6"/><line x1="95" y1="102" x2="209" y2="102" stroke="#FCF5EC" stroke-width="6"/>'
-    + '<rect x="712" y="98" width="108" height="128" rx="4" fill="#8A6B57"/><rect x="720" y="106" width="92" height="112" rx="2" fill="#F5E9DF"/>'
-    + '<path d="M736 194 Q754 150 770 194" fill="none" stroke="#C8324B" stroke-width="2.4" opacity=".45"/>'
-    + '<g transform="translate(872,300)"><ellipse cx="-13" cy="-38" rx="11" ry="32" fill="#7FA07E" transform="rotate(-18 -13 -38)"/>'
-    + '<ellipse cx="6" cy="-50" rx="11" ry="36" fill="#6F9A79"/><ellipse cx="25" cy="-38" rx="11" ry="32" fill="#A6C39E" transform="rotate(18 25 -38)"/>'
-    + '<path d="M-19 0 h42 l-7 52 h-28 z" fill="#CE9A78"/></g>'
-    + '</svg>';
+/* ---------- background music: a quiet bed that dips while someone is speaking ---------- */
+var MU = { el:null, gain:null, level:0, missing:false };
+function startMusic(){
+  if(FILM || !soundOn || MU.missing) return;
+  if(!MU.el){
+    MU.el = new Audio(MUSIC_SRC); MU.el.loop = true; MU.el.preload = 'auto';
+    MU.el.onerror = function(){ MU.missing = true; MU.el = null; };
+    // a gain node rather than .volume, because iOS ignores .volume on media elements
+    try{
+      var ctx = LS.ctx || (LS.ctx = new (window.AudioContext || window.webkitAudioContext)());
+      MU.gain = ctx.createGain(); MU.gain.gain.value = 0;
+      ctx.createMediaElementSource(MU.el).connect(MU.gain); MU.gain.connect(ctx.destination);
+    }catch(e){ MU.gain = null; MU.el.volume = 0; }
+  }
+  if(LS.ctx && LS.ctx.state === 'suspended'){ try{ LS.ctx.resume(); }catch(e){} }
+  if(MU.el && MU.el.paused){ var p = MU.el.play(); if(p && p.catch) p.catch(function(){}); }
+}
+function stopMusic(){ if(MU.el){ try{ MU.el.pause(); }catch(e){} } }
+(function mix(){
+  if(MU.el && !MU.el.paused){
+    var talking = au && !au.paused && !au.ended;
+    MU.level += (VOL * (talking ? MUSIC_DUCK : MUSIC_BED) - MU.level) * 0.06;
+    if(MU.gain) MU.gain.gain.value = MU.level; else MU.el.volume = Math.min(1, MU.level);
+  }
+  requestAnimationFrame(mix);
+})();
+
+/* ---------- kinetic text ---------- */
+function words(html){
+  // wrap each word in a span for a staggered pop, keeping <em> highlights intact
+  var out = [], k = 0;
+  html.replace(/(<em>.*?<\/em>|\S+)/g, function(tok){
+    var inner = tok.replace(/^<em>|<\/em>$/g,'');
+    var wrap = /^<em>/.test(tok);
+    inner.split(' ').forEach(function(wd){
+      out.push('<span class="w" style="animation-delay:'+(k++*0.075)+'s">'+(wrap?'<em>'+wd+'</em>':wd)+'</span>');
+    });
+    return tok;
+  });
+  return out.join(' ');
+}
+function setKin(pos, big, small){
+  var kin = $('kin');
+  if(!big){ kin.innerHTML = ''; $('scrimTop').classList.remove('show'); $('scrimBot').classList.remove('show'); return; }
+  kin.className = 'kin ' + pos;
+  kin.innerHTML = '<p class="big serif">'+words(big)+'</p>' + (small ? '<div class="small in">'+small+'</div>' : '');
+  $('scrimTop').classList.toggle('show', pos === 'top');
+  $('scrimBot').classList.toggle('show', pos === 'bottom');
 }
 
 /* ---------- playback ---------- */
-function bars(){
-  $('bars').innerHTML = SCENES.map(function(_, n){
-    return '<i><b style="transform:scaleX('+(n < i ? 1 : 0)+')"></b></i>';
-  }).join('');
-}
-function progress(p){
-  var b = $('bars').children[i]; if(b && b.firstChild) b.firstChild.style.transform = 'scaleX('+Math.max(0, Math.min(1, p))+')';
-}
-
-function renderScene(){
-  var s = SCENES[i];
-  $('eyebrow').textContent = s.eyebrow;
-  $('head').textContent = s.h;
-  $('head').className = 'serif anim';
-  $('capWho').textContent = s.name;
-  $('capTxt').textContent = s.line;
-  $('cta').textContent = s.cta || 'Next';
-  $('tapnote').textContent = s.cta ? '' : 'Skip ahead any time';
-  var speaker = s.who === 'f' ? 'a' : 'b';
-  setExpr('a', s.expr.a); setExpr('b', s.expr.b);
-  $('ch-a').classList.toggle('idle', speaker !== 'a');
-  $('ch-b').classList.toggle('idle', speaker !== 'b');
-  bars();
-  track('intro_scene', { scene: i + 1, at: elapsed() });
-  playScene(speaker, s);
-}
-
-function playScene(speaker, s){
-  stopAudio();
-  var done = function(){ next(); };
-  if(muted || !audioOK){
-    lipStart(speaker, null);
-    var start = Date.now();
-    var tick = function(){ progress((Date.now()-start)/(s.dur*1000)); raf = requestAnimationFrame(tick); };
-    tick();
-    timer = setTimeout(function(){ lipStop(); done(); }, s.dur * 1000);
-    return;
-  }
-  au = new Audio(s.audio);
-  au.preload = 'auto';
-  au.onended = function(){ lipStop(); done(); };
-  au.onerror = function(){ audioOK = false; track('intro_audio_blocked', { scene: i+1, reason: 'load' }); lipStop(); playScene(speaker, s); };
-  au.ontimeupdate = function(){ if(au.duration) progress(au.currentTime / au.duration); };
-  lipStart(speaker, au);
-  var p = au.play();
-  if(p && p.catch) p.catch(function(){
-    // The browser refused. Fall back to a silent, timed run rather than a frozen screen.
-    audioOK = false;
-    track('intro_audio_blocked', { scene: i + 1, reason: 'autoplay' });
-    $('mute').textContent = '🔇';
-    lipStop(); playScene(speaker, s);
-  });
+function progress(k, p){
+  var bars = $('bars').children;
+  for(var n=0;n<bars.length;n++) bars[n].firstChild.style.transform = 'scaleX('+(n<k?1:n>k?0:Math.max(0,Math.min(1,p)))+')';
 }
 function stopAudio(){
-  if(timer){ clearTimeout(timer); timer = null; }
-  if(raf){ cancelAnimationFrame(raf); raf = 0; }
-  if(au){ try{ au.pause(); }catch(e){} au.onended = au.onerror = au.ontimeupdate = null; au = null; }
+  if(au){ try{ au.pause(); }catch(e){} au = null; }
   lipStop();
 }
-
-function next(){
-  if(i >= SCENES.length - 1) return finish('completed');
-  progress(1); i++; renderScene();
-}
-function finish(how){
-  if(ended) return; ended = true;
+function playAudioAt(at){
+  var s = SCENES[i];
   stopAudio();
-  try{ localStorage.setItem(SEEN_KEY, '1'); }catch(e){}
-  if(how === 'completed') track('intro_completed', { at: elapsed(), audio: audioOK && !muted }, true);
-  else track('intro_skipped', { scene: i + 1, at: elapsed(), audio: audioOK && !muted }, true);
-  location.replace(LOGIN);
+  if(soundOn) startMusic(); else stopMusic();
+  if(!s || !s.audio) return;
+  if(!soundOn || at >= s.dur - PAD - 0.15){
+    if(s.kind === 'close' && at < s.dur - PAD) lipStart(s.speaker, null);
+    return;
+  }
+  au = new Audio(s.audio); au.volume = VOL;
+  try{ au.currentTime = at; }catch(e){}
+  if(s.kind === 'close') lipStart(s.speaker, au);
+  var pr = au.play();
+  if(pr && pr.catch) pr.catch(function(err){
+    // AbortError only means we paused it by moving to the next card; only a real refusal counts
+    if(ended || !err || err.name !== 'NotAllowedError') return;
+    if(!blocked) track('intro_audio_blocked', { scene:i+1 });
+    blocked = true; soundOn = false; paintSound(); stopMusic();
+    if(s.kind === 'close') lipStart(s.speaker, null);
+  });
+  au.onended = function(){ if(SCENES[i] && SCENES[i].kind === 'close') lipStop(); };
+}
+function show(k){
+  cancelAnimationFrame(raf);
+  layers.forEach(function(el, n){ el.classList.toggle('on', n === k); });
+  // restart the video from the top every time its scene comes round
+  var v = layers[k].querySelector('video');
+  layers.forEach(function(el, n){ var vv = el.querySelector('video'); if(vv && n !== k){ try{ vv.pause(); }catch(e){} } });
+  if(v){ try{ v.currentTime = 0; }catch(e){} var p = v.play(); if(p && p.catch) p.catch(function(){}); }
+  // warm the next clip
+  var nx = layers[k+1] && layers[k+1].querySelector('video'); if(nx) nx.preload = 'auto';
+
+  var s = SCENES[k];
+  swapped = false;
+  setKin(s.pos, s.big, s.small);
+  if(s.kind === 'privacy'){ ['pr0','pr1','pr2'].forEach(function(id){ var r=$(id); r.classList.remove('in','done'); }); }
+  $('ctaWrap').classList.toggle('show', s.kind === 'close');
+  track('intro_scene', { scene:k+1, at:elapsedAll() });
+  t0 = performance.now();
+  playAudioAt(0);
+  tick();
+}
+function tick(){
+  var s = SCENES[i], el = (performance.now() - t0) / 1000;
+  progress(i, el / s.dur);
+  if(s.swap && !swapped && el >= s.swap.at){ swapped = true; setKin(s.pos, s.swap.big, s.swap.small); }
+  if(s.kind === 'privacy'){
+    s.beats.forEach(function(at, n){
+      var r = $('pr'+n);
+      if(el >= at && !r.classList.contains('in')) r.classList.add('in');
+      if(el >= at + 1.1 && !r.classList.contains('done')) r.classList.add('done');
+    });
+  }
+  if(el >= s.dur){
+    if(i < SCENES.length - 1){ next(); return; }
+    // the last scene holds on the call to action; it does not navigate away on its own
+    progress(i, 1); lipStop();
+    if(!completed){ completed = true; track('intro_completed', { at:elapsedAll(), sound:soundOn }, true); }
+    return;
+  }
+  raf = requestAnimationFrame(tick);
+}
+function next(){ i = Math.min(i + 1, SCENES.length - 1); show(i); }
+function finish(how, dest){
+  if(ended) return; ended = true;
+  cancelAnimationFrame(raf); stopAudio(); stopMusic();
+  if(how === 'skipped') track('intro_skipped', { scene:i+1, at:elapsedAll(), sound:soundOn, to: dest === BLOG ? 'blog' : 'signin' }, true);
+  else if(!completed) track('intro_completed', { at:elapsedAll(), sound:soundOn, early:true }, true);
+  // the blog keeps the intro in history so Back returns to it; sign-in replaces it
+  if(dest === BLOG) location.href = BLOG; else location.replace(LOGIN);
 }
 
 /* ---------- controls ---------- */
-$('cta').onclick = function(){ SCENES[i].cta ? finish('completed') : next(); };
-$('skip').onclick = function(){ finish('skipped'); };
-$('posterSkip').onclick = function(e){ e.preventDefault(); ended = true; try{ localStorage.setItem(SEEN_KEY,'1'); }catch(e2){}
-  track('intro_skipped', { scene: 0, at: elapsed(), audio: false }, true); location.replace(LOGIN); };
-$('mute').onclick = function(){
-  muted = !muted;
-  $('mute').textContent = muted ? '🔇' : '🔊';
-  track('intro_muted', { scene: i + 1, muted: muted });
-  if(au) au.muted = muted;
-  if(muted && au){ /* keep the film moving on the audio clock we already have */ }
+var SPEAKER = '<path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" fill="currentColor" stroke="none"/>';
+var ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' + SPEAKER
+  + '<path d="M15.6 9.2a4 4 0 0 1 0 5.6"/><path d="M18.4 6.6a7.8 7.8 0 0 1 0 10.8"/></svg>';
+var ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' + SPEAKER
+  + '<path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+function paintSound(){
+  var b = $('sound');
+  b.classList.toggle('off', !soundOn);
+  b.innerHTML = soundOn ? ICON_ON : ICON_OFF;
+  b.setAttribute('aria-label', soundOn ? 'Turn sound off' : 'Turn sound on');
+  b.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+}
+$('sound').onclick = function(){
+  soundOn = !soundOn; blocked = false; paintSound();
+  track('intro_muted', { muted:!soundOn, scene:i+1 });
+  playAudioAt((performance.now() - t0) / 1000);
 };
+// the browser held the sound back: the first tap anywhere on the reel brings it in
+document.addEventListener('pointerdown', function(e){
+  if(!blocked || ended || i < 0) return;
+  if(e.target.closest && e.target.closest('button,a')) return;
+  blocked = false; soundOn = true; paintSound();
+  track('intro_sound_unlocked', { scene:i+1 });
+  playAudioAt((performance.now() - t0) / 1000);
+}, true);
+$('skip').onclick = function(){ finish('skipped', LOGIN); };
+$('skipBlog').onclick = function(){ finish('skipped', BLOG); };
+$('cta').onclick = function(){ finish('cta', LOGIN); };
 document.addEventListener('keydown', function(e){
-  if($('poster').style.display === 'none'){
-    if(e.key === 'Escape') finish('skipped');
-    else if(e.key === 'ArrowRight'){ e.preventDefault(); next(); }
-  }
+  if(e.key === 'Escape') finish('skipped');
+  else if(e.key === 'ArrowRight' && i < SCENES.length - 1){ e.preventDefault(); next(); }
 });
-// A skip that navigates away should still be counted.
-window.addEventListener('pagehide', function(){ if(!ended) track('intro_skipped', { scene: i+1, at: elapsed(), audio: audioOK && !muted, closed: true }, true); });
+window.addEventListener('pagehide', function(){ if(!ended && !completed) track('intro_skipped', { scene:i+1, at:elapsedAll(), sound:soundOn, closed:true }, true); });
 
 /* ---------- boot ---------- */
-$('play').onclick = function(){
-  $('poster').style.display = 'none';
-  track('intro_started', { at: elapsed() });
-  i = 0; renderScene();
-};
-
-var FILM = /[?&]film=1/.test(location.search);
-
+function start(){
+  if(i >= 0) return;
+  track('intro_started', { at:elapsedAll() });
+  i = 0; show(0);
+}
 (function boot(){
-  if(FILM) document.body.classList.add('film');
-  $('sceneBg').innerHTML = sceneBg();
+  build();
   mountRigs();
-  bars();
-  // Film mode records the export and answers to nobody: no poster, no admin switch, straight in.
+  if(FROM_APP){ $('skip').textContent = 'Back to app'; $('cta').textContent = 'Back to Samvaad'; }
+  paintSound();
   if(FILM){
-    // give the rigs a moment to finish loading so frame one is never an empty room
+    document.body.classList.add('film');
+    // give the rigs a moment so the closing scene never opens on an empty room
     var waited = 0;
     (function ready(){
-      if((R.a && R.a.ready && R.b && R.b.ready) || waited > 6000){
-        $('poster').style.display = 'none'; i = 0; renderScene(); return;
-      }
+      if((R.a && R.a.ready && R.b && R.b.ready) || waited > 6000) return start();
       waited += 120; setTimeout(ready, 120);
     })();
     return;
   }
-  // Otherwise: if the admin has switched the intro off, never show it. Short leash, because a
-  // sleeping Render instance must not hold a first-time visitor on a blank screen.
-  var settled = false, go = function(){ settled = true; };
-  var t = setTimeout(go, 700);
+  // Honour the admin switch, on a short leash: a sleeping backend must never hold a first-time
+  // visitor on a blank screen.
+  var leash = setTimeout(start, 500);
   fetch(BACKEND + '/api/config')
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){
-      clearTimeout(t);
-      if(d && d.introEnabled === false){
-        try{ localStorage.setItem(SEEN_KEY, '1'); }catch(e){}
+      if(d && d.introEnabled === false && !FROM_APP){
+        clearTimeout(leash);
         location.replace(LOGIN); return;
       }
-      go();
+      clearTimeout(leash); start();
     })
-    .catch(function(){ clearTimeout(t); go(); });
+    .catch(function(){ clearTimeout(leash); start(); });
 })();
 </script>
 </body>

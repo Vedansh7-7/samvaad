@@ -168,11 +168,22 @@ and the throughput with no code change.
 
 ## Regenerating the intro
 
-The script lives in `web/audio/intro/script.json`; the audio is `web/audio/intro/*.mp3` (271 KB
-total, mono 48 kbps). To change the narration, edit the lines, regenerate through the ElevenLabs
-API with the same voice ids, re-encode to mono 48 kbps, and update the `dur` values in the
-`SCENES` array in `intro.html` to the new measured durations.
+Narration lives in `web/audio/intro/script-v2.json`; the audio is `web/audio/intro/v2-00-f.mp3` to
+`v2-07-f.mp3`, one line per card, levelled to the same loudness (about -17.5 dB mean). To change a
+line, regenerate it through the ElevenLabs API with the same voice ids (`ELEVEN_VOICE_A` female,
+`ELEVEN_VOICE_B` male), level it to match, and set that card's `dur` in the `SCENES` array in
+`intro.html` to the new measured length plus `PAD`.
 
-The marketing cut is recorded from `intro.html?film=1` with a headless browser and muxed with the
-concatenated narration using ffmpeg. Recording it from the live page rather than building a
-separate video means the clip can never drift from the product it advertises.
+Background music is optional: put a file at `web/audio/intro/music.mp3` and the reel picks it up.
+It plays at `MUSIC_BED` and dips to `MUSIC_DUCK` under every voice line, both relative to the 75%
+voice volume set at the top of the script. With no file, the reel plays without music.
+
+The product clips (`web/media/intro/s1.mp4` to `s5.mp4`, 720x1280 H.264) are real `app.html`
+footage, captured with Chrome's own screencast (CDP `Page.startScreencast`, 360x640 at 3x density)
+against a mocked API. Markers on the same clock let every loading frame be cut and each clip be
+timed to its line. Re-record them whenever the app's look changes, or the reel will advertise an
+app that no longer exists. The scripts are in `tools/intro/` (see its README).
+
+The marketing cut is recorded from `intro.html?film=1` the same way and muxed with the narration
+laid on the card timings. Recording it from the live page rather than building a separate video
+means the clip can never drift from the product it advertises.

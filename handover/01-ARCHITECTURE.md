@@ -131,13 +131,17 @@ It ends with `notify pgrst, 'reload schema'`, which is what clears Supabase's
 Static HTML with inline CSS and JS. No framework, no bundler, no build. Open a file, read the
 whole feature. This is a deliberate constraint that has kept the project fast to change.
 
-- **`index.html`** — routes a first-time visitor to `intro.html`, everyone else to `login.html`.
-- **`intro.html`** — the animated introduction. The two Rive rigs introduce the product
-  themselves, lip-synced to real ElevenLabs narration, six scenes, ~45 seconds. Opens on a poster
-  with a play button because browsers refuse to autoplay audio. Emits a full funnel of events
-  (started, per-scene, muted, audio-blocked, completed/skipped) using `sendBeacon` so a skip that
-  navigates away still counts. `?film=1` strips the interactive chrome; that is how
-  `docs/media/samvaad-intro.mp4` was recorded.
+- **`index.html`**: sends a signed-in visitor straight to `app.html` and everyone else to `intro.html`.
+- **`intro.html`**: the 9:16 intro reel, about 46 seconds. A fast chat hook, five clips of real
+  `app.html` footage (`web/media/intro/s1.mp4` to `s5.mp4`, recorded against a mocked API with every
+  loading frame cut), a privacy card, then the two Rive rigs and the call to action. Every card has
+  its own timed voice line. Sound is on by default at 75% volume, with an optional music bed that
+  dips under the voice; when the browser refuses audible autoplay the reel runs silently and the
+  first tap brings the sound in. Two exits at every moment: Skip to blog (`how-it-works.html`) and
+  Skip to sign in. `?from=app` is the rewatch from the You page and returns to the app. Emits
+  started, per-card, muted, audio-blocked, sound-unlocked and completed/skipped (with where they
+  went) using `sendBeacon`. `?film=1` strips the controls; that is how
+  `docs/media/samvaad-intro.mp4` is recorded.
 - **`login.html`** — magic link, OTP, guest. **The canonical design reference**: when in doubt
   about how something should look, look here.
 - **`app.html`** — the product. Four views (Home, Analyse, Insights, You), the breathing overlay,
