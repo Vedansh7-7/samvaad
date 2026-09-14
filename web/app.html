@@ -176,6 +176,12 @@
   .ch{position:absolute;bottom:-6px;width:260px;text-align:center;z-index:1;
     transition:transform .45s cubic-bezier(.22,1,.36,1);filter:drop-shadow(0 12px 13px rgba(70,30,45,.18))}
   .ch.a{left:50%;margin-left:-305px}.ch.b{left:50%;margin-left:45px}.ch.solo{left:50%;margin-left:0;transform:translateX(-50%)}
+  /* Same fixed-offset problem on the full report stage when the screen itself is narrow. */
+  @media (max-width:640px){
+    .ch{width:46%}
+    .ch.a{left:2%;margin-left:0}.ch.b{left:auto;right:2%;margin-left:0}
+    .ch.solo{left:50%;right:auto;margin-left:0;transform:translateX(-50%)}
+  }
   .ch.speaking{transform:translateY(-7px)}.ch.solo.speaking{transform:translateX(-50%) translateY(-7px)}
   .ch::before{content:"";position:absolute;left:50%;top:70px;width:170px;height:170px;translate:-50% 0;border-radius:50%;z-index:-1;
     background:radial-gradient(circle, var(--accent-soft), rgba(255,255,255,0) 70%);opacity:0;transition:opacity .4s}
@@ -272,7 +278,13 @@
      back and shrink the rig to match, so the compact stage still frames both faces. */
   .slide-body .rvc{height:250px;transform:scale(1.06)}
   .slide-body .rvc.flip{transform:scaleX(-1) scale(1.06)}
-  .slide-body .ch{width:210px}
+  .slide-body .ch{width:46%}
+  /* The base .ch.a/.ch.b offsets are fixed pixels sized for a ~610px scene. A walk-through slide on
+     a phone is under 300px wide, so those offsets pushed one character off the left edge and the
+     other half off the right. Inside slides, position by percentage of the scene instead. */
+  .slide-body .ch.a{left:2%;margin-left:0}
+  .slide-body .ch.b{left:auto;right:2%;margin-left:0}
+  .slide-body .ch.solo{left:50%;right:auto;margin-left:0;transform:translateX(-50%)}
   @media (max-height:760px){
     .slide-body .scene{height:min(230px,32vh)}
     .slide-body .bubbles{max-height:92px}
