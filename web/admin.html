@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Samvaad — Admin console (pre-launch trial).
+  Samvaad, Admin console (pre-launch trial).
   Two sides: Metrics (what the cohort is doing) and People (what you can do about it).
   Auth-gated: only Supabase users whose id is in the backend's ADMIN_USER_IDS see anything.
   Backend URL is read from localStorage 'samvaad.beUrl', else the Render default below.
@@ -224,8 +224,8 @@
       + kpi('Analyses', a.analyses||0, (a.today||0)+' today · '+(a.last7||0)+' this week')
       + kpi('Active this week', a.activeLast7||0, 'distinct people')
       + kpi('Per active user', a.perActivatedUser||0, 'analyses each')
-      + kpi('Avg score', q.avgScore==null?'—':q.avgScore, 'across all reports')
-      + kpi('Avg escalation', q.avgEscalation==null?'—':q.avgEscalation, 'higher = more heat')
+      + kpi('Avg score', q.avgScore==null?'…':q.avgScore, 'across all reports')
+      + kpi('Avg escalation', q.avgEscalation==null?'…':q.avgEscalation, 'higher = more heat')
       + kpi('Check-in opt-ins', f.optins||0, 'consented to WhatsApp')
       + '</div>';
 
@@ -241,8 +241,8 @@
       + '<p class="sub">Whether the opening film is earning its place, and whether the voice-over is actually being heard.</p>'
       + '<div class="grid" style="margin:0">'
       + kpi('Started', intro.started||0, 'people who saw it')
-      + kpi('Watched to the end', intro.completed||0, intro.completionRate==null?'—':intro.completionRate+'% of starts')
-      + kpi('Skipped', intro.skipped||0, intro.avgSceneOnSkip==null?'—':'average scene '+intro.avgSceneOnSkip)
+      + kpi('Watched to the end', intro.completed||0, intro.completionRate==null?'…':intro.completionRate+'% of starts')
+      + kpi('Skipped', intro.skipped||0, intro.avgSceneOnSkip==null?'…':'average scene '+intro.avgSceneOnSkip)
       + kpi('Voice blocked', intro.audioBlocked||0, 'browser refused autoplay')
       + kpi('Muted it', intro.muted||0, 'chose silence')
       + '</div></div>';
@@ -257,9 +257,9 @@
 
     // Capacity: the two ceilings that actually bite during a trial.
     html += '<div class="glass sec"><h3>Capacity</h3>'
-      + '<p class="sub">Analysis engine: <b>'+esc(cap.model||'—')+'</b> at '+esc(cap.tpm||'—')+' tokens/min. '
-      + 'That sets the longest conversation the product can accept: <b>'+esc((cap.limits&&cap.limits.maxMinutes)||'—')+' minutes</b> '
-      + '('+esc((cap.limits&&cap.limits.maxWords)||'—')+' words). Raise GROQ_TPM on Render after upgrading the Groq plan to lift it.</p>'
+      + '<p class="sub">Analysis engine: <b>'+esc(cap.model||'…')+'</b> at '+esc(cap.tpm||'…')+' tokens/min. '
+      + 'That sets the longest conversation the product can accept: <b>'+esc((cap.limits&&cap.limits.maxMinutes)||'…')+' minutes</b> '
+      + '('+esc((cap.limits&&cap.limits.maxWords)||'…')+' words). Raise GROQ_TPM on Render after upgrading the Groq plan to lift it.</p>'
       + '<p class="note">Analysis minutes charged this month: <b>'+esc(cap.minutesThisMonth||0)+'</b> · long conversations trimmed: <b>'+esc(a.truncated||0)+'</b></p>'
       + voiceCard(k.voice||{})
       + '</div>';
@@ -281,7 +281,7 @@
         + (k===live ? '<div class="tag">Default</div>' : '<div class="tag" style="opacity:.35">&nbsp;</div>')
         + '<h4>'+esc(labels[k])+'</h4>'
         + '<div class="n">'+esc(desc[k])+'</div>'
-        + '<div class="big">'+(e.willTryRate==null ? '—' : e.willTryRate+'%')+'</div>'
+        + '<div class="big">'+(e.willTryRate==null ? '…' : e.willTryRate+'%')+'</div>'
         + '<div class="n">said they’ll try it · '+esc(e.feedback||0)+' answered of '+esc(e.sessions||0)+' sessions</div>'
         + '</div>';
     }).join('') + '</div>';

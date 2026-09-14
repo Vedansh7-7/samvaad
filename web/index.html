@@ -1,26 +1,38 @@
 <!doctype html>
 <!--
   Deploy entry: makes "/" work on Vercel.
-  A first-time visitor is sent to the intro animation; everyone after that goes straight to login.
-  The meta-refresh and the <noscript> link both point at login.html so the page is never a dead end
-  if scripting is off — the intro is an enhancement, not a gate.
+
+  Routing, decided with the team on 2026-09-14:
+  - Someone already signed in goes straight into the app. They have seen the intro and do not need
+    to sign in again.
+  - Everyone else (new, signed out, or a guest) lands on the intro, every time. There is no
+    "seen it once" memory any more: the intro is skippable in one tap, and a remembered flag meant
+    returning visitors, and the team, could never see it again.
+
+  The meta-refresh and the <noscript> link point at the intro so the page is never a dead end with
+  scripting off.
 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Samvaad</title>
-  <meta http-equiv="refresh" content="1; url=login.html">
-  <link rel="canonical" href="login.html">
+  <meta http-equiv="refresh" content="2; url=intro.html">
+  <link rel="canonical" href="intro.html">
+  <script src="auth.js"></script>
 </head>
 <body>
   <script>
     (function(){
-      var seen = false;
-      try { seen = localStorage.getItem('samvaad.introSeen') === '1'; } catch (e) {}
-      location.replace(seen ? 'login.html' : 'intro.html');
+      var signedIn = false;
+      try {
+        var s = window.SamvaadAuth && SamvaadAuth.readSession();
+        // a session that has already expired is not "signed in"; app.html would bounce it anyway
+        signedIn = !!(s && s.access_token && (!s.expires_at || s.expires_at * 1000 > Date.now()));
+      } catch (e) {}
+      location.replace(signedIn ? 'app.html' : 'intro.html');
     })();
   </script>
-  <noscript><a href="login.html">Continue to Samvaad</a></noscript>
+  <noscript><a href="intro.html">Continue to Samvaad</a></noscript>
 </body>
 </html>

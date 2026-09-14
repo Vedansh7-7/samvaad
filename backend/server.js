@@ -358,7 +358,9 @@ async function tpmReserve(tokens) {
       // Not a fault: the free tier's per-minute budget is genuinely spoken for. 503 + Retry-After
       // says "come back", where a 500 would say "we broke" and get logged as an outage.
       const e = new Error('A few conversations are being read right now. Give it a minute and try again.');
-      e.status = 503; e.retryAfter = 60;
+      // The real time until enough of the minute frees up, so the app's countdown tells the truth
+      // instead of always saying "a minute".
+      e.status = 503; e.retryAfter = Math.max(5, Math.ceil(wait / 1000));
       throw e;
     }
     await new Promise(r => setTimeout(r, Math.max(500, wait)));
@@ -765,7 +767,7 @@ For every turn in BOTH arrays: "speaker" is exactly "A" or "B" and never a name;
     res.json({ ...rep, original, improved, sessionId, truncated: cap.truncated, wordsKept: cap.wordsKept, wordsTotal: cap.wordsTotal, limits: LIMITS, allowance: await allowance(principal) });
   } catch (e) {
     if (e && e.retryAfter) res.set('retry-after', String(e.retryAfter));
-    res.status((e && e.status) || 500).json({ error: String(e.message || e), code: (e && e.code) || null });
+    res.status((e && e.status) || 500).json({ error: String(e.message || e), code: (e && e.code) || null, retryAfter: (e && e.retryAfter) || null });
   }
 });
 

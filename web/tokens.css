@@ -1,0 +1,68 @@
+/*
+  Samvaad design tokens. One file, so the palette is changed in one place.
+
+  Derived 2026-09-14 from colour-emotion research, then built with the golden method.
+
+  The person opening Samvaad has usually just been in conflict, so arousal is already high. The
+  palette is built to lower arousal and raise pleasantness while staying warm:
+  - Lightness and saturation matter more than hue: brightness raises pleasantness and lowers
+    arousal, saturation raises arousal (Valdez & Mehrabian, 1994). Large areas are very light and
+    low in chroma.
+  - Base hue is a soft periwinkle (248 degrees). Blue produced the lowest physiological arousal of
+    blue, green and red (Wilms & Oberfeld, 2018); purple-blue is among the most pleasant and least
+    arousing hues (Valdez & Mehrabian).
+  - Red is no longer the action colour. Across 30 nations red is among the most emotionally charged
+    colours and carries anger as well as love (Jonauskaite et al., 2020).
+
+  Golden method: step around the wheel from the base by the golden angle, 137.5 degrees.
+    248 -> 25.5 (warm peach, affection without alarm) -> 163 (sea green, contentment)
+        -> 300.5 (orchid, used sparingly)
+  Area follows a golden split: about 62% canvas, 24% base family, 14% accents.
+
+  Every text pairing below meets WCAG AA (4.5:1) against the surface it is used on.
+*/
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Nunito:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600&display=swap');
+
+:root{
+  /* neutrals, about 62% of any screen */
+  --canvas:#FAF8F4;        /* warm, very light: pleasant, low arousal */
+  --surface:#F1F0F9;       /* soft periwinkle panel */
+  --surface-2:#E3E1F2;
+  --line:#D6D3E3;
+
+  /* ink: never pure black, which rates as the most arousing and overbearing */
+  --ink:#312E52;           /* 12.05:1 on canvas */
+  --ink-soft:#686586;      /* 5.22:1 on canvas */
+
+  /* base family, about 24% */
+  --primary:#7164C6;       /* action colour; white label 4.84:1 */
+  --primary-deep:#5848BF;  /* pressed / hover */
+  --primary-soft:#E1DEF7;  /* chips, selected states */
+
+  /* golden-angle accents, about 14% together */
+  --warm:#F1C6A7;          /* 25.5 deg peach fill */
+  --warm-ink:#A55F2C;      /* 4.63:1 */
+  --calm:#CFE7E1;          /* 163 deg sea-green fill: improving, breathing */
+  --calm-ink:#367D69;      /* 4.61:1, good scores */
+  --orchid:#EEDDEE;        /* 300.5 deg, sparing */
+  --orchid-ink:#9D559D;    /* 4.69:1 */
+
+  /* states */
+  --risk:#B0523B;          /* muted clay, serious without a siren; 4.81:1, white label 5.10:1 */
+  --amber:#98661B;         /* middling scores; 4.66:1 */
+
+  /* shape and depth, after the reference UI: solid soft panels, generous radii, pill buttons */
+  --radius-lg:26px;
+  --radius:20px;
+  --radius-sm:14px;
+  --pill:999px;
+  --shadow-soft:0 18px 40px -28px rgba(49,46,82,.35);
+  --shadow-lift:0 22px 44px -26px rgba(88,72,191,.45);
+
+  /* type */
+  --font-head:'Fraunces', Georgia, serif;
+  --font-body:'Nunito', 'Noto Sans Devanagari', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* motion: smooth deceleration, no bounce */
+  --ease-out:cubic-bezier(.16,1,.3,1);
+}

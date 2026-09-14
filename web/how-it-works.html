@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How Samvaad works</title>
+<meta name="description" content="How Samvaad reads a conversation, what you get back, and what happens to your data.">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--font-body);line-height:1.65;font-size:16px}
+  a{color:var(--primary-deep)}
+  .wrap{max-width:760px;margin:0 auto;padding:max(28px,env(safe-area-inset-top)) 22px 64px}
+
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:34px}
+  .brand{font-family:var(--font-head);font-weight:600;font-size:22px;color:var(--ink);text-decoration:none}
+  .brand span{color:var(--primary)}
+  .pill-link{font-weight:800;font-size:14px;text-decoration:none;color:var(--primary-deep);
+    background:var(--primary-soft);padding:10px 16px;border-radius:var(--pill);min-height:44px;display:inline-flex;align-items:center}
+
+  .eyebrow{font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--primary);margin:0 0 10px}
+  h1{font-family:var(--font-head);font-weight:600;font-size:clamp(34px,8vw,48px);line-height:1.08;letter-spacing:-.015em;margin:0 0 16px}
+  h1 em,h2 em{font-style:italic;font-weight:500;color:var(--primary)}
+  .lead{font-family:var(--font-head);font-style:italic;font-weight:500;font-size:clamp(18px,4.4vw,20px);color:var(--ink-soft);margin:0 0 46px;max-width:34em}
+  h2{font-family:var(--font-head);font-weight:600;font-size:clamp(24px,5.6vw,30px);line-height:1.15;margin:0 0 10px}
+  section{margin:0 0 56px}
+  section > p{color:var(--ink-soft);margin:0 0 22px;max-width:38em}
+
+  /* ── flow charts ──
+     Built from real HTML rather than one big image, so they reflow on any phone and every word stays
+     selectable and readable. Vertical on phones, horizontal where there is room. */
+  .flow{display:flex;flex-direction:column;align-items:stretch;gap:0;counter-reset:step}
+  .node{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px 16px 62px;box-shadow:var(--shadow-soft)}
+  .node::before{counter-increment:step;content:counter(step);position:absolute;left:16px;top:16px;width:30px;height:30px;
+    border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;background:var(--primary);color:#fff}
+  .node b{display:block;font-size:16px;font-weight:800;margin-bottom:2px}
+  .node span{display:block;font-size:14.5px;color:var(--ink-soft);line-height:1.5}
+  .node.split{padding:16px 18px 16px 62px}
+  .arrow{height:30px;display:grid;place-items:center}
+  .arrow svg{width:16px;height:30px}
+  .branches{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .branches .node{padding:16px 16px 16px 16px}
+  .branches .node::before{display:none}
+  .tag{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 9px;border-radius:var(--pill);margin-bottom:8px}
+  .tag.play{background:var(--primary-soft);color:var(--primary-deep)}
+  .tag.read{background:var(--orchid);color:var(--orchid-ink)}
+
+  /* data lifecycle: three lanes */
+  .lanes{display:grid;gap:12px}
+  .lane{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-soft)}
+  .lane .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center}
+  .lane .ic svg{width:24px;height:24px}
+  .lane b{display:block;font-weight:800;font-size:16px}
+  .lane .path{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px;color:var(--ink-soft);margin-top:2px}
+  .lane .path i{font-style:normal;color:var(--line)}
+  .end{font-size:12px;font-weight:800;letter-spacing:.04em;padding:6px 11px;border-radius:var(--pill);white-space:nowrap;text-align:center}
+  .end.gone{background:var(--calm);color:var(--calm-ink)}
+  .end.kept{background:var(--primary-soft);color:var(--primary-deep)}
+  .ic.gone{background:var(--calm)} .ic.gone svg{stroke:var(--calm-ink)}
+  .ic.kept{background:var(--primary-soft)} .ic.kept svg{stroke:var(--primary-deep)}
+
+  /* scores */
+  .scores{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .score{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+  .score b{font-family:var(--font-head);font-weight:600;font-size:18px;display:block}
+  .score span{font-size:14.5px;color:var(--ink-soft)}
+  .score.up{background:var(--calm);border-color:transparent}
+  .scale{display:flex;height:10px;border-radius:var(--pill);overflow:hidden;margin:18px 0 6px}
+  .scale i{flex:1}
+  .scale-lab{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-soft)}
+
+  .note{background:var(--warm);border-radius:var(--radius);padding:18px 20px;color:var(--ink)}
+  .note b{font-weight:800}
+
+  .cta{text-align:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:34px 22px}
+  .cta h2{margin-bottom:8px}
+  .cta p{color:var(--ink-soft);margin:0 auto 22px;max-width:30em}
+  .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .btn{font-family:var(--font-body);font-weight:800;font-size:16px;border:none;border-radius:var(--pill);padding:14px 26px;min-height:48px;
+    text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:transform .2s var(--ease-out),box-shadow .2s var(--ease-out)}
+  .btn.primary{background:var(--primary);color:#fff;box-shadow:var(--shadow-lift)}
+  .btn.primary:active{background:var(--primary-deep);transform:scale(.98)}
+  .btn.ghost{background:transparent;color:var(--primary-deep);border:1.5px solid var(--line)}
+
+  footer{margin-top:40px;text-align:center;font-size:13px;color:var(--ink-soft)}
+
+  @media (min-width:720px){
+    .flow.h{flex-direction:row;align-items:stretch}
+    .flow.h .node{flex:1;padding:58px 16px 16px 16px}
+    .flow.h .node::before{left:16px;top:16px}
+    .flow.h .arrow{height:auto;width:26px}
+    .flow.h .arrow svg{transform:rotate(-90deg)}
+  }
+  @media (max-width:420px){
+    .branches,.scores{grid-template-columns:1fr}
+    /* on narrow phones the two choice cards pull back under the step number so they are not squeezed */
+    .node.split .branches{margin-left:-44px}
+    .lane{grid-template-columns:auto 1fr}
+    .lane .end{grid-column:2;justify-self:start}
+  }
+  @media (prefers-reduced-motion: reduce){ .btn{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <a class="brand" href="index.html">Samvaad<span>.</span></a>
+    <a class="pill-link" href="intro.html">Watch the intro</a>
+  </div>
+
+  <p class="eyebrow">How it works</p>
+  <h1>See the conversation, <em>not just the argument.</em></h1>
+  <p class="lead">Samvaad reads a real conversation between the two of you and shows you what happened, what changed it, and what you could say instead. Here is exactly how, and what happens to your words.</p>
+
+  <!-- 1. the journey -->
+  <section>
+    <p class="eyebrow">The journey</p>
+    <h2>From a hard chat to a <em>kinder line</em></h2>
+    <p>It takes a few minutes, and you choose how you want to see the result.</p>
+
+    <div class="flow">
+      <div class="node"><b>Bring in the conversation</b><span>Paste the chat straight from WhatsApp, or upload a recording. Hinglish, Hindi and English all work.</span></div>
+      <div class="arrow" aria-hidden="true"><svg viewBox="0 0 16 30" fill="none" stroke="var(--line)" stroke-width="2" stroke-linecap="round"><path d="M8 2v24M3 20l5 6 5-6"/></svg></div>
+      <div class="node"><b>Smart analysis reads it</b><span>It looks at who said what, where the tone shifted, and which words turned it.</span></div>
+      <div class="arrow" aria-hidden="true"><svg viewBox="0 0 16 30" fill="none" stroke="var(--line)" stroke-width="2" stroke-linecap="round"><path d="M8 2v24M3 20l5 6 5-6"/></svg></div>
+      <div class="node"><b>You get a score</b><span>A clear number for the conversation, with the parts that make it up.</span></div>
+      <div class="arrow" aria-hidden="true"><svg viewBox="0 0 16 30" fill="none" stroke="var(--line)" stroke-width="2" stroke-linecap="round"><path d="M8 2v24M3 20l5 6 5-6"/></svg></div>
+      <div class="node split"><b>Choose how to see it</b>
+        <div class="branches" style="margin-top:12px">
+          <div class="node"><span class="tag play">Play the reflection</span><b>Watch it</b><span>Your real moment plays back, acted out in your own words, then a kinder version of the same moment.</span></div>
+          <div class="node"><span class="tag read">Read the analysis</span><b>Read it</b><span>The full written report: what went wrong, what went well, and the exact lines to try.</span></div>
+        </div>
+      </div>
+      <div class="arrow" aria-hidden="true"><svg viewBox="0 0 16 30" fill="none" stroke="var(--line)" stroke-width="2" stroke-linecap="round"><path d="M8 2v24M3 20l5 6 5-6"/></svg></div>
+      <div class="node"><b>Track it over time</b><span>Each conversation adds to your trend, so you can see yourselves getting better.</span></div>
+    </div>
+  </section>
+
+  <!-- 2. data -->
+  <section>
+    <p class="eyebrow">Your privacy</p>
+    <h2>What happens to <em>your words</em></h2>
+    <p>Only one thing is kept, and only you can open it.</p>
+
+    <div class="lanes">
+      <div class="lane">
+        <div class="ic gone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+        <div><b>Your recording</b><div class="path">Turned into text <i>&rarr;</i> never stored</div></div>
+        <div class="end gone">Not kept</div>
+      </div>
+      <div class="lane">
+        <div class="ic gone" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></div>
+        <div><b>Your full chat</b><div class="path">Read once to build your reflection <i>&rarr;</i> not stored</div></div>
+        <div class="end gone">Not kept</div>
+      </div>
+      <div class="lane">
+        <div class="ic kept" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="13" height="18" rx="2.5"/><path d="M8 8h5M8 12h5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/><path d="M15 13v-1.5a2 2 0 0 1 4 0V13"/></svg></div>
+        <div><b>Your walkthrough</b><div class="path">Score, patterns, suggested lines and the short moment it replays <i>&rarr;</i> saved to your account</div></div>
+        <div class="end kept">Only you</div>
+      </div>
+    </div>
+    <p style="margin-top:16px">Trying it as a guest? Then nothing is saved at all.</p>
+  </section>
+
+  <!-- 3. scores -->
+  <section>
+    <p class="eyebrow">Your score</p>
+    <h2>What the <em>numbers</em> mean</h2>
+    <p>Every part is out of 100. Higher is better, except heat, where lower is calmer.</p>
+    <div class="scores">
+      <div class="score up"><b>Overall</b><span>How the conversation went, all things considered.</span></div>
+      <div class="score"><b>Connection</b><span>How much you turned toward each other.</span></div>
+      <div class="score"><b>Empathy</b><span>How well each of you heard the other.</span></div>
+      <div class="score"><b>Heat</b><span>How escalated it got. If it runs high, Samvaad offers a minute to breathe first.</span></div>
+    </div>
+    <div class="scale" aria-hidden="true"><i style="background:var(--risk)"></i><i style="background:var(--amber)"></i><i style="background:var(--calm-ink)"></i></div>
+    <div class="scale-lab" aria-hidden="true"><span>Needs care</span><span>Mixed</span><span>Going well</span></div>
+  </section>
+
+  <!-- 4. good to know -->
+  <section>
+    <p class="eyebrow">Good to know</p>
+    <h2>Before you <em>start</em></h2>
+    <div class="note"><b>Three free conversations.</b> Each account gets three during the trial. If a lot of people are reflecting at the same moment, you may wait a few seconds. Nothing is lost while you wait, and it will carry on by itself.</div>
+  </section>
+
+  <div class="cta">
+    <h2>Ready to look at <em>yours?</em></h2>
+    <p>One conversation, a few minutes, and you will see it differently.</p>
+    <div class="btns">
+      <a class="btn primary" href="login.html">Get started</a>
+      <a class="btn ghost" href="intro.html">Watch the intro</a>
+    </div>
+  </div>
+
+  <footer>Samvaad. Private by design. <a href="privacy.html">Privacy</a></footer>
+</div>
+</body>
+</html>

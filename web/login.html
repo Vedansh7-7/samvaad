@@ -1,8 +1,8 @@
 <!--
-  Samvaad — sign in
+  Samvaad, sign in
   Design system reference (new aesthetic): soft wellness pastels, glassmorphism, Fraunces serif + Mulish.
   Auth: Supabase GoTrue REST (magic link + email OTP code). Anon key is public by design; RLS protects data.
-  No SDK, no localStorage — session held in memory for the demo.
+  No SDK, no localStorage, session held in memory for the demo.
 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,7 +12,7 @@
   :root{
     --peach:#FDEEF0; --blush:#F8D6DD; --lav:#F0DCE6; --sky:#E6D6E2;
     --ink:#2E2024; --muted:#6E5258; --faint:#7A5E63;
-    /* cherry — the brand action colour */
+    /* cherry, the brand action colour */
     --cherry:#C8324B; --cherry-2:#A52741; --cherry-soft:#F8DDE0;
     --teal:#93C6BD; --line:#2C2622;
     --glass:rgba(255,255,255,.46); --glass-brd:rgba(255,255,255,.7);
@@ -155,7 +155,7 @@
   <div id="state-email">
     <p class="eyebrow dv">नमस्ते</p>
     <h1>Welcome back</h1>
-    <p class="sub">Sign in to continue your reflections — we'll send a secure link to your inbox.</p>
+    <p class="sub">Sign in to continue your reflections, we'll send a secure link to your inbox.</p>
     <div class="field">
       <label for="email">Email</label>
       <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
@@ -170,7 +170,7 @@
   <div id="state-code" class="hide">
     <p class="eyebrow">Almost there</p>
     <h1>Check your inbox</h1>
-    <p class="sub">We sent a link to <b id="emailEcho"></b>. Tap it to sign in — or enter the 6-digit code from the email.</p>
+    <p class="sub">We sent a link to <b id="emailEcho"></b>. Tap it to sign in, or enter the 6-digit code from the email.</p>
     <div class="field">
       <label for="code">Sign-in code</label>
       <input id="code" class="otp" inputmode="numeric" maxlength="6" placeholder="••••••">
@@ -259,13 +259,13 @@
       $('doneSub').textContent = 'Signed in as ' + currentEmail + '. Your reflections will be saved.';
       show('done');
     }catch(err){
-      m.className='msg err'; m.textContent = 'That code didn\u2019t work — check it, or use the link in the email.';
+      m.className='msg err'; m.textContent = 'That code didn\u2019t work, check it, or use the link in the email.';
     }finally{ busy($('verifyBtn'), false); }
   };
 
   $('resendBtn').onclick = async function(){
     var m = $('msg2'); m.className='msg'; m.textContent='';
-    try{ await sbAuth(otpPath(), { email: currentEmail, create_user: true }); m.className='msg ok'; m.textContent='Sent again — check your inbox.'; }
+    try{ await sbAuth(otpPath(), { email: currentEmail, create_user: true }); m.className='msg ok'; m.textContent='Sent again, check your inbox.'; }
     catch(err){ m.className='msg err'; m.textContent = err.message; }
   };
   $('backBtn').onclick = function(){ show('email'); $('msg1').textContent=''; };
@@ -290,7 +290,7 @@
   $('guestBtn').onclick = function(){
     SamvaadAuth.setGuest(); // app.html allows guests through (no persistence)
     $('doneH').textContent = 'Welcome, friend.';
-    $('doneSub').textContent = 'Exploring as a guest — your sessions won\u2019t be saved until you sign in.';
+    $('doneSub').textContent = 'Exploring as a guest, your sessions won\u2019t be saved until you sign in.';
     show('done');
   };
   $('enterBtn').onclick = function(){
