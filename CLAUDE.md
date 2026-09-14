@@ -155,6 +155,8 @@ Intentional flows — do NOT "fix" these, they are by design:
 - The WhatsApp check-in slide is asked once per browser (`samvaad.checkinAsked`), never after a number
   is given.
 - Sign-in codes are accepted at 6 to 10 digits: Supabase's OTP length is a dashboard setting.
+- Input order is deliberate: **Upload audio** first and selected by default (the headline way in), **Chats**
+  second, **Record** last and visually quiet. The intro reel leads with uploading too.
 - The **Record** tab records audio (MediaRecorder, any modern browser), with no live transcript. Tap to
   start and stop; it auto-stops at 10 minutes (founder's call) or at `limits.maxAudioSeconds` from
   `/api/me` if that is ever shorter, because the backend refuses audio it cannot analyse. The recording then goes through the

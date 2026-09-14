@@ -13,6 +13,8 @@ const path = require('path');
 
 const OUT = path.join(__dirname, 'out', 'product');
 const BASE = 'http://localhost:8123';
+// the recording the footage uploads: Upload audio is the headline way in
+const UPLOAD = path.join(__dirname, 'assets', 'Kavya and Rohit, Tuesday night.m4a');
 const J = (b, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(b) });
 
 const CHAT = [
@@ -86,6 +88,7 @@ const HISTORY = [
     limits: ANALYSIS.limits, phone: '919876543210'
   })));
   await ctx.route('**/api/history', r => r.fulfill(J({ sessions: HISTORY.slice().reverse() })));
+  await ctx.route('**/api/transcribe', async r => { await new Promise(x => setTimeout(x, 80)); r.fulfill(J({ transcript: CHAT, turns: [], seconds: 33, truncated: false })); });
   await ctx.route('**/api/analyze', async r => { await new Promise(x => setTimeout(x, 80)); r.fulfill(J(ANALYSIS)); });
   await ctx.route('**/auth/v1/**', r => r.fulfill(J({
     id: 'u1', email: 'kavya@example.com', access_token: 'stub', refresh_token: 'stub', expires_in: 360000,
@@ -125,13 +128,13 @@ const HISTORY = [
     try { await cdp.send('Page.screencastFrameAck', { sessionId }); } catch (e) {}
   });
 
-  // ── Scene 1: paste the chat ──────────────────────────────────────────────
+  // ── Scene 1: upload the recording ──────────────────────────────────────────
   await page.evaluate(() => {
     startSession('relationship', 'couple');
     document.getElementById('nameA').value = 'Kavya';
     document.getElementById('nameB').value = 'Rohit';
     document.getElementById('consentChk').checked = true;
-    document.getElementById('transcript').value = '';
+    document.querySelector('.tabs .tab[data-tab="up"]').click();
   });
   await page.evaluate(() => {
     const t = document.querySelector('.tabs');
@@ -141,16 +144,13 @@ const HISTORY = [
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 92, maxWidth: 1080, maxHeight: 1920, everyNthFrame: 1 });
   await wait(400);
   mark('paste_start');
-  await page.evaluate((chat) => new Promise(res => {
-    const ta = document.getElementById('transcript'); ta.focus();
-    const lines = chat.split('\n'); let n = 0;
-    (function step() {
-      n++; ta.value = lines.slice(0, n).join('\n'); ta.dispatchEvent(new Event('input'));
-      ta.scrollTop = ta.scrollHeight;
-      if (n < lines.length) setTimeout(step, 300); else res();
-    })();
-  }), CHAT);
-  await wait(450);
+  await wait(700);
+  await page.evaluate(() => document.getElementById('drop').classList.add('over'));   // the file arriving
+  await wait(500);
+  await page.setInputFiles('#file', UPLOAD);
+  await page.waitForFunction(() => /MB/.test(document.getElementById('fileName').textContent), null, { timeout: 8000 });
+  await page.evaluate(() => document.getElementById('drop').classList.remove('over'));
+  await wait(1300);
   await page.evaluate(() => {
     const b = document.getElementById('goBtn');
     window.scrollTo({ top: b.getBoundingClientRect().top + window.scrollY - 380, behavior: 'smooth' });

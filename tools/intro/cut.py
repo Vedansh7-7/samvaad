@@ -13,7 +13,8 @@ F = cap['frames']; M = cap['marks']; T0 = F[0]['t']
 PAD = 0.3
 # (name, start mark, end mark, target seconds, extra hold on the last frame before scaling)
 CLIPS = [
-  ('s1', 'paste_start', 'click_analyse', 3.48 + PAD, 0.5),
+  # uploading is the headline way in, so the first clip shows a recording arriving
+  ('s1', 'paste_start', 'click_analyse', 4.69 + PAD, 0.3),
   # ends on the walk-through opener; the next slide shows an empty room until the avatars load
   ('s2', 'score_shown', ('walk_open', 2.3), 5.99 + PAD, 0),
   ('s3', 'act1_start',  'patterns',      6.27 + PAD, 0),

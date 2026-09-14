@@ -214,7 +214,7 @@ finishes. It spends real Groq quota and waits out the per-minute window, so allo
 ## 10. The intro
 
 `web/intro.html` is a 9:16 reel, about 46 seconds, built so nobody has to sit through an
-explanation: a fast chat hook, five clips of the real product (paste, score, the moment played
+explanation: a fast chat hook, five clips of the real product (upload the recording, score, the moment played
 back, the line that turned it and the kinder one, the score tracked over time), a privacy card,
 then the two Rive rigs and Get started. Every card has its own timed voice line.
 

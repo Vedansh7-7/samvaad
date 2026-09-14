@@ -114,6 +114,8 @@
   .tab{border:1px solid var(--glass-brd);background:var(--glass);border-radius:99px;padding:8px 15px;font:inherit;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:.2s}
   .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
   .tab .bonus{font-size:11px;opacity:.85;font-weight:400}
+  .tab.quiet{background:none;border-color:transparent;font-weight:600}
+  .tab.quiet[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 
   .btn{border:none;border-radius:999px;padding:13px 24px;font:inherit;font-weight:700;font-size:15px;cursor:pointer;color:#fff;background:linear-gradient(180deg,var(--cherry),var(--cherry-2));box-shadow:0 12px 24px -12px rgba(88,72,191,.55);transition:transform .15s,box-shadow .2s,opacity .2s}
   .btn:hover{transform:translateY(-1px)} .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
@@ -545,11 +547,12 @@
         <input type="text" id="waNumber" placeholder="+91 98765 43210" inputmode="tel" autocomplete="tel">
       </div>
       <div class="tabs">
-        <button class="tab" data-tab="text" aria-selected="true">Chats</button>
-        <button class="tab" data-tab="rec" aria-selected="false">Record</button>
-        <button class="tab" data-tab="up" aria-selected="false">Upload audio</button>
+        <!-- Upload audio is the headline way in, the chat second; recording stays available but quiet -->
+        <button class="tab" data-tab="up" aria-selected="true">Upload audio</button>
+        <button class="tab" data-tab="text" aria-selected="false">Chats</button>
+        <button class="tab quiet" data-tab="rec" aria-selected="false">Record</button>
       </div>
-      <div id="tab-text">
+      <div id="tab-text" class="hide">
         <label class="fl" id="taLbl">Your chat</label>
         <textarea id="transcript" maxlength="25000" placeholder="Kavya: Aaj phir tumne mummy ko call nahi kiya.&#10;Rohit: Yaar office mein kaam tha.&#10;Kavya: Hamesha koi excuse hota hai."></textarea>
         <p class="hint" id="taHint">Copy the chat straight from WhatsApp and paste it here, or type it as <code>Name: what they said</code>. Hinglish and Devanagari welcome.</p>
@@ -562,8 +565,8 @@
         <div class="hint" id="micHint">Tap to start recording, and tap again when you are done.</div>
         <div id="recPlay"></div>
       </div>
-      <div id="tab-up" class="hide">
-        <div class="drop" id="drop"><strong>Drop an audio file</strong> or click to browse<br><span class="hint">MP3, WAV, M4A · via your backend or Deepgram key</span><input type="file" id="file" accept="audio/*" class="hide"></div>
+      <div id="tab-up">
+        <div class="drop" id="drop"><strong>Choose the recording</strong> or drop it here<br><span class="hint">Voice notes and call recordings · MP3, M4A, WAV, OGG</span><input type="file" id="file" accept="audio/*" class="hide"></div>
         <div class="hint" id="fileName"></div>
       </div>
       <div class="consent" id="consentBox"><input type="checkbox" id="consentChk"><label for="consentChk">This includes another person. I confirm I have their consent to analyse it.</label></div>
@@ -655,7 +658,7 @@
 </div>
 
 <script>
-var S={mode:'relationship',sub:'couple',tab:'text',audioFile:null,audioURL:null,recT:'',recording:false,report:null,original:[],improved:[],track:null,mute:false,playing:false,idx:0,sessions:[],turns:[]};
+var S={mode:'relationship',sub:'couple',tab:'up',audioFile:null,audioURL:null,recT:'',recording:false,report:null,original:[],improved:[],track:null,mute:false,playing:false,idx:0,sessions:[],turns:[]};
 var $=function(id){return document.getElementById(id);};
 document.body.setAttribute('data-mode','relationship');
 
@@ -814,7 +817,7 @@ function applyMe(){
   if(typeof REC!=='undefined'&&REC.state==='idle'&&!REC.has)recPaint('idle');
   syncMode();      // re-render the hint now that the real limits are known
   var d=$('drop');
-  if(d&&lim.maxMinutes)d.innerHTML='<strong>Drop an audio file</strong> or click to browse<br><span class="hint">MP3, WAV, M4A · up to about '+lim.maxMinutes+' minutes</span><input type="file" id="file" accept="audio/*" class="hide">',bindFile();
+  if(d&&lim.maxMinutes)d.innerHTML='<strong>Choose the recording</strong> or drop it here<br><span class="hint">Voice notes and call recordings · up to about '+lim.maxMinutes+' minutes</span><input type="file" id="file" accept="audio/*" class="hide">',bindFile();
 }
 async function loadMe(){
   try{
