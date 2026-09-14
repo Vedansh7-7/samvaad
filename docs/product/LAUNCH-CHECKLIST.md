@@ -45,11 +45,11 @@ those files.
 | Compressed images | **Have** | No raster images on the site. Clips are H.264 at about 100 to 160 KB, the music is 620 KB, and `og.jpg` is compressed. |
 | Internal links | **Have** (+ **Done**) | Intro, How it works, sign in, privacy, terms and the You page all link to each other. Terms links were added. |
 | Breadcrumbs | **Drop** | The site is a few flat pages. Breadcrumbs help deep hierarchies. |
-| 5 FAQs | **Done** | Five questions on How it works (privacy, languages, length, consent, cost), with FAQ structured data. |
-| Local schema | **Drop** (+ **Done**) | LocalBusiness schema is for places people visit. Samvaad is online, so it has Organization, WebApplication and FAQPage structured data instead. |
+| 5 FAQs | **Done** | Five questions at the bottom of the app's Home tab (privacy, languages, length, consent, cost), above the footer. |
+| Local schema | **Drop** (+ **Done**) | LocalBusiness schema is for places people visit. Samvaad is online, so it has Organization and WebApplication structured data instead. |
 | Maps and directions | **Drop** | No physical location to visit. |
 | Real reviews on the home page | **Later** | Trigger: 10 or more reviews where people ticked "Samvaad may quote this". The tick box and an "OK to quote" tag in admin shipped today, so the reviews collected from now on can be used. Then show three on the intro's last card and on How it works. |
-| Case studies / blog | **Later** | Trigger: the first real stories, told with consent, after launch. Needs a `posts` table, an editor in admin, a public blog page and its own sitemap entries. |
+| Case studies / blog | **Done** (+ **Later**) | Home shows "Reads for you" cards from `web/blog/posts.json`: How it works, six conflict patterns, how a samvaad can heal, and a composite case study (labelled as such). **Later:** an editor in admin so posts can be written without a code change, and real case studies told with consent. |
 | Team photo | **Later** | Trigger: an About page, which is worth having before paid plans. The founder decides whether faces go on it. |
 
 ## Security
@@ -90,7 +90,7 @@ those files.
 ## Later, with triggers
 
 - **Reviews on the home page**: once 10 or more reviews are marked OK to quote.
-- **Blog and case studies**: once real stories exist with consent.
+- **Blog editor in admin, and real case studies**: once someone is writing posts regularly, and once real stories exist with consent.
 - **About page and team photo**: before paid plans, founder's call on faces.
 - **Column-level encryption of stored reports**: before paid users, or when stored reports grow.
 - **Dependabot alerts**: any time; a switch in the GitHub repository settings.

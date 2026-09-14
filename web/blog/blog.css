@@ -1,0 +1,56 @@
+/* Samvaad reads: one calm article layout shared by every blog post. Colours and type come from
+   /tokens.css, so the palette changes in one place. */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--font-body);font-size:17.5px;line-height:1.75}
+a{color:var(--primary-deep)}
+.wrap{max-width:680px;margin:0 auto;padding:max(26px,env(safe-area-inset-top)) 22px 72px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:38px}
+.brand{font-family:var(--font-head);font-weight:600;font-size:22px;color:var(--ink);text-decoration:none}
+.brand span{color:var(--primary)}
+.pill-link{font-weight:800;font-size:14px;text-decoration:none;color:var(--primary-deep);background:var(--primary-soft);
+  padding:10px 16px;border-radius:var(--pill);min-height:44px;display:inline-flex;align-items:center}
+
+.eyebrow{font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--primary);margin:0 0 12px}
+h1{font-family:var(--font-head);font-weight:600;font-size:clamp(32px,7.4vw,44px);line-height:1.1;letter-spacing:-.015em;margin:0 0 14px}
+h1 em,h2 em{font-style:italic;font-weight:500;color:var(--primary)}
+.meta{font-size:14px;color:var(--ink-soft);margin:0 0 30px}
+.lead{font-family:var(--font-head);font-style:italic;font-weight:500;font-size:clamp(19px,4.6vw,22px);line-height:1.55;color:var(--ink-soft);margin:0 0 40px}
+
+article h2{font-family:var(--font-head);font-weight:600;font-size:clamp(23px,5.4vw,28px);line-height:1.2;margin:46px 0 12px}
+article h3{font-weight:800;font-size:18px;margin:30px 0 6px}
+article p{margin:0 0 18px}
+article ul,article ol{padding-left:22px;margin:0 0 18px}
+article li{margin:0 0 8px}
+
+/* "it sounds like" / "try instead" pairs */
+.pair{display:grid;gap:10px;margin:14px 0 22px}
+.say{border-radius:var(--radius-sm);padding:13px 16px;font-size:16px;line-height:1.55}
+.say b{display:block;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
+.say.hurt{background:#F6E3DD;color:#7E3B2A}
+.say.hurt b{color:var(--risk)}
+.say.kind{background:var(--calm);color:#244F43}
+.say.kind b{color:var(--calm-ink)}
+
+.note{background:var(--surface);border-radius:var(--radius);padding:20px 22px;margin:26px 0}
+.note b{font-weight:800}
+.note.warm{background:#FBEBDD}
+.practice{background:var(--calm);border-radius:var(--radius);padding:22px 24px;margin:28px 0}
+.practice h3{margin-top:0;color:#244F43}
+.practice ol{margin-bottom:0}
+blockquote{margin:34px auto;max-width:30em;padding:0 8px;text-align:center;font-family:var(--font-head);font-style:italic;font-size:21px;line-height:1.5;color:var(--ink)}
+blockquote::before{content:"";display:block;width:36px;height:2px;margin:0 auto 16px;border-radius:2px;background:var(--primary-soft)}
+.sources{font-size:14px;color:var(--ink-soft);border-top:1px solid var(--line);margin-top:46px;padding-top:18px}
+.sources p{margin:0 0 8px}
+
+.cta{text-align:center;background:var(--surface);border-radius:var(--radius-lg);padding:32px 22px;margin-top:48px}
+.cta h2{font-family:var(--font-head);font-weight:600;font-size:26px;margin:0 0 8px}
+.cta p{color:var(--ink-soft);margin:0 auto 20px;max-width:28em;font-size:16px}
+.btn{font-family:var(--font-body);font-weight:800;font-size:16px;border-radius:var(--pill);padding:14px 26px;min-height:48px;
+  text-decoration:none;display:inline-flex;align-items:center;justify-content:center;background:var(--primary);color:#fff;box-shadow:var(--shadow-lift)}
+.more{margin-top:40px}
+.more a{display:block;text-decoration:none;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;margin:0 0 10px}
+.more a b{display:block;font-family:var(--font-head);font-weight:600;font-size:18px}
+.more a span{font-size:14px;color:var(--ink-soft)}
+footer{margin-top:40px;text-align:center;font-size:13px;color:var(--ink-soft)}

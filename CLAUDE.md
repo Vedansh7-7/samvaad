@@ -152,6 +152,10 @@ Intentional flows — do NOT "fix" these, they are by design:
   model or spending an allowance, and its voice lines are pre-recorded. An edited sample is a normal
   analysis. Regenerate `web/samples/` if the sample text in `app.html` ever changes.
 - The Talk screen's intro line is shown as poppable rising bubbles until the analysis is ready.
+- **Home** is: the Talk something through card, "Reads for you" blog cards, five FAQs, and a footer with contact
+  details. "What are we looking at?", Recent reflections and the check-in tile live at the top of **You**.
+  Blog posts are static pages in `web/blog/`, listed in `web/blog/posts.json` (add a page and one entry to
+  publish). The case study is a labelled composite; never present an invented story as a real user.
 - The WhatsApp check-in slide is asked once per browser (`samvaad.checkinAsked`), never after a number
   is given.
 - Sign-in codes are accepted at 6 to 10 digits: Supabase's OTP length is a dashboard setting.

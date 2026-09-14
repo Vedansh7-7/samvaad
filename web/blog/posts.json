@@ -1,0 +1,34 @@
+[
+  {
+    "url": "/how-it-works.html",
+    "tag": "Samvaad",
+    "tint": "periwinkle",
+    "title": "How Samvaad works",
+    "excerpt": "From a hard chat to a kinder line: what happens to your conversation, step by step, and what is kept.",
+    "minutes": 4
+  },
+  {
+    "url": "/blog/common-relationship-conflicts.html",
+    "tag": "Relationships",
+    "tint": "peach",
+    "title": "Six patterns that turn a small talk into a big fight",
+    "excerpt": "Blame openers, always and never, defending before hearing. How to notice them, and what to say instead.",
+    "minutes": 7
+  },
+  {
+    "url": "/blog/how-a-samvaad-can-heal.html",
+    "tag": "Wellness",
+    "tint": "green",
+    "title": "How a samvaad can heal",
+    "excerpt": "Why being truly heard softens old hurt, and a gentle five-step way back to each other, with a breath to begin.",
+    "minutes": 6
+  },
+  {
+    "url": "/blog/case-study-sunday-plans.html",
+    "tag": "Case study",
+    "tint": "orchid",
+    "title": "Case study: the argument about Sunday",
+    "excerpt": "A couple, one recurring fight, and what changed when they saw it played back. A composite story.",
+    "minutes": 5
+  }
+]

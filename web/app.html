@@ -435,6 +435,34 @@
   .rcard .rwhen{font-size:11px;color:var(--muted)}
   .recent-empty{width:100%;font-size:13px;color:var(--muted);padding:18px;border:1px dashed var(--hair);border-radius:16px;text-align:center}
 
+  /* Home: reads, questions, footer */
+  #viewYou #homeRecent,#viewYou .checkin{margin-bottom:18px}
+  .bcard .bart{min-height:64px}
+  .blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:12px}
+  .bcard{display:flex;flex-direction:column;text-decoration:none;color:var(--ink);background:var(--glass);border:1px solid var(--glass-brd);border-radius:20px;overflow:hidden;transition:transform .2s,box-shadow .2s}
+  .bcard:hover,.bcard:focus-visible{transform:translateY(-3px);box-shadow:0 16px 30px -20px rgba(49,46,82,.5)}
+  .bcard .bart{height:68px;display:flex;align-items:flex-end;justify-content:space-between;padding:12px 14px}
+  .bcard .bart svg{width:46px;height:34px;opacity:.75}
+  .bcard .btag{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,255,255,.7);padding:4px 9px;border-radius:99px}
+  .bcard .bbody{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;flex:1}
+  .bcard .btitle{font-family:'Fraunces',serif;font-weight:600;font-size:17.5px;line-height:1.25}
+  .bcard .bex{font-size:13px;color:var(--muted);line-height:1.45}
+  .bcard .bmin{margin-top:auto;padding-top:6px;font-size:12px;font-weight:700;color:var(--accent-ink)}
+  .t-periwinkle{background:linear-gradient(150deg,#E1DEF7,#F1F0F9)}.t-periwinkle .btag{color:#5848BF}.t-periwinkle svg{stroke:#5848BF}
+  .t-peach{background:linear-gradient(150deg,#F6DECB,#FBEFE6)}.t-peach .btag{color:#A55F2C}.t-peach svg{stroke:#A55F2C}
+  .t-green{background:linear-gradient(150deg,#CFE7E1,#EAF4F1)}.t-green .btag{color:#367D69}.t-green svg{stroke:#367D69}
+  .t-orchid{background:linear-gradient(150deg,#EEDDEE,#F7EEF7)}.t-orchid .btag{color:#9D559D}.t-orchid svg{stroke:#9D559D}
+  .home-faq details{background:var(--glass);border:1px solid var(--glass-brd);border-radius:16px;margin:0 0 8px}
+  .home-faq summary{cursor:pointer;list-style:none;padding:14px 44px 14px 16px;font-weight:700;font-size:14.5px;position:relative}
+  .home-faq summary::-webkit-details-marker{display:none}
+  .home-faq summary::after{content:"+";position:absolute;right:16px;top:10px;font-size:20px;color:var(--accent-ink)}
+  .home-faq details[open] summary::after{content:"\2212"}
+  .home-faq details p{margin:0;padding:0 16px 14px;font-size:14px;color:var(--muted);line-height:1.6}
+  .home-foot{margin:28px 0 8px;padding:22px 4px 6px;border-top:1px solid var(--glass-brd);text-align:center;font-size:13px;color:var(--muted)}
+  .home-foot p{margin:4px 0}
+  .home-foot a{color:var(--accent-ink);font-weight:600}
+  .hf-brand{font-family:'Fraunces',serif;font-weight:600;font-size:19px;color:var(--ink);margin-bottom:4px}
+  .hf-brand span{color:var(--accent)}
   .checkin{display:flex;align-items:center;gap:13px;padding:15px 16px;border-radius:18px;margin:18px 0 4px;cursor:pointer;background:var(--glass);border:1px solid var(--glass-brd);transition:transform .2s;width:100%;text-align:left;font:inherit}
   .checkin:hover{transform:translateY(-2px)}
   .checkin .ci{width:40px;height:40px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;background:var(--accent-soft)}
@@ -463,20 +491,12 @@
     .bottomnav .talk .tk{margin-top:0;width:auto;height:auto;background:none;border:none;box-shadow:none;color:var(--accent-ink)}
     .bottomnav .talk .tk svg{width:21px;height:21px}
 
-    #viewHome{display:grid;grid-template-columns:1fr 1fr;column-gap:26px;row-gap:6px;align-items:start;
-      grid-template-areas:"hero hero" "si sr" "ig rc" "ck rc"}
-    #viewHome>.hero{grid-area:hero;margin:6px 0 10px}
+    #viewHome>.hero{margin:6px 0 10px}
     #viewHome>.hero h2{font-size:27px}
-    #viewHome>.sec-intents{grid-area:si}
-    #viewHome>.intent-grid{grid-area:ig}
-    #viewHome>.sec-recent{grid-area:sr}
-    #viewHome>#homeRecent{grid-area:rc;flex-direction:column}
-    #viewHome>#homeRecent .rcard{width:auto}
-    #viewHome>.checkin{grid-area:ck;align-self:start;margin-top:16px}
+    #viewYou #homeRecent{flex-wrap:wrap}
   }
   @media (min-width:1240px){
     .wrap{max-width:1180px;padding-left:264px}
-    #viewHome{grid-template-columns:1.15fr .85fr;column-gap:34px}
   }
 
   /* a11y: keyboard focus visibility (inputs already have a focus ring) */
@@ -533,23 +553,24 @@
       <button class="btn" onclick="startSession()">Start a session →</button>
     </div>
 
-    <div class="sec-h sec-intents">What are we looking at?</div>
-    <!-- The trial runs ONE intent. "Just me" is built, kept, and simply closed: it un-hides when
-         /api/me reports selfMode (a global switch or a per-account flag in the admin console).
-         Do not delete it. -->
-    <div class="intent-grid">
-      <button class="intent" onclick="startSession('relationship','couple')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="9" r="3"/><circle cx="16" cy="10" r="2.6"/><path d="M3.4 19c.4-3 2.7-4.7 5.1-4.7"/><path d="M13.2 19c.3-2.6 2.2-4 4.3-4"/></svg></span><span class="ib"><span class="it">Relationship</span><span class="isub">A conversation between the two of you</span></span><span class="igo">→</span></button>
-      <button class="intent hide" id="intentSelf" onclick="startSession('self','solo')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.2"/><path d="M6 19c.4-3.3 3-5 6-5s5.6 1.7 6 5"/></svg></span><span class="ib"><span class="it">Just me</span><span class="isub">A quiet reflection, on your own</span></span><span class="igo">→</span></button>
+    <div class="sec-h">Reads for you</div>
+    <div class="blog-grid" id="blogGrid" aria-live="polite"></div>
+
+    <div class="sec-h">Questions</div>
+    <div class="home-faq">
+      <details><summary>Is my conversation private?</summary><p>Your recording is turned into text and never stored, and the full chat is read once and not kept. Only your walkthrough is saved, to your own account, and only you can open it. As a guest, nothing is saved at all.</p></details>
+      <details><summary>Which languages work?</summary><p>Hinglish, Hindi and English, including a mix of them in the same sentence. Upload a recording or paste a WhatsApp chat.</p></details>
+      <details><summary>How long can a conversation be?</summary><p>A long evening argument is fine. If something is longer than we can read in one go, the app tells you before you upload and asks you to trim it to the part that matters. Recording inside the app stops at 10 minutes.</p></details>
+      <details><summary>Does the other person need to agree?</summary><p>Yes. If the conversation includes someone else, confirm you have their consent before you analyse it. Samvaad asks every time.</p></details>
+      <details><summary>What does it cost?</summary><p>Every account starts with three free conversations. Need more during the trial? Message us and we will open up more.</p></details>
     </div>
 
-    <div class="sec-h sec-recent">Recent reflections <a onclick="view('dash')">See all →</a></div>
-    <div class="carousel" id="homeRecent"></div>
-
-    <button class="checkin hide" id="checkinTile" onclick="startSession('self','solo')">
-      <span class="ci"><svg width="22" height="16" viewBox="0 0 120 90" fill="none" stroke="var(--accent-ink)" stroke-width="3.4" stroke-linecap="round"><path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/><path d="M60 79 C44 56 38 40 32 30"/><path d="M60 79 C76 56 82 40 88 30"/></svg></span>
-      <span class="ct"><b>Today’s check-in</b><p>How was your day? Take a minute to reflect.</p></span>
-      <span class="cgo">→</span>
-    </button>
+    <footer class="home-foot">
+      <div class="hf-brand">Samvaad<span>.</span></div>
+      <p>Private by design. Made in India, for conversations in Hinglish, Hindi and English.</p>
+      <p class="hf-contact">Write to us at <a href="mailto:razieldecarte@gmail.com">razieldecarte@gmail.com</a>. We reply within 7 days.</p>
+      <p class="hf-links"><a href="how-it-works.html">How it works</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p>
+    </footer>
   </section>
 
   <!-- ANALYSE -->
@@ -621,6 +642,24 @@
 
   <!-- YOU -->
   <section id="viewYou" class="screen hide">
+    <div class="sec-h sec-intents">What are we looking at?</div>
+    <!-- The trial runs ONE intent. "Just me" is built, kept, and simply closed: it un-hides when
+         /api/me reports selfMode (a global switch or a per-account flag in the admin console).
+         Do not delete it. -->
+    <div class="intent-grid">
+      <button class="intent" onclick="startSession('relationship','couple')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="9" r="3"/><circle cx="16" cy="10" r="2.6"/><path d="M3.4 19c.4-3 2.7-4.7 5.1-4.7"/><path d="M13.2 19c.3-2.6 2.2-4 4.3-4"/></svg></span><span class="ib"><span class="it">Relationship</span><span class="isub">A conversation between the two of you</span></span><span class="igo">→</span></button>
+      <button class="intent hide" id="intentSelf" onclick="startSession('self','solo')"><span class="ig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.2"/><path d="M6 19c.4-3.3 3-5 6-5s5.6 1.7 6 5"/></svg></span><span class="ib"><span class="it">Just me</span><span class="isub">A quiet reflection, on your own</span></span><span class="igo">→</span></button>
+    </div>
+
+    <div class="sec-h sec-recent">Recent reflections <a onclick="view('dash')">See all →</a></div>
+    <div class="carousel" id="homeRecent"></div>
+
+    <button class="checkin hide" id="checkinTile" onclick="startSession('self','solo')">
+      <span class="ci"><svg width="22" height="16" viewBox="0 0 120 90" fill="none" stroke="var(--accent-ink)" stroke-width="3.4" stroke-linecap="round"><path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/><path d="M60 79 C44 56 38 40 32 30"/><path d="M60 79 C76 56 82 40 88 30"/></svg></span>
+      <span class="ct"><b>Today’s check-in</b><p>How was your day? Take a minute to reflect.</p></span>
+      <span class="cgo">→</span>
+    </button>
+
     <div class="you-sec glass card">
       <h3>Your account</h3>
       <div class="you-acct" id="acctId">…</div>
@@ -628,7 +667,7 @@
     </div>
     <div class="you-sec glass card">
       <h3>Learn how it works</h3>
-      <p class="hint" style="margin:0 0 12px">A short read on what happens to your conversation, step by step, and a 40-second video.</p>
+      <p class="hint" style="margin:0 0 12px">The full walkthrough of what happens to your conversation, and the 45-second video. More reads are on Home.</p>
       <div class="row" style="margin-top:0">
         <a class="btn soft" href="how-it-works.html" style="width:auto;text-decoration:none">How it works</a>
         <a class="btn soft" href="intro.html?from=app" style="width:auto;text-decoration:none">Watch the video</a>
@@ -744,7 +783,7 @@ function view(v){
   document.querySelectorAll('.bottomnav button').forEach(function(b){b.setAttribute('aria-current',String(b.dataset.tab===v));});
   if(v==='home')renderHome();
   if(v==='dash')renderDash();
-  if(v==='you')renderAcct();
+  if(v==='you'){renderAcct();renderHome();}
   window.scrollTo({top:0,behavior:'smooth'});
   floatSync();
   if(v==='home'||v==='dash')setTimeout(maybeReview,1200);
@@ -765,9 +804,27 @@ function renderHome(){
   var guest=SamvaadAuth.isGuest();
   if($('streakChip')){var n=streakCount();$('streakChip').textContent=n>0?('🔥 '+n+(n>1?' days':' day')):'New';}
   var c=$('homeRecent');if(!c)return;
-  if(!(S.sessions&&S.sessions.length)){c.innerHTML='<div class="recent-empty">'+(guest?'Sign in to keep your reflections here.':'No reflections yet, start your first session above.')+'</div>';return;}
+  if(!(S.sessions&&S.sessions.length)){c.innerHTML='<div class="recent-empty">'+(guest?'Sign in to keep your reflections here.':'No reflections yet. Start your first one from Talk.')+'</div>';return;}
   c.innerHTML=S.sessions.slice(0,8).map(function(s){var when=new Date(s.ts).toLocaleDateString([],{month:'short',day:'numeric'});return '<button class="rcard" onclick="view(\'dash\')"><span class="rsc" style="color:'+clr('overall',s.overall||0)+'">'+(s.overall||0)+'</span><span class="rpat dv">'+esc(s.pattern||'…')+'</span><span class="rwhen">'+(s.mode==='self'?'Reflection':'Relationship')+' · '+when+'</span></button>';}).join('');
 }
+
+/* Reads on Home. The list lives in web/blog/posts.json: to publish a new post, add its page under
+   web/blog/ and one entry to that file. */
+var BLOG_ART='<svg viewBox="0 0 120 90" fill="none" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/><path d="M60 79 C44 56 38 40 32 30"/><path d="M60 79 C76 56 82 40 88 30"/><path d="M16 80 Q60 89 104 80"/></svg>';
+function renderBlog(){
+  var g=$('blogGrid');if(!g||g.dataset.done)return;
+  fetch('blog/posts.json').then(function(r){return r.ok?r.json():[];}).then(function(posts){
+    g.dataset.done='1';
+    g.innerHTML=(posts||[]).map(function(p){
+      var tint=/^(periwinkle|peach|green|orchid)$/.test(p.tint)?p.tint:'periwinkle';
+      var url=/^\/[a-z0-9\/._-]+\.html$/i.test(p.url||'')?p.url:'#';
+      return '<a class="bcard" href="'+url+'"><div class="bart t-'+tint+'"><span class="btag">'+esc(p.tag||'Read')+'</span>'+BLOG_ART+'</div>'
+        +'<div class="bbody"><span class="btitle">'+esc(p.title)+'</span><span class="bex">'+esc(p.excerpt||'')+'</span>'
+        +'<span class="bmin">'+(Number(p.minutes)||3)+' min read</span></div></a>';
+    }).join('');
+  }).catch(function(){});
+}
+renderBlog();
 
 /* mode + submode (smooth cross-fade handled by CSS on data-mode) */
 document.querySelectorAll('#intentSeg button').forEach(function(b){b.onclick=function(){document.querySelectorAll('#intentSeg button').forEach(function(x){x.setAttribute('aria-selected','false');});b.setAttribute('aria-selected','true');S.mode=b.dataset.m;S.sub=b.dataset.s;document.body.setAttribute('data-mode',S.mode);syncMode();};});
