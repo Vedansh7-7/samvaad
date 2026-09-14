@@ -24,6 +24,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Vercel Web Analytics: cookieless page views, no consent banner needed -->
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
+<script defer src="/_vercel/insights/script.js"></script>
 <title>Samvaad · See it in 45 seconds</title>
 <script src="https://unpkg.com/@rive-app/canvas@2/rive.js"></script>
 <link rel="preload" as="video" href="media/intro/s1.mp4">
@@ -204,7 +207,7 @@ var FROM_APP = /[?&]from=app/.test(location.search);
 var LOGIN = FROM_APP ? 'app.html' : 'login.html', BLOG = 'how-it-works.html';
 var VOL = 0.75;                                   // voice at 75% of whatever the device volume is
 var MUSIC_SRC = 'audio/intro/music.mp3';          // optional; without the file the reel plays without music
-var MUSIC_BED = 0.22, MUSIC_DUCK = 0.08;          // music level, relative to VOL, between and under voice lines
+var MUSIC_BED = 0.44, MUSIC_DUCK = 0.22;          // relative to VOL: about 16 dB under the voice between lines, 22 dB under while someone speaks
 var FILM = /[?&]film=1/.test(location.search);
 var BACKEND = (function(){ try{ return localStorage.getItem('samvaad.beUrl'); }catch(e){ return null; } })()
               || 'https://samvaad-backend-gyk9.onrender.com';

@@ -576,7 +576,9 @@ const EVENT_NAMES = new Set([
   'signup_started', 'phone_submitted',
   'analysis_started', 'analysis_ready', 'analysis_refused',
   'walkthrough_opened', 'walkthrough_completed', 'act1_played', 'act1_finished',
-  'replay_played', 'breathing_opened', 'feedback_given', 'report_opened'
+  'replay_played', 'breathing_opened', 'feedback_given', 'report_opened',
+  'intro_sound_unlocked', 'sample_loaded', 'sample_analysed', 'bubbles_popped',
+  'record_started', 'record_finished', 'review_prompt_shown', 'review_dismissed'
 ]);
 
 app.post('/api/event', async (req, res) => {
@@ -606,6 +608,28 @@ app.post('/api/event', async (req, res) => {
     }
     res.json({ ok: true, stored: !error });
   } catch (e) { res.json({ ok: true, stored: false }); }
+});
+
+// ---- End-of-trial review ---------------------------------------------------------
+// Asked once, when someone has used their last free conversation: one to five stars and a few words.
+// Kept in events as 'trial_review' so it needs no migration. Unlike /api/event this is written by a
+// person, so it needs a signed-in user or a guest token, is rate limited per person, and is capped.
+app.post('/api/review', async (req, res) => {
+  try {
+    const principal = await requirePrincipal(req, res); if (!principal) return;
+    if (!rateLimit('rv:' + principal.id, 5)) return res.status(429).json({ error: 'Thank you, we already have it.' });
+    const stars = Math.round(Number(req.body?.stars));
+    if (!(stars >= 1 && stars <= 5)) return res.status(400).json({ error: 'Choose between one and five stars.' });
+    const review = String(req.body?.review || '').replace(/\s+/g, ' ').trim().slice(0, 1000);
+    if (!admin) return res.json({ ok: true, stored: false });
+    const { error } = await admin.from('events').insert({
+      user_id: principal.kind === 'user' ? principal.id : null,
+      anon_id: principal.kind === 'guest' ? String(principal.id).slice(0, 64) : null,
+      name: 'trial_review', props: { stars, review, guest: principal.kind === 'guest' }
+    });
+    if (error) return res.status(500).json({ error: 'Could not save that right now.' });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: String(e.message || e) }); }
 });
 
 // ---- Public config -----------------------------------------------------------
@@ -1277,6 +1301,21 @@ app.get('/api/admin/kpis', async (req, res) => {
       }
     }
 
+    // --- end-of-trial reviews ---
+    let reviews = { count: 0, average: null, latest: [] };
+    if (admin) {
+      const rv = await admin.from('events').select('user_id, props, created_at').eq('name', 'trial_review')
+        .order('created_at', { ascending: false }).limit(200);
+      if (!rv.error) {
+        const rows = (rv.data || []).filter(r => Number(r.props?.stars) >= 1);
+        const emails = new Map(authUsers.map(u => [u.id, u.email]));
+        reviews.count = rows.length;
+        reviews.average = rows.length ? Math.round((rows.reduce((a, r) => a + Number(r.props.stars), 0) / rows.length) * 10) / 10 : null;
+        reviews.latest = rows.slice(0, 20).map(r => ({ stars: Number(r.props.stars), review: r.props.review || '', at: r.created_at,
+          email: r.user_id ? (emails.get(r.user_id) || null) : null }));
+      }
+    }
+
     // --- capacity ---
     const minutesThisMonth = profileRows
       .filter(p => p.quota_month === monthKey())
@@ -1299,6 +1338,7 @@ app.get('/api/admin/kpis', async (req, res) => {
     } catch (e) { voice = { ok: false, error: String(e.message || e) }; }
 
     res.json({
+      reviews,
       funnel: {
         signups, withPhone, activated, returning,
         activationRate: signups ? Math.round((activated / signups) * 100) : 0,

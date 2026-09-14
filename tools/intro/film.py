@@ -24,8 +24,13 @@ with open(D + '/film.ffconcat', 'w') as fh:
 cards = [c for c in cap['cards'] if c['audio']]
 args = ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', D + '/film.ffconcat']
 for c in cards: args += ['-i', WEB + c['audio']]
+# the soft music bed, looped, at the same level the page plays it (VOL 0.75 x MUSIC_BED 0.44)
+MUSIC = WEB + 'audio/intro/music.mp3'
+args += ['-stream_loop', '-1', '-i', MUSIC]
 fc = ''.join('[%d:a]adelay=%d:all=1,volume=0.75[a%d];' % (k + 1, round(c['at'] * 1000), k) for k, c in enumerate(cards))
-fc += ''.join('[a%d]' % k for k in range(len(cards))) + 'amix=inputs=%d:normalize=0,apad[aout]' % len(cards)
+fc += ''.join('[a%d]' % k for k in range(len(cards))) + 'amix=inputs=%d:normalize=0,apad,aresample=44100,aformat=channel_layouts=stereo,asplit=2[voice][key];' % len(cards)
+# it dips about 6 dB while someone speaks, like the page's ducking
+fc += '[%d:a]aresample=44100,aformat=channel_layouts=stereo,volume=0.33[bed];[bed][key]sidechaincompress=threshold=0.015:ratio=1.6:attack=40:release=600[duck];[voice][duck]amix=inputs=2:normalize=0[aout]' % (len(cards) + 1)
 args += ['-filter_complex', fc, '-map', '0:v', '-map', '[aout]',
          '-vf', 'scale=720:1280:flags=lanczos,fps=30,format=yuv420p', '-t', '%.3f' % (end - start),
          '-c:v', 'libx264', '-preset', 'slow', '-crf', '24', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', OUTF]

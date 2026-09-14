@@ -65,7 +65,8 @@ const box = (page, sel) => page.locator(sel).first().boundingBox();
   }
   st = await state(page);
   ok('voice still on after walking every card (no false "blocked")', st.soundOn && !st.blocked, st);
-  ok('missing music file is handled quietly', st.musicMissing === true, st.musicMissing);
+  const mu = await page.evaluate(() => ({ loaded: !!MU.el && !MU.missing, playing: !!(MU.el && !MU.el.paused), level: MU.level }));
+  ok('music bed plays, quietly', mu.loaded && mu.playing && mu.level > 0 && mu.level < 0.4, mu);
   await page.click('#sound'); await page.waitForTimeout(200);
   st = await state(page);
   ok('tapping the icon turns sound off', !st.soundOn && st.pressed === 'false' && !st.playing, st);

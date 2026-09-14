@@ -174,7 +174,8 @@ line, regenerate it through the ElevenLabs API with the same voice ids (`ELEVEN_
 `ELEVEN_VOICE_B` male), level it to match, and set that card's `dur` in the `SCENES` array in
 `intro.html` to the new measured length plus `PAD`.
 
-Background music is optional: put a file at `web/audio/intro/music.mp3` and the reel picks it up.
+The music bed is `web/audio/intro/music.mp3`: Caleb Arredondo, *Feeling Blue*, a 62-second excerpt
+levelled to -22 LUFS with soft fades. To swap it, replace the file and keep the replacement just as quiet.
 It plays at `MUSIC_BED` and dips to `MUSIC_DUCK` under every voice line, both relative to the 75%
 voice volume set at the top of the script. With no file, the reel plays without music.
 

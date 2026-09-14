@@ -121,6 +121,13 @@
   .act:disabled{opacity:.55;cursor:progress}
   .btn,.tabs button{border-radius:999px}
   @media (max-width:760px){ *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important} .glass{background:rgba(255,255,255,.92)!important} }
+  .review-row{padding:12px 0;border-top:1px solid #D6D3E3}
+  .review-row:first-of-type{border-top:none}
+  .stars{color:#7164C6;letter-spacing:2px;font-size:16px}
+  .stars .off{color:#D6D3E3}
+  .rv-text{margin:4px 0;color:#312E52;line-height:1.45}
+  .rv-text.muted{color:#686586;font-style:italic}
+  .rv-meta{font-size:12px;color:#686586}
   .act.del{color:#B0523B;border-color:rgba(176,82,59,.35);margin-left:auto}
 </style>
 </head>
@@ -241,6 +248,19 @@
       + kpi('Tried it', tried, 'ran at least one conversation', true)
       + kpi('Came back', back, 'used it more than once', true)
       + kpi('Out of free conversations', out, out ? 'give them more on the People tab' : 'nobody has hit the limit')
+      + '</div>';
+    // what people said when their free conversations ran out
+    var rv = k.reviews || {};
+    html += '<div class="glass sec"><h3>What people said</h3>'
+      + (rv.count
+          ? '<p class="sub"><b>'+esc(rv.average)+' out of 5</b> from '+rv.count+' review'+(rv.count===1?'':'s')+', given at the end of a free trial.</p>'
+            + (rv.latest||[]).map(function(x){
+                var n = Math.max(1, Math.min(5, Number(x.stars)||0));
+                return '<div class="review-row"><div class="stars" aria-label="'+n+' out of 5">'+'★★★★★'.slice(0,n)+'<span class="off">'+'★★★★★'.slice(0,5-n)+'</span></div>'
+                  + (x.review ? '<p class="rv-text">'+esc(x.review)+'</p>' : '<p class="rv-text muted">No written review</p>')
+                  + '<div class="rv-meta">'+esc(x.email || 'guest')+' · '+esc(ago(x.at))+'</div></div>';
+              }).join('')
+          : '<p class="sub">No reviews yet. People are asked for one when they finish their free conversations.</p>')
       + '</div>';
     html += simpleSwitches();
     html += nudgeSection();

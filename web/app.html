@@ -7,6 +7,9 @@
 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Vercel Web Analytics: cookieless page views, no consent banner needed -->
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
+<script defer src="/_vercel/insights/script.js"></script>
 <script src="https://unpkg.com/@rive-app/canvas@2/rive.js"></script>
 <script src="auth.js"></script>
 <script>
@@ -77,6 +80,22 @@
   .seg button{border:none;background:none;border-radius:99px;padding:8px 18px;font:inherit;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:.3s}
   .seg button[aria-selected="true"]{background:var(--accent);color:#fff;box-shadow:0 6px 16px -8px var(--accent)}
   .lede{color:var(--muted);font-size:15px;max-width:60ch;margin:2px 0 18px}
+  /* end-of-trial review */
+  .review{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:20px;background:rgba(49,46,82,.38);opacity:0;visibility:hidden;transition:opacity .3s ease,visibility 0s linear .3s}
+  .review.show{opacity:1;visibility:visible;transition:opacity .3s ease}
+  .review-card{width:100%;max-width:420px;padding:26px 22px 20px;border-radius:24px;background:#FFFFFF;border:1px solid #E3E1F2;box-shadow:0 30px 60px -28px rgba(49,46,82,.5);outline:none;transform:translateY(10px);transition:transform .45s cubic-bezier(.16,1,.3,1)}
+  .review.show .review-card{transform:none}
+  .review-card:focus,.review-card:focus-visible{outline:none}
+  .rv-eyebrow{margin:0 0 6px;font-size:11.5px;letter-spacing:.1em;line-height:1.4;text-transform:uppercase;color:var(--accent-ink);font-weight:700}
+  .review-card h2{font-weight:500;font-size:24px;line-height:1.2;margin:0 0 16px}
+  .rv-stars{display:flex;gap:6px;margin:0 0 16px}
+  .rv-stars button{width:44px;height:44px;padding:6px;border:none;background:none;cursor:pointer;border-radius:12px}
+  .rv-stars svg{width:100%;height:100%;fill:#E3E1F2;stroke:#C9C5DE;stroke-width:1;transition:fill .15s ease}
+  .rv-stars button.on svg{fill:#7164C6;stroke:#5848BF}
+  .rv-stars button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .review-card textarea{width:100%;min-height:84px}
+  .review .btn[disabled]{opacity:.5;cursor:not-allowed}
+  .rv-msg{min-height:18px;margin:6px 0 0;font-size:13px;color:var(--risk)}
   .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   /* The Talk screen's intro line, broken into points that rise slowly while someone fills this in and
      waits for the analysis. Tapping one pops it: something small to do with nervous hands. */
@@ -620,6 +639,28 @@
   </nav>
 </div>
 
+<!-- END-OF-TRIAL REVIEW -->
+<div class="review" id="review" role="dialog" aria-modal="true" aria-labelledby="rvTitle" aria-hidden="true">
+  <div class="review-card" tabindex="-1">
+    <div id="rvForm">
+      <p class="rv-eyebrow">Your free conversations are done</p>
+      <h2 class="serif" id="rvTitle">How was Samvaad for you?</h2>
+      <div class="rv-stars" id="rvStars" role="radiogroup" aria-label="Your rating"></div>
+      <label class="fl" for="rvText">A few words, if you like</label>
+      <textarea id="rvText" maxlength="1000" rows="3" placeholder="What helped, what did not"></textarea>
+      <p class="rv-msg" id="rvMsg" role="status"></p>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <button class="btn soft" id="rvLater" style="width:auto">Not now</button>
+        <button class="btn" id="rvSend" style="width:auto" disabled>Send</button>
+      </div>
+    </div>
+    <div id="rvThanks" class="hide" style="text-align:center">
+      <h2 class="serif">Thank you</h2>
+      <p class="hint">We read every one of these.</p>
+    </div>
+  </div>
+</div>
+
 <!-- BREATHING OVERLAY -->
 <div class="breath" id="breath">
   <div class="breath-inner">
@@ -697,6 +738,7 @@ function view(v){
   if(v==='you')renderAcct();
   window.scrollTo({top:0,behavior:'smooth'});
   floatSync();
+  if(v==='home'||v==='dash')setTimeout(maybeReview,1200);
 }
 document.querySelectorAll('.bottomnav button').forEach(function(b){b.onclick=function(){view(b.dataset.tab);};});
 $('acctBtn').onclick=function(){view('you');};
@@ -829,6 +871,7 @@ async function loadMe(){
     // A suspended account should find out here, not after typing out a painful conversation.
     if(d.status==='suspended')showErr('This account is paused. Please reach out to us and we will sort it out.');
     applyMe();
+    setTimeout(maybeReview,2500);
   }catch(e){}
 }
 
@@ -839,6 +882,57 @@ $('sampleBtn').onclick=function(){
   if(S.mode==='self'){$('nameA').value='Aarav';$('transcript').value="Aarav: Aaj ka din bahut heavy tha. Subah se lag raha tha sab pile up ho raha hai. Meeting mein awaaz kaanp rahi thi. Ghar aaya toh chhoti baat pe irritate ho gaya. Lately I feel like I'm running but not moving.";}
   else{$('nameA').value='Kavya';$('nameB').value='Rohit';$('transcript').value="Kavya: Rohit, aaj phir tumne mummy ko call nahi kiya. Unhe bura laga.\nRohit: Yaar office mein kaam tha. Tum samajhti kyun nahi?\nKavya: Samajhti hoon, but yeh daily ho raha hai. Hamesha koi excuse.\nRohit: Excuse? Main hamare future ke liye kaam kar raha hoon.\nKavya: Main yeh nahi keh rahi kaam mat karo. Mujhe akela feel hota hai.\nRohit: ...Shayad main sach mein kuch miss kar raha hoon.\nKavya: Aaj meri promotion ki last date thi. Tumhe pata bhi nahi tha.\nRohit: Mujhe nahi pata tha. I'm sorry. Aaj ki baat karo, kya hua?";}
 };
+
+/* ---------- the end-of-trial review ----------
+   Once someone has used their last free conversation, ask how it was: stars and a few words. Asked at a
+   calm moment (opening the app, or arriving on Home or Insights), never over a result or the
+   walk-through, once per browser, and not again after two "Not now"s. */
+function rvStore(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
+var RV={stars:0,open:false,shownThisLoad:false};
+function reviewDue(){
+  var a=S.me&&S.me.allowance;
+  if(!a||a.left!==0||RV.open||RV.shownThisLoad)return false;
+  if(rvStore('samvaad.reviewDone'))return false;
+  if(Number(rvStore('samvaad.reviewDismissed')||0)>=2)return false;
+  if(S.busy||$('slides').classList.contains('show')||$('breath').classList.contains('show'))return false;
+  return true;
+}
+function maybeReview(){if(reviewDue())openReview();}
+function openReview(){
+  RV.open=true;RV.shownThisLoad=true;RV.stars=0;
+  $('rvText').value='';$('rvMsg').textContent='';$('rvForm').classList.remove('hide');$('rvThanks').classList.add('hide');
+  paintStars(0);$('review').classList.add('show');$('review').setAttribute('aria-hidden','false');
+  setTimeout(function(){var c=document.querySelector('.review-card');if(c)c.focus();},60);   // focus the card, not a star, so nothing looks pre-chosen
+  ev('review_prompt_shown');
+}
+function closeReview(dismissed){
+  if(!RV.open)return;RV.open=false;$('review').classList.remove('show');$('review').setAttribute('aria-hidden','true');
+  if(dismissed){rvStore('samvaad.reviewDismissed',String(Number(rvStore('samvaad.reviewDismissed')||0)+1));ev('review_dismissed');}
+}
+function paintStars(n){document.querySelectorAll('#rvStars button').forEach(function(b,i){b.classList.toggle('on',i<n);b.setAttribute('aria-checked',String(i+1===RV.stars));});$('rvSend').disabled=RV.stars<1;}
+async function sendReview(){
+  if(RV.stars<1)return;var btn=$('rvSend');btn.disabled=true;$('rvMsg').textContent='';
+  try{
+    await ensureGuestToken();
+    var r=await fetch(be()+'/api/review',{method:'POST',headers:beHeaders(),body:JSON.stringify({stars:RV.stars,review:$('rvText').value.trim().slice(0,1000)})});
+    if(!r.ok&&r.status!==429){var d=await r.json().catch(function(){return {};});throw new Error(d.error||'Could not send that right now.');}
+    rvStore('samvaad.reviewDone','1');
+    $('rvForm').classList.add('hide');$('rvThanks').classList.remove('hide');
+    setTimeout(function(){closeReview(false);},2400);
+  }catch(e){$('rvMsg').textContent=e.message||'Could not send that right now.';btn.disabled=false;}
+}
+(function(){
+  var wrap=$('rvStars');
+  for(var i=1;i<=5;i++){(function(n){var b=document.createElement('button');b.type='button';b.setAttribute('role','radio');b.setAttribute('aria-label',n+(n===1?' star':' stars'));
+    b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.5l6-.8z"/></svg>';
+    b.onclick=function(){RV.stars=n;paintStars(n);};
+    b.onmouseenter=function(){paintStars(n);};
+    wrap.appendChild(b);})(i);}
+  wrap.onmouseleave=function(){paintStars(RV.stars);};
+  $('rvSend').onclick=sendReview;$('rvLater').onclick=function(){closeReview(true);};
+  $('review').addEventListener('click',function(e){if(e.target===$('review'))closeReview(true);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&RV.open)closeReview(true);});
+})();
 
 /* ---------- the sample is free ----------
    The sample never changes, so its analysis was generated once (web/samples/*.json) and is shown
