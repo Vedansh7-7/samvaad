@@ -140,9 +140,18 @@ Pages in `web/` and polish status:
   decks (currently untracked), not part of the app.
 
 Intentional flows — do NOT "fix" these, they are by design:
-- After analysis the results screen shows ONLY a centered score + "✦ Walk me through it". Finishing
-  the walk-through **redirects to the Dashboard**; dashboard tiles (date·time) open the full report
-  via `openSession`; trend graph sits below. The detailed report now lives behind dashboard tiles.
+- After analysis the results screen shows a centered score and two buttons: **Play the reflection**
+  (the walk-through, which ends on the Dashboard) and **Read the analysis** (the written report).
+  Dashboard tiles open that same written report via `openSession`. The written report is documents
+  only: no walk-through button and no replay stage (a replay rebuilt outside the walk-through came up
+  empty). Replays live only inside the walk-through.
+- **Load a sample** is free: its analysis is pre-generated in `web/samples/`, shown without calling the
+  model or spending an allowance, and its voice lines are pre-recorded. An edited sample is a normal
+  analysis. Regenerate `web/samples/` if the sample text in `app.html` ever changes.
+- The Talk screen's intro line is shown as poppable rising bubbles until the analysis is ready.
+- The WhatsApp check-in slide is asked once per browser (`samvaad.checkinAsked`), never after a number
+  is given.
+- Sign-in codes are accepted at 6 to 10 digits: Supabase's OTP length is a dashboard setting.
 - Self / "Just me" mode reframes the scripts section as **"Say these out loud"** affirmations
   (express-your-way), not prescriptive rewrites. Relationship mode keeps "try saying".
 

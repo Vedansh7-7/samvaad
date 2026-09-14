@@ -56,6 +56,8 @@ const box = (page, sel) => page.locator(sel).first().boundingBox();
       const kin = await box(page, '#kin .big'), hud = await box(page, '.hudrow');
       ok('caption sits below the HUD', kin && hud && kin.y > hud.y + hud.height, { kinTop: kin && Math.round(kin.y), hudBottom: Math.round(hud.y + hud.height) });
       ok('clip 1 video is decoding', await page.evaluate(() => layers[1].querySelector('video').readyState >= 2));
+      const shot = await box(page, '.layer.on .shot');
+      ok('caption never covers the product card', kin && shot && kin.y + kin.height <= shot.y, { kinBottom: kin && Math.round(kin.y + kin.height), cardTop: shot && Math.round(shot.y) });
     }
     if (k === 4) ok('clip 4 caption swapped to the kinder line', /kinder/.test(await page.textContent('#kin')));
     if (k === 7) ok('call to action is visible on the last card', await page.isVisible('#cta'));
@@ -95,11 +97,16 @@ const box = (page, sel) => page.locator(sel).first().boundingBox();
   ({ ctx, page, events, errors } = await open(b2, '/intro.html'));
   await page.waitForTimeout(1300);
   st = await state(page);
-  ok('blocked browser: reel keeps running silently, icon shows off', st.blocked && !st.soundOn && st.off && st.i >= 0, st);
-  await page.mouse.click(180, 380);
+  const tapShown = () => page.evaluate(() => document.getElementById('tapSound').classList.contains('show'));
+  ok('blocked browser: big speaker button appears, icon shows off', st.blocked && !st.soundOn && st.off && await tapShown(), st);
+  await page.screenshot({ path: OUT + '/9-blocked.png' });
+  await page.waitForTimeout(2600);
+  st = await state(page);
+  ok('blocked browser: waits after the hook instead of running on silently', st.i === 0 && st.blocked, st);
+  await page.mouse.click(180, 300);
   await page.waitForTimeout(700);
   st = await state(page);
-  ok('first tap anywhere brings the sound in', st.soundOn && !st.blocked && st.playing, st);
+  ok('first tap starts again from the top, with sound', st.soundOn && !st.blocked && st.playing && st.i === 0 && !(await tapShown()), st);
   ok('blocked browser: no script errors', errors.length === 0, errors.slice(0, 3));
   await ctx.close(); await b2.close();
 

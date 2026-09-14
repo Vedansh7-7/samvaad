@@ -6,11 +6,13 @@
   - Nobody has the patience to be told about a product, so the kinetic on-screen text carries the
     story on its own. Sound is ON by default: every card has its own timed voice line at 75% of the
     device volume, with a music bed underneath that dips while someone speaks. Browsers refuse audible
-    autoplay before a first interaction; when that happens the reel runs silently and the first tap
-    anywhere brings the sound in.
+    autoplay before a first interaction; when that happens the hook still plays, the reel waits a few
+    seconds on a big speaker button, and the first tap anywhere starts it again with sound.
   - It opens on a fast hook, jumps straight into REAL footage of the product (media/intro/s1-s5.mp4,
     recorded from app.html with every loading frame cut out), then winds down into illustration:
     a privacy beat and the two Rive rigs.
+  - Product footage sits in a rounded card below its caption, so text never covers the app, and the
+    card does not zoom: a slow scale on video shimmers at phone sizes.
   - The privacy beat claims only what is true today: audio is never stored, the full chat is not
     kept, and only the finished walkthrough is saved, to the user's own account.
 
@@ -49,21 +51,20 @@
 
   .layer{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .2s ease,visibility 0s linear .2s}
   .layer.on{opacity:1;visibility:visible;transition:opacity .2s ease}
-  .layer video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:50% 45%}
-  .layer.on video{animation:kb var(--d,5s) linear forwards}
-  @keyframes kb{from{transform:scale(1)}to{transform:scale(1.07)}}
-
-  /* scrims give the kinetic text a calm band to sit on over busy product UI */
-  .scrim{position:absolute;left:0;right:0;pointer-events:none;opacity:0;transition:opacity .25s}
-  .scrim.top{top:0;height:50%;background:linear-gradient(to bottom,rgba(250,248,244,.97) 0%,rgba(250,248,244,.93) 62%,rgba(250,248,244,0) 100%)}
-  .scrim.bottom{bottom:0;height:52%;background:linear-gradient(to top,rgba(250,248,244,.98) 0%,rgba(250,248,244,.93) 60%,rgba(250,248,244,0) 100%)}
-  .scrim.show{opacity:1}
+  /* product footage: its own rounded card below the caption, never under it, and no zoom */
+  .shot{position:absolute;left:0;right:0;top:29cqh;margin:0 auto;width:67cqw;height:67cqh;border-radius:5.5cqw;overflow:hidden;
+    background:#fff;border:1px solid rgba(49,46,82,.08);
+    box-shadow:0 34px 70px -34px rgba(49,46,82,.55),0 8px 20px -14px rgba(88,72,191,.35);opacity:0;transform:translateY(3cqh)}
+  .layer.on .shot{opacity:1;transform:none;transition:opacity .45s ease,transform .6s cubic-bezier(.16,1,.3,1)}
+  .shot video{display:block;width:100%;height:100%;object-fit:cover}
+  .glow{position:absolute;left:8cqw;right:8cqw;top:34cqh;height:60cqh;border-radius:50%;pointer-events:none;
+    background:radial-gradient(closest-side,rgba(113,100,198,.2),rgba(113,100,198,0))}
 
   /* kinetic text */
   .kin{position:absolute;left:0;right:0;padding:0 7cqw;z-index:4;pointer-events:none}
-  .kin.top{top:15cqh}
+  .kin.top{top:12cqh}
   .kin.bottom{bottom:11cqh}
-  .kin .big{font-family:'Fraunces',serif;font-weight:600;font-size:9.4cqw;line-height:1.08;letter-spacing:-.02em;margin:0}
+  .kin .big{font-family:'Fraunces',serif;font-weight:600;font-size:8.6cqw;line-height:1.08;letter-spacing:-.02em;margin:0}
   .kin .big em{font-style:normal;color:var(--cherry)}
   .kin .small{margin-top:1.6cqh;font-size:4.1cqw;font-weight:700;color:var(--accent-ink);letter-spacing:.01em}
   .w{display:inline-block;opacity:0;transform:translateY(40%) scale(.96);filter:blur(6px);animation:pop .46s cubic-bezier(.16,1,.3,1) forwards}
@@ -152,12 +153,23 @@
   .close .ch.idle{filter:saturate(.75);opacity:.85;transform:translateY(1.5%) scale(.97)}
   .close canvas{display:block;width:100%;height:100%}
 
+  /* shown only when the browser held the sound back: one big, obvious way to hear it */
+  .tapsound{position:absolute;left:0;right:0;bottom:9cqh;margin:0 auto;z-index:13;width:21cqw;height:21cqw;min-width:76px;min-height:76px;
+    border:none;border-radius:50%;cursor:pointer;color:#fff;background:linear-gradient(180deg,var(--cherry),var(--cherry-2));
+    box-shadow:0 20px 40px -16px rgba(88,72,191,.7);display:grid;place-items:center;
+    opacity:0;pointer-events:none;transform:scale(.8);transition:opacity .3s ease,transform .4s cubic-bezier(.16,1,.3,1)}
+  .tapsound.show{opacity:1;pointer-events:auto;transform:none}
+  .tapsound svg{width:46%;height:46%}
+  .tapsound::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid rgba(113,100,198,.55);animation:ring 1.8s ease-out infinite}
+  @keyframes ring{from{transform:scale(1);opacity:1}to{transform:scale(1.55);opacity:0}}
+
   /* film mode: the same page, controls removed, for recording the marketing cut */
-  body.film .hud,body.film .sound{display:none!important}
+  body.film .hud,body.film .sound,body.film .tapsound{display:none!important}
   body.film .reel{height:100dvh;border-radius:0;box-shadow:none}
 
   @media (prefers-reduced-motion: reduce){
-    .layer.on video,.layer.on .hook,.chip,.sound.off{animation:none!important}
+    .layer.on .hook,.chip,.sound.off,.tapsound::after{animation:none!important}
+    .shot{transition:none!important}
     .w,.row,.hook .bub,.hook .punch{animation-duration:.01s!important;animation-delay:0s!important}
   }
 </style>
@@ -165,8 +177,6 @@
 <body>
 <div class="reel" id="reel">
   <div id="layers"></div>
-  <div class="scrim top" id="scrimTop"></div>
-  <div class="scrim bottom" id="scrimBot"></div>
   <div class="kin" id="kin"></div>
 
   <div class="hud">
@@ -178,6 +188,8 @@
       <button class="skip" id="skip">Skip to sign in</button>
     </div>
   </div>
+
+  <button class="tapsound" id="tapSound" aria-label="Play with sound"></button>
 
   <div class="ctaWrap" id="ctaWrap">
     <button class="btn" id="cta">Get started</button>
@@ -230,16 +242,16 @@ var SCENES = [
     big:'A real <em>score.</em>', small:'In seconds. Not a guess.' },
   { kind:'video', src:'media/intro/s3.mp4', audio:'audio/intro/v2-03-f.mp3', dur:6.27+PAD, pos:'top',
     big:'Your moment, <em>played back.</em>', small:'In your own words' },
-  { kind:'video', src:'media/intro/s4.mp4', audio:'audio/intro/v2-04-m.mp3', dur:5.62+PAD, pos:'bottom',
+  { kind:'video', src:'media/intro/s4.mp4', audio:'audio/intro/v2-04-m.mp3', dur:5.62+PAD, pos:'top',
     big:'The line that <em>turned it.</em>', small:'What went wrong',
     swap:{ at:3.45, big:'And the <em>kinder</em> one.', small:'What to say instead' } },
-  { kind:'video', src:'media/intro/s5.mp4', audio:'audio/intro/v2-05-f.mp3', dur:4.32+PAD, pos:'bottom',
+  { kind:'video', src:'media/intro/s5.mp4', audio:'audio/intro/v2-05-f.mp3', dur:4.32+PAD, pos:'top',
     big:'Watch yourselves <em>get better.</em>', small:'Your score, tracked every time' },
   { kind:'privacy', audio:'audio/intro/v2-06-m.mp3', dur:10.4+PAD, beats:[0.15, 2.3, 5.9] },
   { kind:'close', audio:'audio/intro/v2-07-f.mp3', dur:5.15+PAD, speaker:'a' }
 ];
 
-var i = -1, t0 = 0, raf = 0, au = null, soundOn = !FILM, blocked = false, ended = false, completed = false, swapped = false;
+var i = -1, t0 = 0, raf = 0, au = null, soundOn = !FILM, blocked = false, holding = false, holdDone = false, holdTimer = 0, ended = false, completed = false, swapped = false;
 var layers = [];
 
 /* ---------- building each layer ---------- */
@@ -303,8 +315,7 @@ function build(){
     el.className = 'layer';
     if(s.kind === 'hook') el.innerHTML = hookHTML();
     else if(s.kind === 'video'){
-      el.style.setProperty('--d', s.dur + 's');
-      el.innerHTML = '<video muted playsinline preload="'+(k<=2?'auto':'metadata')+'" src="'+s.src+'"></video>';
+      el.innerHTML = '<div class="glow"></div><div class="shot"><video muted playsinline preload="'+(k<=2?'auto':'metadata')+'" src="'+s.src+'"></video></div>';
     }
     else if(s.kind === 'privacy') el.innerHTML = privacyHTML();
     else if(s.kind === 'close') el.innerHTML = closeHTML();
@@ -355,6 +366,8 @@ function lipStart(side, audioEl){
   if(!audioEl || !Ctx) return flap(side);
   try{
     var ctx = LS.ctx || (LS.ctx = new Ctx()); if(ctx.state === 'suspended') ctx.resume();
+    // a context the browser has not let start would swallow the voice; let the element play on its own
+    if(ctx.state !== 'running') return flap(side);
     var src = audioEl.__svSrc || (audioEl.__svSrc = ctx.createMediaElementSource(audioEl));
     var g = ctx.createGain(); g.gain.value = VOL; audioEl.volume = 1; LS.g = g;
     var an = ctx.createAnalyser(); an.fftSize = 256; src.connect(g); g.connect(an); an.connect(ctx.destination);
@@ -402,6 +415,7 @@ function startMusic(){
     // a gain node rather than .volume, because iOS ignores .volume on media elements
     try{
       var ctx = LS.ctx || (LS.ctx = new (window.AudioContext || window.webkitAudioContext)());
+      if(ctx.state !== 'running') throw 0;
       MU.gain = ctx.createGain(); MU.gain.gain.value = 0;
       ctx.createMediaElementSource(MU.el).connect(MU.gain); MU.gain.connect(ctx.destination);
     }catch(e){ MU.gain = null; MU.el.volume = 0; }
@@ -435,11 +449,9 @@ function words(html){
 }
 function setKin(pos, big, small){
   var kin = $('kin');
-  if(!big){ kin.innerHTML = ''; $('scrimTop').classList.remove('show'); $('scrimBot').classList.remove('show'); return; }
-  kin.className = 'kin ' + pos;
+  if(!big){ kin.innerHTML = ''; return; }
+  kin.className = 'kin ' + (pos || 'top');
   kin.innerHTML = '<p class="big serif">'+words(big)+'</p>' + (small ? '<div class="small in">'+small+'</div>' : '');
-  $('scrimTop').classList.toggle('show', pos === 'top');
-  $('scrimBot').classList.toggle('show', pos === 'bottom');
 }
 
 /* ---------- playback ---------- */
@@ -468,7 +480,7 @@ function playAudioAt(at){
     // AbortError only means we paused it by moving to the next card; only a real refusal counts
     if(ended || !err || err.name !== 'NotAllowedError') return;
     if(!blocked) track('intro_audio_blocked', { scene:i+1 });
-    blocked = true; soundOn = false; paintSound(); stopMusic();
+    blocked = true; soundOn = false; paintSound(); stopMusic(); showTapSound(true);
     if(s.kind === 'close') lipStart(s.speaker, null);
   });
   au.onended = function(){ if(SCENES[i] && SCENES[i].kind === 'close') lipStop(); };
@@ -505,6 +517,12 @@ function tick(){
     });
   }
   if(el >= s.dur){
+    if(blocked && i === 0 && !holdDone){
+      // the browser held the sound back: wait on the speaker button before the product footage starts,
+      // then carry on silently rather than leave a still screen
+      if(!holding){ holding = true; progress(0, 1); holdTimer = setTimeout(function(){ holdDone = true; next(); }, 5000); }
+      return;
+    }
     if(i < SCENES.length - 1){ next(); return; }
     // the last scene holds on the call to action; it does not navigate away on its own
     progress(i, 1); lipStop();
@@ -513,7 +531,10 @@ function tick(){
   }
   raf = requestAnimationFrame(tick);
 }
-function next(){ i = Math.min(i + 1, SCENES.length - 1); show(i); }
+function next(){
+  if(holding || holdTimer){ clearTimeout(holdTimer); holdTimer = 0; holding = false; holdDone = true; showTapSound(false); }
+  i = Math.min(i + 1, SCENES.length - 1); show(i);
+}
 function finish(how, dest){
   if(ended) return; ended = true;
   cancelAnimationFrame(raf); stopAudio(); stopMusic();
@@ -537,18 +558,27 @@ function paintSound(){
   b.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
 }
 $('sound').onclick = function(){
-  soundOn = !soundOn; blocked = false; paintSound();
+  if(blocked){ unlock(); return; }
+  soundOn = !soundOn; paintSound();
   track('intro_muted', { muted:!soundOn, scene:i+1 });
   playAudioAt((performance.now() - t0) / 1000);
 };
-// the browser held the sound back: the first tap anywhere on the reel brings it in
+function showTapSound(on){ var b = $('tapSound'); if(b) b.classList.toggle('show', !!on && !FILM); }
+// The browser held the sound back. While the reel is still on its opening card, a tap starts the story
+// again from the top with sound; later on, it brings the sound in wherever they are.
+function unlock(){
+  if(!blocked || ended) return;
+  blocked = false; soundOn = true; paintSound(); showTapSound(false);
+  track('intro_sound_unlocked', { scene:i+1 });
+  if(i <= 0 || holding){ clearTimeout(holdTimer); holdTimer = 0; holding = false; i = 0; show(0); }
+  else playAudioAt((performance.now() - t0) / 1000);
+}
 document.addEventListener('pointerdown', function(e){
   if(!blocked || ended || i < 0) return;
   if(e.target.closest && e.target.closest('button,a')) return;
-  blocked = false; soundOn = true; paintSound();
-  track('intro_sound_unlocked', { scene:i+1 });
-  playAudioAt((performance.now() - t0) / 1000);
+  unlock();
 }, true);
+$('tapSound').onclick = unlock;
 $('skip').onclick = function(){ finish('skipped', LOGIN); };
 $('skipBlog').onclick = function(){ finish('skipped', BLOG); };
 $('cta').onclick = function(){ finish('cta', LOGIN); };
@@ -569,6 +599,7 @@ function start(){
   mountRigs();
   if(FROM_APP){ $('skip').textContent = 'Back to app'; $('cta').textContent = 'Back to Samvaad'; }
   paintSound();
+  $('tapSound').innerHTML = ICON_ON;
   if(FILM){
     document.body.classList.add('film');
     // give the rigs a moment so the closing scene never opens on an empty room

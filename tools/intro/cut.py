@@ -14,7 +14,8 @@ PAD = 0.3
 # (name, start mark, end mark, target seconds, extra hold on the last frame before scaling)
 CLIPS = [
   ('s1', 'paste_start', 'click_analyse', 3.48 + PAD, 0.5),
-  ('s2', 'score_shown', 'act1_start',    5.99 + PAD, 0),
+  # ends on the walk-through opener; the next slide shows an empty room until the avatars load
+  ('s2', 'score_shown', ('walk_open', 2.3), 5.99 + PAD, 0),
   ('s3', 'act1_start',  'patterns',      6.27 + PAD, 0),
   # ends on 'How to improve'; the 'What you did well' slide that follows does not match the caption
   ('s4', 'patterns',    ('improve', 1.65), 5.62 + PAD, 0),

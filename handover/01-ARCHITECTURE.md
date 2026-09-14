@@ -30,7 +30,7 @@ the order a request flows. Split it when it stops fitting in one reading, not be
 
 Two kinds of caller, unified behind one idea:
 
-- **User** — a Supabase Auth account (magic link or 6-digit OTP, via GoTrue REST; there is no
+- **User** — a Supabase Auth account (magic link or a one-time code, via GoTrue REST; there is no
   Supabase JS SDK in the browser). The session lives in `sessionStorage`, per-tab, deliberately
   not `localStorage`: data minimisation.
 - **Guest** — a short-lived HMAC token the backend issues from `POST /api/guest`, signed with

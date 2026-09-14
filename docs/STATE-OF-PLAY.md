@@ -37,7 +37,7 @@ Render: Node/Express proxy  backend/server.js   ← holds ALL secrets
 Frontend hosting: Vercel.  Backend: https://samvaad-backend-gyk9.onrender.com (baked in as default)
 ```
 
-Auth: Supabase magic-link / 6-digit OTP via GoTrue REST. Session lives in **sessionStorage**
+Auth: Supabase magic-link / one-time code via GoTrue REST. Session lives in **sessionStorage**
 (per-tab, deliberately not localStorage — data-minimisation). Guest mode is a flag; guests get
 the full app with **no persistence**.
 

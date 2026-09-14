@@ -80,7 +80,7 @@
   }
   input::placeholder{color:#686586; opacity:1}
   input:focus{outline:none; border-color:var(--cherry); box-shadow:0 0 0 4px rgba(113,100,198,.15); background:#fff}
-  input.otp{letter-spacing:.5em; text-align:center; font-weight:600; font-size:19px}
+  input.otp{letter-spacing:.32em; text-align:center; font-weight:600; font-size:19px}
 
   .btn{
     width:100%; border:none; cursor:pointer; font:inherit; font-weight:600; font-size:15px; color:#fff;
@@ -173,10 +173,10 @@
   <div id="state-code" class="hide">
     <p class="eyebrow">Almost there</p>
     <h1>Check your inbox</h1>
-    <p class="sub">We sent a link to <b id="emailEcho"></b>. Tap it to sign in, or enter the 6-digit code from the email.</p>
+    <p class="sub">We sent a link to <b id="emailEcho"></b>. Tap it to sign in, or enter the code from the email.</p>
     <div class="field">
       <label for="code">Sign-in code</label>
-      <input id="code" class="otp" inputmode="numeric" maxlength="6" placeholder="••••••">
+      <input id="code" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="24" placeholder="••••••••">
     </div>
     <button class="btn" id="verifyBtn">Verify &amp; enter</button>
     <div class="msg" id="msg2"></div>
@@ -254,11 +254,11 @@
     }finally{ busy($('sendBtn'), false); }
   };
 
-  // verify the 6-digit code
+  // verify the emailed code (6 to 10 digits, whatever the Supabase OTP length is set to)
   $('verifyBtn').onclick = async function(){
-    var code = $('code').value.trim();
+    var code = $('code').value.replace(/\D/g, '');   // the email spaces the digits out; people paste it that way
     var m = $('msg2'); m.className='msg'; m.textContent='';
-    if(code.length < 6){ m.className='msg err'; m.textContent='Enter the 6-digit code from your email.'; return; }
+    if(code.length < 6 || code.length > 10){ m.className='msg err'; m.textContent='Enter the full code from your email.'; return; }
     busy($('verifyBtn'), true, 'Verifying…');
     try{
       var data = await sbAuth('/verify', { type:'email', email: currentEmail, token: code });
@@ -311,6 +311,8 @@
   // submit on Enter
   $('email').addEventListener('keydown', function(e){ if(e.key==='Enter') $('sendBtn').click(); });
   $('code').addEventListener('keydown', function(e){ if(e.key==='Enter') $('verifyBtn').click(); });
+  // The email spaces the digits out, so a pasted code arrives with spaces: keep digits only, up to 10.
+  $('code').addEventListener('input', function(){ var el = $('code'), v = el.value.replace(/\D/g, '').slice(0, 10); if(el.value !== v) el.value = v; });
   $('code').addEventListener('input', function(e){ e.target.value = e.target.value.replace(/\D/g,''); });
 
   // Magic-link return: Supabase redirects back here with tokens in the URL hash.
