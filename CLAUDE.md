@@ -143,23 +143,29 @@ Pages in `web/` and polish status:
   decks (currently untracked), not part of the app.
 
 Intentional flows — do NOT "fix" these, they are by design:
-- After analysis the results screen shows a centered score and two buttons: **Play the reflection**
-  (the walk-through, which ends on the Dashboard) and **Read the analysis** (the written report).
-  Dashboard tiles open that same written report via `openSession`. The written report is documents
-  only: no walk-through button and no replay stage (a replay rebuilt outside the walk-through came up
-  empty). Replays live only inside the walk-through.
+- After analysis the walk-through opens **by itself** (no "Play the reflection" button, removed at the
+  2026-09-16 review): breathe first if it ran hot, the real conversation played back, the score, what went
+  wrong, what to say instead, the kinder version. Closing it leaves a results card with Watch it again,
+  Share with a friend and a small **Read the full analysis** link. Dashboard tiles open that same written
+  report via `openSession`; it is documents only, and replays live only inside the walk-through.
+- Replay voices are fetched for the whole track when a scene is built (`ttsFetch` / `prefetchVoices`) and
+  play at natural speed. Do not bring back the 0.9x `playbackRate`: the time-stretch made voices warble.
 - **Load a sample** is free: its analysis is pre-generated in `web/samples/`, shown without calling the
   model or spending an allowance, and its voice lines are pre-recorded. An edited sample is a normal
   analysis. Regenerate `web/samples/` if the sample text in `app.html` ever changes.
 - The Talk screen's intro line is shown as poppable rising bubbles until the analysis is ready.
-- **Home** is: the Talk something through card, "Reads for you" blog cards, five FAQs, and a footer with contact
-  details. "What are we looking at?", Recent reflections and the check-in tile live at the top of **You**.
+- **Home** is: the Talk something through card with a muted looping demo video (`web/media/intro/reel.mp4`, tap
+  for sound) and Share with a friend, then "Reads for you" blog cards, five FAQs, and a footer with contact
+  details. The fourth tab is **Profile** (was You): name, WhatsApp number and email (saved via `/api/profile`),
+  then "What are we looking at?", Recent reflections, account, share and Learn how it works.
   Blog posts are static pages in `web/blog/`, listed in `web/blog/posts.json` (add a page and one entry to
   publish). The case study is a labelled composite; never present an invented story as a real user.
-- The WhatsApp check-in slide is asked once per browser (`samvaad.checkinAsked`), never after a number
-  is given.
+- The Talk form asks signed-in people only **who they were talking with**; their own name comes from Profile.
+  Guests keep both name boxes. There is no WhatsApp box on the Talk form any more.
+- The WhatsApp number lives on Profile only. The check-in slide is no longer part of the walk-through
+  (its code, `optinBlock` / `submitOptin`, is kept for when check-ins go live).
 - Sign-in codes are accepted at 6 to 10 digits: Supabase's OTP length is a dashboard setting.
-- Input order is deliberate: **Upload audio** first and selected by default (the headline way in), **Chats**
+- Input order is deliberate: **Upload audio** first and selected by default (the headline way in), **Paste chat**
   second, **Record** last and visually quiet. The intro reel leads with uploading too.
 - The **Record** tab records audio (MediaRecorder, any modern browser), with no live transcript. Tap to
   start and stop; it auto-stops at 10 minutes (founder's call) or at `limits.maxAudioSeconds` from
@@ -173,8 +179,7 @@ media-player stage chrome (now-playing bar via `#stage`/`#npLive` + `setNP()`, g
 redesigned avatar SVG art in `face()` (egg head + skin-gradient, real hair with the **centred x=50
 fix**, eye catchlights, ears/shoulders); per-emotion expressions in `setExpr` (head-tilt + brows +
 blush); robust speaker mapping (`spk()` + `S._alt` alternation fallback) and **data-driven gender**
-from `report.speakers` (added to `server.js` p1 + the standalone prompt); slowed TTS
-(`au.playbackRate=0.9`); `replayWorth()` drops <2s replays (card + slide); dynamic report — the model
+from `report.speakers` (added to `server.js` p1 + the standalone prompt); TTS at natural speed, prefetched per replay; `replayWorth()` drops <2s replays (card + slide); dynamic report — the model
 no longer pads `patterns`/`improvements` when an exchange is healthy (server.js prompt + UI gate).
 Bug fixed: `stopReplay()` halts audio/speech/loop on tab-change and "Analyse another" (+ a late-audio
 guard in `speakEleven`/`speakBackend`). **PRESERVE** the animation wiring — ids/classes `mouth-a`,
@@ -213,15 +218,17 @@ Decisions taken with the founder on 2026-08-24:
   the admin console; the losers get deleted once the founder picks. `sessions.act1_mode` records
   which variant each session ran under.
 - **An intro reel** (`web/intro.html`) greets every signed-out visitor: 9:16, sound on by default,
-  real product footage in `web/media/intro/`, skippable to the blog or to sign-in. Re-record the
+  real product footage in `web/media/intro/`, about 28 seconds, opening straight on the product. Tap the left
+  third to go back a card, anywhere else for the next (like stories). **Try now** (purple) goes to sign-in and
+  then straight into a new session (`login.html?next=talk`); finishing the reel goes to sign-in, then Home. Re-record the
   clips whenever the app's look changes (`docs/handover/02-OPERATIONS.md`, "Regenerating the intro").
 - **Two sides.** Admin (`web/admin.html`) = Metrics + People, with pause/suspend/extend/reset and
   per-user feature pinning. It is unlinked by design; `ADMIN_USER_IDS` gates it.
 - Phone (WhatsApp) is the account key: `profiles.phone`, unique, saved via `/api/profile/phone`.
 
-Walk-through order is now deliberate and should not be shuffled: score → breathe (if it was hot)
-→ **the real conversation played back** → what went wrong → what to say instead → what you did
-well → the kinder version → daily check-in. Breathing is reachable from every slide.
+Walk-through order (2026-09-16 review) is deliberate and should not be shuffled: breathe (only if it was hot)
+→ **the real conversation played back** → the score → what went wrong → what to say instead → the kinder
+version. It opens by itself after analysis. Breathing is reachable from every slide.
 
 Migrations `backend/migrations/001-phase0.sql` and `002-prelaunch.sql` must both be run by hand in
 the Supabase SQL editor. The backend degrades to unmetered rather than failing if they have not,

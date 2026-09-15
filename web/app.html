@@ -437,6 +437,27 @@
 
   /* Home: reads, questions, footer */
   #viewYou #homeRecent,#viewYou .checkin{margin-bottom:18px}
+  /* Home demo video, the results card, the profile form */
+  .hero-demo{display:grid;grid-template-columns:1fr;gap:18px;align-items:center}
+  .hero-demo .demo-copy h2{max-width:none}
+  .hero-demo .demo-copy p{max-width:36ch}
+  .demo-video{position:relative;justify-self:center;width:min(60vw,230px);aspect-ratio:9/16;max-width:100%;padding:0;border:1px solid var(--glass-brd);border-radius:20px;overflow:hidden;background:#fff;cursor:pointer;box-shadow:0 24px 44px -26px rgba(49,46,82,.55)}
+  .demo-video video{display:block;width:100%;height:100%;object-fit:cover}
+  .demo-sound{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:rgba(255,255,255,.92);color:var(--accent-ink);font-size:12px;font-weight:700;padding:5px 11px;border-radius:99px;white-space:nowrap}
+  @media (min-width:640px){.hero-demo{grid-template-columns:1fr auto;gap:28px}}
+  .linkbtn{display:inline-block;background:none;border:none;padding:10px 4px;font:inherit;font-size:14px;font-weight:700;color:var(--accent-ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  .hero-demo .linkbtn{margin-left:8px}
+  .res-card{text-align:center;padding:30px 22px;max-width:480px;margin:0 auto}
+  .res-card h2{font-weight:500;font-size:22px;margin:0 0 16px}
+  .mini-scores{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:12px 0 6px}
+  .mini-scores span{font-size:13px;font-weight:700;padding:5px 12px;border-radius:99px;background:var(--accent-soft);color:var(--ink)}
+  .names.single{display:block}
+  .prof-form{display:grid;gap:12px}
+  .prof-form input[readonly]{opacity:.75;cursor:default}
+  .prof-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .prof-msg{font-size:13.5px;font-weight:600}
+  .prof-msg.ok{color:var(--good)}
+  .prof-msg.err{color:var(--risk)}
   .bcard .bart{min-height:64px}
   .blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:12px}
   .bcard{display:flex;flex-direction:column;text-decoration:none;color:var(--ink);background:var(--glass);border:1px solid var(--glass-brd);border-radius:20px;overflow:hidden;transition:transform .2s,box-shadow .2s}
@@ -536,7 +557,7 @@
       <div class="hi">Namaste, <span id="greetName">friend</span></div>
       <div class="subhi">A quiet moment to check in.</div>
     </div>
-    <button class="avatar" id="acctBtn" title="You" aria-label="Your profile and settings">
+    <button class="avatar" id="acctBtn" title="Profile" aria-label="Your profile">
       <span class="streak" id="streakChip">New</span>
       <span class="ava" id="avaInit">·</span>
     </button>
@@ -546,11 +567,17 @@
 
   <!-- HOME -->
   <section id="viewHome" class="screen">
-    <div class="hero">
-      <svg class="heroart" width="118" height="118" viewBox="0 0 120 90" fill="none" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round"><path d="M60 79 C44 56 38 40 32 30 C46 36 54 54 60 79"/><path d="M60 79 C76 56 82 40 88 30 C74 36 66 54 60 79"/><path d="M60 79 C52 50 52 28 60 14 C68 28 68 50 60 79 Z"/><path d="M16 80 Q60 89 104 80"/></svg>
-      <h2>Talk something through</h2>
-      <p id="heroPrompt">A hard conversation, a quiet worry, or just your day. Let’s look at it gently.</p>
-      <button class="btn" onclick="startSession()">Start a session →</button>
+    <div class="hero hero-demo">
+      <div class="demo-copy">
+        <h2>Talk something through</h2>
+        <p id="heroPrompt">Upload a conversation. See it played back, learn what to say instead, and watch your score grow.</p>
+        <button class="btn" onclick="startSession()">Start a session →</button>
+        <button class="linkbtn" onclick="shareSamvaad()">Share with a friend</button>
+      </div>
+      <button class="demo-video" id="demoVid" aria-label="Samvaad demo video, tap for sound">
+        <video id="demoVideo" src="media/intro/reel.mp4" poster="media/intro/reel-poster.jpg" muted loop playsinline autoplay preload="metadata"></video>
+        <span class="demo-sound" id="demoSound">Tap for sound</span>
+      </button>
     </div>
 
     <div class="sec-h">Reads for you</div>
@@ -587,23 +614,19 @@
 
     <section class="glass card" id="screenInput">
       <div class="names" id="namesWrap">
-        <div><label class="fl" id="lblA">Your name</label><input type="text" id="nameA" value="Kavya"></div>
-        <div id="nameBWrap"><label class="fl">Partner's name</label><input type="text" id="nameB" value="Rohit"></div>
-      </div>
-      <div id="waWrap" style="margin-bottom:14px">
-        <label class="fl">WhatsApp number <span style="opacity:.65">· optional, for gentle daily check-ins (you can opt in later too)</span></label>
-        <input type="text" id="waNumber" placeholder="+91 98765 43210" inputmode="tel" autocomplete="tel">
+        <div id="nameAWrap"><label class="fl" id="lblA" for="nameA">Your name</label><input type="text" id="nameA" value="" maxlength="40" autocomplete="given-name" placeholder="Your name"></div>
+        <div id="nameBWrap"><label class="fl" for="nameB">Who were you talking with?</label><input type="text" id="nameB" value="" maxlength="40" placeholder="Their name"></div>
       </div>
       <div class="tabs">
         <!-- Upload audio is the headline way in, the chat second; recording stays available but quiet -->
         <button class="tab" data-tab="up" aria-selected="true">Upload audio</button>
-        <button class="tab" data-tab="text" aria-selected="false">Chats</button>
+        <button class="tab" data-tab="text" aria-selected="false">Paste chat</button>
         <button class="tab quiet" data-tab="rec" aria-selected="false">Record</button>
       </div>
       <div id="tab-text" class="hide">
         <label class="fl" id="taLbl">Your chat</label>
         <textarea id="transcript" maxlength="25000" placeholder="Kavya: Aaj phir tumne mummy ko call nahi kiya.&#10;Rohit: Yaar office mein kaam tha.&#10;Kavya: Hamesha koi excuse hota hai."></textarea>
-        <p class="hint" id="taHint">Copy the chat straight from WhatsApp and paste it here, or type it as <code>Name: what they said</code>. Hinglish and Devanagari welcome.</p>
+        <p class="hint" id="taHint"></p>
         <p class="hint" id="taCount" style="text-align:right;margin:-6px 0 10px"></p>
         <div class="row"><button class="btn soft" id="sampleBtn">Load a sample</button></div>
       </div>
@@ -642,6 +665,20 @@
 
   <!-- YOU -->
   <section id="viewYou" class="screen hide">
+    <div class="you-sec glass card" id="profileCard">
+      <h3>Your profile</h3>
+      <div id="profGuest" class="hide">
+        <p class="hint" style="margin:0 0 12px">You are browsing as a guest. Sign in to save your name, your number and your reflections.</p>
+        <a class="btn" href="login.html" style="width:auto;text-decoration:none;display:inline-flex">Sign in</a>
+      </div>
+      <form id="profForm" class="prof-form" novalidate>
+        <div><label class="fl" for="profName">Name</label><input type="text" id="profName" maxlength="40" autocomplete="name" placeholder="What should we call you?"></div>
+        <div><label class="fl" for="profPhone">WhatsApp number</label><input type="text" id="profPhone" inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210"></div>
+        <div><label class="fl" for="profEmail">Email</label><input type="text" id="profEmail" inputmode="email" readonly></div>
+        <div class="prof-actions"><button class="btn" type="submit" id="profSave" style="width:auto">Save</button><span class="prof-msg" id="profMsg" role="status"></span></div>
+      </form>
+    </div>
+
     <div class="sec-h sec-intents">What are we looking at?</div>
     <!-- The trial runs ONE intent. "Just me" is built, kept, and simply closed: it un-hides when
          /api/me reports selfMode (a global switch or a per-account flag in the admin console).
@@ -666,6 +703,11 @@
       <button class="btn soft" id="signBtn" style="width:auto">Sign out</button>
     </div>
     <div class="you-sec glass card">
+      <h3>Know someone who would like this?</h3>
+      <p class="hint" style="margin:0 0 12px">Send Samvaad to a friend and ask what they think.</p>
+      <button class="btn soft" style="width:auto" onclick="shareSamvaad()">Share with a friend</button>
+    </div>
+    <div class="you-sec glass card">
       <h3>Learn how it works</h3>
       <p class="hint" style="margin:0 0 12px">The full walkthrough of what happens to your conversation, and the 45-second video. More reads are on Home.</p>
       <div class="row" style="margin-top:0">
@@ -682,7 +724,7 @@
     <button data-tab="home" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 9.5V20h14V9.5"/></svg>Home</button>
     <button data-tab="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4"/><path d="M4 16l5-5 3 3 7-8"/><path d="M16 6h4v4"/></svg>Insights</button>
     <button class="talk" data-tab="analyse"><span class="tk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12.5a5 5 0 0 1-5 5H9l-4.5 3v-8a5 5 0 0 1 5-5h5.5a5 5 0 0 1 5 5z"/></svg></span>Talk</button>
-    <button data-tab="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.6"/><path d="M5.5 20c.5-3.6 3.2-5.6 6.5-5.6s6 2 6.5 5.6"/></svg>You</button>
+    <button data-tab="you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.6"/><path d="M5.5 20c.5-3.6 3.2-5.6 6.5-5.6s6 2 6.5 5.6"/></svg>Profile</button>
   </nav>
 </div>
 
@@ -755,7 +797,7 @@ document.body.setAttribute('data-mode','relationship');
 function renderAcct(){
   var sess=SamvaadAuth.readSession(), guest=SamvaadAuth.isGuest();
   var email=sess&&sess.user&&sess.user.email;
-  var nm=guest?'friend':(email?cap(email.split('@')[0]):'friend');
+  var nm=guest?'friend':(myName()||'friend');
   if($('greetName'))$('greetName').textContent=nm;
   if($('avaInit'))$('avaInit').textContent=(guest?'G':(nm.charAt(0)||'·')).toUpperCase();
   if($('acctId'))$('acctId').textContent=guest?'Browsing as a guest. Sessions aren’t saved.':(email||'Signed in.');
@@ -783,9 +825,10 @@ function view(v){
   document.querySelectorAll('.bottomnav button').forEach(function(b){b.setAttribute('aria-current',String(b.dataset.tab===v));});
   if(v==='home')renderHome();
   if(v==='dash')renderDash();
-  if(v==='you'){renderAcct();renderHome();}
+  if(v==='you'){renderAcct();renderHome();paintProfile();}
   window.scrollTo({top:0,behavior:'smooth'});
   floatSync();
+  var dv=$('demoVideo');if(dv){if(v==='home'&&dv.dataset.still!=='1'){var dp=dv.play();if(dp&&dp.catch)dp.catch(function(){});}else dv.pause();}
   if(v==='home'||v==='dash')setTimeout(maybeReview,1200);
 }
 document.querySelectorAll('.bottomnav button').forEach(function(b){b.onclick=function(){view(b.dataset.tab);};});
@@ -796,7 +839,7 @@ $('acctBtn').onclick=function(){view('you');};
    rather than at every call site, so nothing can slip a 'solo' relationship session through. */
 function setIntent(m,s){if(m==='relationship')s='couple';S.mode=m;S.sub=s;document.body.setAttribute('data-mode',m);document.querySelectorAll('#intentSeg button').forEach(function(x){x.setAttribute('aria-selected',String(x.dataset.m===m&&x.dataset.s===s));});syncMode();}
 /* start a fresh session from a home entry point: set intent, reset to the input form, open Talk */
-function startSession(m,s){if(m)setIntent(m,s);if(typeof screen==='function')screen('input');view('analyse');}
+function startSession(m,s){if(m)setIntent(m,s);if(typeof screen==='function')screen('input');fillMyName();view('analyse');}
 
 /* home */
 function streakCount(){var d={};(S.sessions||[]).forEach(function(s){d[new Date(s.ts).toDateString()]=1;});return Object.keys(d).length;}
@@ -825,6 +868,69 @@ function renderBlog(){
   }).catch(function(){});
 }
 renderBlog();
+
+/* ---------- Profile ----------
+   Signed-in people set their name and WhatsApp number once, on Profile, so the Talk form only asks who they
+   were talking with. Guests have no profile and keep both name boxes. */
+function myName(){var sess=SamvaadAuth.readSession(),email=sess&&sess.user&&sess.user.email,dn=S.me&&S.me.displayName;return (dn&&dn.trim())||(email?cap(email.split('@')[0]):'');}
+function fillMyName(){
+  var guest=SamvaadAuth.isGuest();
+  $('nameAWrap').classList.toggle('hide',!guest);$('namesWrap').classList.toggle('single',!guest);
+  if(!guest)$('nameA').value=myName()||'You';
+}
+function paintProfile(){
+  var guest=SamvaadAuth.isGuest();
+  $('profGuest').classList.toggle('hide',!guest);$('profForm').classList.toggle('hide',guest);
+  if(guest)return;
+  var sess=SamvaadAuth.readSession();
+  if(document.activeElement!==$('profName'))$('profName').value=(S.me&&S.me.displayName)||'';
+  if(document.activeElement!==$('profPhone'))$('profPhone').value=(S.me&&S.me.phone)?('+'+S.me.phone):'';
+  $('profEmail').value=(sess&&sess.user&&sess.user.email)||'';
+}
+$('profForm').onsubmit=async function(e){
+  e.preventDefault();
+  var msg=$('profMsg'),btn=$('profSave');msg.textContent='';msg.className='prof-msg';
+  var name=$('profName').value.trim(),phone=$('profPhone').value.replace(/[^\d+]/g,'');
+  if(phone&&!/^(\+?91)?[6-9]\d{9}$/.test(phone)){msg.textContent='Enter a 10-digit Indian mobile number.';msg.className='prof-msg err';return;}
+  btn.disabled=true;
+  try{
+    var r=await fetch(be()+'/api/profile',{method:'POST',headers:beHeaders(),body:JSON.stringify({display_name:name,phone:phone})});
+    if(r.status===401)return authLapsed();
+    var d=await r.json().catch(function(){return {};});
+    if(!r.ok)throw new Error(d.error||'Could not save that. Try again in a moment.');
+    S.me.displayName=d.displayName||null;S.me.phone=d.phone||null;if(d.phone)checkinStore('samvaad.waGiven','1');
+    msg.textContent='Saved.';msg.className='prof-msg ok';renderAcct();fillMyName();ev('profile_saved');
+  }catch(err){msg.textContent=err.message||'Could not save that.';msg.className='prof-msg err';}
+  finally{btn.disabled=false;}
+};
+
+/* Share with a friend: the phone's own share sheet where there is one, WhatsApp otherwise. */
+function shareSamvaad(){
+  var url='https://samvaad-mu.vercel.app/',text='I have been trying Samvaad: upload a conversation, see where it turned, and get kinder words to try. What do you think?';
+  ev('share_clicked');
+  if(navigator.share){navigator.share({title:'Samvaad',text:text,url:url}).catch(function(){});return;}
+  window.open('https://wa.me/?text='+encodeURIComponent(text+' '+url),'_blank','noopener');
+}
+
+/* The demo on Home plays muted on a loop; a tap brings the sound in. */
+(function(){
+  var v=$('demoVideo'),b=$('demoVid'),lab=$('demoSound');if(!v)return;
+  try{if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){v.removeAttribute('autoplay');v.pause();v.dataset.still='1';lab.textContent='Tap to play';}}catch(e){}
+  b.onclick=function(){
+    v.dataset.still='';
+    if(v.paused){v.muted=false;var p=v.play();if(p&&p.catch)p.catch(function(){});lab.textContent='Tap to mute';return;}
+    v.muted=!v.muted;lab.textContent=v.muted?'Tap for sound':'Tap to mute';
+  };
+  document.addEventListener('visibilitychange',function(){if(document.hidden)v.pause();});
+})();
+
+/* Try now on the intro lands straight in a new session: app.html#talk, or a fresh note from the sign-in page. */
+(function(){
+  var go=/^#talk$/.test(location.hash),n=null;
+  try{n=JSON.parse(localStorage.getItem('samvaad.next')||'null');localStorage.removeItem('samvaad.next');}catch(e){}
+  if(n&&n.to==='talk'&&Date.now()-n.t<30*60000)go=true;
+  if(go){if(location.hash)history.replaceState(null,'',location.pathname+location.search);setTimeout(function(){startSession();},0);}
+})();
 
 /* mode + submode (smooth cross-fade handled by CSS on data-mode) */
 document.querySelectorAll('#intentSeg button').forEach(function(b){b.onclick=function(){document.querySelectorAll('#intentSeg button').forEach(function(x){x.setAttribute('aria-selected','false');});b.setAttribute('aria-selected','true');S.mode=b.dataset.m;S.sub=b.dataset.s;document.body.setAttribute('data-mode',S.mode);syncMode();};});
@@ -877,7 +983,7 @@ function floatPop(b){
 }
 function syncMode(){
   var couple=S.mode==='relationship'&&S.sub==='couple';$('nameBWrap').classList.toggle('hide',!couple);$('consentBox').classList.toggle('hide',!couple);
-  var L={'relationship|couple':["A conversation between the two of you. We replay how it actually went, show where it caught, and give you the lines to try instead.","Your chat","Copy the chat straight from WhatsApp and paste it here, or type it as <code>Name: what they said</code>. Hinglish and Devanagari welcome."],
+  var L={'relationship|couple':["A conversation between the two of you. We replay how it actually went, show where it caught, and give you the lines to try instead.","Your chat","Hinglish, Hindi and English all work."],
          'relationship|solo':["Just you. Describe a situation or speak a voice-journal. We read how you show up and gently infer the other side.","Your words","Speak or write freely about what happened."],
          'self|solo':["The introspection space, in your own words. A commute debrief or a journal entry; we surface your stress, self-talk and language, and help you cool down.","Your words","A debrief, a journal entry, anything you want to think through."]};
   var c=L[S.mode+'|'+S.sub]||L['relationship|couple'];$('lede').textContent=c[0];floatSync();$('taLbl').textContent=c[1];
@@ -916,6 +1022,7 @@ function renderAllowance(){
 }
 function applyMe(){
   var self=!!S.me.selfMode;
+  paintProfile();fillMyName();renderAcct();
   var wa=$('waWrap');if(wa)wa.classList.toggle('hide',!!(S.me.phone||checkinStore('samvaad.waGiven')));
   ['intentSelf','checkinTile','modeBar'].forEach(function(id){var el=$(id);if(el)el.classList.toggle('hide',!self);});
   var lim=S.me.limits||{};
@@ -933,7 +1040,7 @@ async function loadMe(){
     var r=await fetch(be()+'/api/me',{headers:beHeaders()});
     if(!r.ok)return;
     var d=await r.json();
-    S.me={act1:d.act1||'voiced',selfMode:!!d.selfMode,limits:d.limits||S.me.limits,status:d.status,quota:d.quota,allowance:d.allowance||null,phone:d.phone||null};
+    S.me={act1:d.act1||'voiced',selfMode:!!d.selfMode,limits:d.limits||S.me.limits,status:d.status,quota:d.quota,allowance:d.allowance||null,phone:d.phone||null,displayName:d.displayName||null};
     // A suspended account should find out here, not after typing out a painful conversation.
     if(d.status==='suspended')showErr('This account is paused. Please reach out to us and we will sort it out.');
     applyMe();
@@ -1076,7 +1183,7 @@ function recPaint(state,sec,auto){
   play.innerHTML='';
   hint.textContent=state==='short'?'That was too short to use. Tap to try again.'
     :state==='blocked'?'Microphone access was blocked. Allow it for this site, then tap again.'
-    :state==='unsupported'?'This browser cannot record. Use Upload audio or Chats instead.'
+    :state==='unsupported'?'This browser cannot record. Use Upload audio or Paste chat instead.'
     :'Tap to start recording, and tap again when you are done. It stops on its own at '+fmtClock(recLimitSec())+'.';
 }
 async function recStart(){
@@ -1229,7 +1336,6 @@ async function run(){
     S.report=data;S.improved=data.improved||[];S.original=data.original||[];
     if(data.allowance){S.me.allowance=data.allowance;renderAllowance();}
     S.sessions.unshift({ts:Date.now(),mode:S.mode,sub:S.sub,a:a,b:b,overall:(data.scores||{}).overall||0,pattern:(data.patterns&&data.patterns[0])?data.patterns[0].title:'…',full:data,local:true});
-    saveWhatsApp();   // fire and forget: links the number to the account, never blocks the report
     showWalkPrompt(a,b);
   }catch(err){screen('input');showErr(err.message||String(err));}
   finally{S.busy=false;}
@@ -1303,19 +1409,22 @@ function showWalkPrompt(a,b){
   var sc=(S.report&&S.report.scores)||{},self=S.mode==='self';
   var trunc=S._trunc?('<p class="hint" style="margin:0 0 14px;color:var(--warn)">This one ran long, so we read the first '
     +Number(S._trunc.kept).toLocaleString()+' of '+Number(S._trunc.total).toLocaleString()+' words.</p>'):'';
-  $('resultsStack').innerHTML='<div class="rv in"><div class="glass section" style="text-align:center;padding:34px 24px;max-width:480px;margin:0 auto">'
+  $('resultsStack').innerHTML='<div class="rv in"><div class="glass section res-card">'
     +trunc
     +(S._isSample?'<p class="hint" style="margin:0 0 12px">This is the sample, so it did not use one of your conversations.</p>':'')
     +'<div class="slide-big" style="color:'+clr('overall',sc.overall||0)+'">'+(sc.overall||0)+'</div>'
     +'<p class="hint" style="margin:2px 0 14px">'+(self?'wellbeing signal':'connection')+'</p>'
-    +'<h2 class="serif" style="font-weight:500;font-size:22px;margin:0 0 6px">Your reflection is ready</h2>'
-    +'<p class="hint" style="margin:0 0 20px">Watch your conversation play back, then a kinder version of it. Or read the full analysis at your own pace.</p>'
+    +'<h2 class="serif">Your reflection is ready</h2>'
     +'<div class="choice2">'
-    +'<button class="btn accent" onclick="playReflection()">&#9654; Play the reflection</button>'
-    +'<button class="btn soft" onclick="readAnalysis()">Read the analysis</button>'
+    +'<button class="btn accent" onclick="playReflection()">&#8635; Watch it again</button>'
+    +'<button class="btn soft" onclick="shareSamvaad()">Share with a friend</button>'
     +'</div>'
+    +'<button class="linkbtn" onclick="readAnalysis()">Read the full analysis</button>'
     +'</div></div>';
   screen('results');
+  // straight into it: the conversation plays back first, no extra button to find
+  ev('walkthrough_opened',{auto:true});
+  openSlides();
 }
 /* The two ways into a finished analysis. Some people want to watch it, some want to read it, and
    neither should have to go through the other first. */
@@ -1644,7 +1753,34 @@ function browser(text,cls,done){var fem=(S._g&&S._g[cls])?S._g[cls]==='female':c
 /* The proxy's voice A is the female voice and B the male one. Sides used to map straight onto them, so
    swapping the names (Rohit as person A) redrew the characters but kept a woman's voice on the man. */
 function voiceFor(cls){var g=S._g&&S._g[cls];if(!g)return cls==='a'?'A':'B';return g==='male'?'B':'A';}
-async function speakBackend(text,cls,done,fb){var sv=sampleVoice(text);if(sv){try{var sa=new Audio(sv);S._au=sa;sa.playbackRate=0.9;try{sa.preservesPitch=true;}catch(e){}sa.onended=done;sa.onerror=function(){fb();};if(!S.playing)return;var pp=sa.play();if(pp&&pp.catch)pp.catch(function(){fb();});talkStart(cls,sa);}catch(e){fb();}return;}try{var r=await fetch(be()+'/api/tts',{method:'POST',headers:beHeaders(),body:JSON.stringify({text:text,speaker:voiceFor(cls)})});if(!r.ok)throw 0;var u=URL.createObjectURL(await r.blob());var au=new Audio(u);S._au=au;au.playbackRate=0.9;try{au.preservesPitch=true;}catch(e){}au.onended=function(){URL.revokeObjectURL(u);done();};au.onerror=done;if(!S.playing){try{au.pause();}catch(e){}URL.revokeObjectURL(u);return;}au.play();talkStart(cls,au);}catch(e){fb();}}
+/* Every line of a replay is fetched at once when its scene is built, then played from the cache. Fetching each
+   line only when its turn came left a pause before every line, and the old 0.9x time-stretch made voices warble. */
+var TTS={};
+function ttsFetch(text,voice){
+  var k=voice+'|'+text;if(TTS[k])return TTS[k];
+  var p=fetch(be()+'/api/tts',{method:'POST',headers:beHeaders(),body:JSON.stringify({text:text,speaker:voice})})
+    .then(function(r){if(!r.ok)throw new Error('tts '+r.status);return r.blob();})
+    .then(function(b){return URL.createObjectURL(b);});
+  TTS[k]=p;p.catch(function(){delete TTS[k];});return p;
+}
+function prefetchVoices(){
+  if(S.mute||S._silent)return;
+  trackOf().forEach(function(t,i){
+    if(S._segs&&S._segs[i])return;
+    var cls=S.mode==='self'?'a':spk(t,i),text=stripSpk(t.speak||t.display);
+    if(!text||sampleVoice(text))return;
+    ttsFetch(text,voiceFor(cls)).catch(function(){});
+  });
+}
+async function speakBackend(text,cls,done,fb){
+  var src=sampleVoice(text);
+  if(!src){try{src=await ttsFetch(text,voiceFor(cls));}catch(e){return fb();}}
+  if(!S.playing)return;
+  var au=new Audio(src);S._au=au;
+  au.onended=done;au.onerror=function(){fb();};
+  var pp=au.play();if(pp&&pp.catch)pp.catch(function(){fb();});
+  talkStart(cls,au);
+}
 
 /* ---------- act 1: the conversation as it actually happened ----------
    The walk-through opens by playing the pivotal moment back in the couple's own words, before it
@@ -1723,6 +1859,7 @@ function startAct1(){
     if(got<Math.ceil((S.original||[]).length/2)){S._segs=null;S._real=null;S._act1='voiced';}
   }
   buildScene(a,b,S.original);
+  prefetchVoices();
   var lbl=$('slides').querySelector('.np-label');
   if(lbl)lbl.textContent=(S._act1==='real_audio')?'Their voices':(S._act1==='silent'?'As it happened':'As it happened');
   startPlay();
@@ -1743,7 +1880,7 @@ function tick(){if(!BR||!BR.running)return;var s=Math.floor((Date.now()-BR.start
 var WALK={slides:[],i:0};
 function openSlides(){var a=($('nameA').value||'').trim()||'You';WALK.slides=buildSlides(a);WALK.i=0;WALK.cur=null;$('slides').classList.add('show');renderSlide();}
 function closeSlides(){leaveSlide();$('slides').classList.remove('show');}
-function walkNav(d){var n=WALK.i+d;if(n<0)return;if(n>=WALK.slides.length){closeSlides();renderDash();view('dash');return;}WALK.i=n;renderSlide();}
+function walkNav(d){var n=WALK.i+d;if(n<0)return;if(n>=WALK.slides.length){closeSlides();ev('walkthrough_completed');return;}WALK.i=n;renderSlide();}
 /* A slide that put a replay stage on screen has to tear it down before the next slide replaces
    the markup underneath it, otherwise the audio keeps playing over the following slide. */
 function leaveSlide(){
@@ -1768,43 +1905,26 @@ function startAct2(){
   endAct1();
   var a=($('nameA').value||'').trim()||'You',b=($('nameB').value||'').trim()||'Them';
   buildScene(a,b,S.improved);
+  prefetchVoices();
   startPlay();
 }
 $('slideBreathe').onclick=function(){stopReplay();openBreath();};
 function scriptCards(arr,self){arr=arr||[];if(!arr.length)return '<p class="hint">…</p>';return arr.map(function(s){return self
   ? '<div class="imp"><div class="p dv">'+esc(s.pattern||'')+'</div><div class="script dv"><span class="lab">🔊 say this out loud</span>'+esc(s.script||'')+'</div></div>'
   : '<div class="imp"><div class="p dv">'+esc(s.pattern||'')+'</div><div class="s dv">'+esc(s.suggestion||'')+'</div><div class="script dv"><span class="lab">try saying</span>'+esc(s.script||'')+'</div></div>';}).join('');}
+/* After the 2026-09-16 review: fewer, simpler steps. See the conversation, see the score, see what to change,
+   see it said kindly. Breathing comes first only when the conversation ran hot, and stays one tap away. */
 function buildSlides(a){
   var r=S.report||{},sc=r.scores||{},risk=sc.escalation_risk||0,hot=risk>=60,self=S.mode==='self',overall=sc.overall||0;
-  var sList=function(arr,kind){arr=arr||[];if(!arr.length)return '<p class="hint">…</p>';return arr.map(function(s){return '<div class="item '+kind+'"><span class="t dv">'+esc(s.title)+'</span> <span class="who">'+esc(s.who||'')+'</span><div class="d dv">'+esc(s.detail||'')+'</div></div>';}).join('');};
+  var sList=function(arr,kind){return arr.map(function(s){return '<div class="item '+kind+'"><span class="t dv">'+esc(s.title)+'</span> <span class="who">'+esc(s.who||'')+'</span><div class="d dv">'+esc(s.detail||'')+'</div></div>';}).join('');};
+  var mini='<div class="mini-scores">'+[['Connection',sc.connection],['Empathy',sc.empathy],['Heat',sc.escalation_risk]].filter(function(x){return x[1]!=null;}).map(function(x){return '<span>'+x[0]+' '+Number(x[1])+'</span>';}).join('')+'</div>';
   var slides=[];
-  slides.push({eyebrow:'A gentle walk-through',h:'Let’s look at this together, '+esc(a),html:'<div class="slide-big" style="color:'+clr('overall',overall)+'">'+overall+'</div><p class="slide-p" style="margin-top:2px">'+(self?'wellbeing signal':'connection')+'</p><p class="slide-p dv">'+esc(r.summary||'')+'</p>'});
-  // breathing earns its place only when escalation was genuinely high, and the reason is shown
-  if(hot)slides.push({eyebrow:'One minute for you',h:'There was real heat. Let’s breathe',html:'<p class="slide-p">Escalation read high on this one ('+risk+'/100). Before anything else, one minute to settle your body, inhale, hold, exhale, soften. Regulate first, talk second.</p><div class="row" style="justify-content:center"><button class="btn accent" onclick="openBreath()">Take a minute</button></div>'});
-  // ACT 1, the conversation as it actually happened, in their own words, before a word of
-  // judgement. Seeing it played back is what makes everything after it land.
-  if(act1Worth())slides.push({
-    eyebrow:'How it went',
-    h:'First, the moment itself',
-    html:'<p class="slide-p">This is the stretch where it turned, played back in your own words. Watch it once before we look at why.</p>'+stageHTML('As it happened'),
-    after:startAct1, leave:endAct1
-  });
-  // Then what went wrong, then what could have been said instead. That order is the point:
-  // the diagnosis only means something once you have watched the thing being diagnosed.
-  if((r.patterns||[]).length)slides.push({eyebrow:'Where it caught',h:'What went wrong here',html:sList(r.patterns,'pat')});
-  if((r.improvements||[]).length)slides.push(self?{eyebrow:'Your words, out loud',h:'Say these out loud',html:'<p class="slide-p">Say each line aloud, your way, hearing your own voice is the practice.</p>'+scriptCards(r.improvements,true)}:{eyebrow:'How to improve',h:'What could be said instead',html:scriptCards(r.improvements,false)});
-  //, rest as before …
-  if((r.strengths||[]).length)slides.push({eyebrow:'The good in you',h:self?'What’s working':'What you did well',html:sList(r.strengths,'good')});
-  // ACT 2, the same moment, softened. Inline now, so the walk-through is not interrupted
-  // halfway through to send someone off to another screen.
-  if(replayWorth())slides.push({
-    eyebrow:'See it play out',
-    h:self?'Sathi reflects back':'Now, a kinder version',
-    html:'<p class="slide-p">The same moment, said differently.</p>'+stageHTML(self?'Sathi reflects back':'Kinder replay'),
-    after:startAct2, leave:stopReplay
-  });
-  // asked once: not again after this slide has been shown, and never once a number has been given
-  if(!checkinDone())slides.push({eyebrow:'Stay with it',h:'A gentle daily check-in',html:optinBlock(a),checkin:true});
+  if(hot)slides.push({eyebrow:'Before we begin',h:'That got heated. Breathe first?',html:'<p class="slide-p">One slow minute helps the rest land. You can skip it.</p><div class="row" style="justify-content:center"><button class="btn accent" onclick="openBreath()">Take a minute</button></div>'});
+  if(act1Worth())slides.push({eyebrow:'Your conversation',h:'Here is how it went',html:stageHTML('As it happened'),after:startAct1,leave:endAct1});
+  slides.push({eyebrow:'Your score',h:self?'How your words land':'How this conversation went',html:'<div class="slide-big" style="color:'+clr('overall',overall)+'">'+overall+'</div><p class="slide-p" style="margin-top:2px">'+(self?'wellbeing signal':'connection')+'</p>'+mini+'<p class="slide-p dv">'+esc(r.summary||'')+'</p>'});
+  if((r.patterns||[]).length)slides.push({eyebrow:'What went wrong',h:'Where it turned',html:sList(r.patterns.slice(0,3),'pat')});
+  if((r.improvements||[]).length)slides.push(self?{eyebrow:'Your words, out loud',h:'Say these out loud',html:scriptCards(r.improvements.slice(0,3),true)}:{eyebrow:'What to say instead',h:'Try these lines',html:scriptCards(r.improvements.slice(0,3),false)});
+  if(replayWorth())slides.push({eyebrow:'The kinder version',h:self?'Sathi reflects back':'The same moment, said kindly',html:stageHTML(self?'Sathi reflects back':'Kinder replay'),after:startAct2,leave:stopReplay});
   return slides;
 }
 function vidCard(t,m,i){i=i||0;var TH=['linear-gradient(150deg,#7164C6,#5848BF)','linear-gradient(150deg,#9D559D,#6F3F72)','linear-gradient(150deg,#7164C6,#9D559D)','linear-gradient(150deg,#367D69,#2A6454)'];

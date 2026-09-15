@@ -213,18 +213,20 @@ finishes. It spends real Groq quota and waits out the per-minute window, so allo
 
 ## 10. The intro
 
-`web/intro.html` is a 9:16 reel, about 46 seconds, built so nobody has to sit through an
-explanation: a fast chat hook, five clips of the real product (upload the recording, score, the moment played
-back, the line that turned it and the kinder one, the score tracked over time), a privacy card,
-then the two Rive rigs and Get started. Every card has its own timed voice line.
+`web/intro.html` is a 9:16 reel, about 28 seconds, built so nobody has to sit through an
+explanation. It opens straight on four clips of the real product (upload the recording, the score, the
+moment played back, what went wrong and the kinder line), then the two Rive rigs with "Try it, visualise,
+and score your progress." and Get started. Every card has its own timed voice line. Like stories, a tap on
+the left goes back a card and a tap on the right skips ahead.
 
 **Sound is on by default**, at 75% of the device volume, with an icon-only toggle. Browsers refuse
 audible autoplay before someone has touched the page, so on a first visit many people will see it
 start silently; the first tap anywhere brings the sound in. A music bed plays under the voice once
 `web/audio/intro/music.mp3` exists.
 
-**Two ways out at every moment:** Skip to blog (the How it works page) and Skip to sign in.
-Signed-in people can rewatch it, or read the blog, from the You page.
+**Two ways out at every moment:** Skip to blog (the How it works page) and a purple **Try now**, which
+goes to sign-in and then straight into a new session. Get started at the end goes to sign-in, then Home.
+Signed-in people see the same reel playing muted on Home, and can rewatch it or read the blog from Profile.
 
 **How it is tracked.** Every viewer gets an anonymous id in localStorage. The page emits
 `intro_started`, an `intro_scene` for each card reached, `intro_audio_blocked` when the browser

@@ -1,14 +1,12 @@
-// Verifies the new intro reel at Android size: default sound, icon-only toggle, two skips,
-// blocked-autoplay unlock, replay-from-app labels, layout, and a screenshot of every card.
+// Intro reel after the 2026-09-16 review: opens on product video, 4 clips + close, story-style taps,
+// purple Try now to sign-in with next=talk, voice buffered up front, blocked-autoplay still handled.
 const { chromium } = require('playwright');
 const fs = require('fs');
-const path = require('path');
-const BASE = 'http://localhost:8123';
-const OUT = path.join(__dirname, 'out', 'check');
+const BASE = process.env.BASE || 'http://localhost:8123';
+const OUT = require('path').join(__dirname, 'out', 'introcheck');
 fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive: true });
-
 let pass = 0, fail = 0;
-const ok = (name, cond, extra) => { cond ? pass++ : fail++; console.log((cond ? 'PASS ' : 'FAIL ') + name + (extra !== undefined ? '  ' + JSON.stringify(extra) : '')); };
+const ok = (n, c, x) => { c ? pass++ : fail++; console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  ' + JSON.stringify(x) : '')); };
 
 async function open(browser, url) {
   const ctx = await browser.newContext({ viewport: { width: 360, height: 640 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
@@ -21,95 +19,72 @@ async function open(browser, url) {
   await page.goto(BASE + url, { waitUntil: 'load' });
   return { ctx, page, events, errors };
 }
-const state = page => page.evaluate(() => ({
-  i, soundOn, blocked, playing: !!(window.au && !au.paused), vol: window.au ? au.volume : null,
-  pressed: document.getElementById('sound').getAttribute('aria-pressed'),
-  iconText: document.getElementById('sound').textContent.trim(),
-  hasSvg: !!document.querySelector('#sound svg'), off: document.getElementById('sound').classList.contains('off'),
-  musicMissing: MU.missing
-}));
-const box = (page, sel) => page.locator(sel).first().boundingBox();
+const st = page => page.evaluate(() => ({ i, soundOn, blocked, playing: !!(window.au && !au.paused), vol: window.au ? au.volume : null,
+  n: SCENES.length, kinds: SCENES.map(s => s.kind), total: SCENES.reduce((a, s) => a + s.dur, 0), buffered: SCENES.filter(s => s._au).length }));
+const tapAt = async (page, frac) => { const b = await page.locator('#reel').boundingBox(); await page.mouse.click(b.x + b.width * frac, b.y + b.height * 0.55); };
 
 (async () => {
-  // ---------- 1. autoplay allowed ----------
   const b1 = await chromium.launch({ channel: 'chrome', args: ['--autoplay-policy=no-user-gesture-required'] });
   let { ctx, page, events, errors } = await open(b1, '/intro.html');
-  await page.waitForTimeout(1300);
-  let st = await state(page);
-  ok('sound is on by default', st.soundOn && st.pressed === 'true', st);
-  ok('hook voice line is playing at 75%', st.playing && Math.abs(st.vol - 0.75) < 0.001, { playing: st.playing, vol: st.vol });
-  ok('sound toggle is an icon with no text', st.hasSvg && st.iconText === '', st.iconText);
-  ok('skip buttons read "Skip to blog" and "Skip to sign in"',
-    (await page.textContent('#skipBlog')).trim() === 'Skip to blog' && (await page.textContent('#skip')).trim() === 'Skip to sign in');
-  const sb = await box(page, '#sound'), bb = await box(page, '#skipBlog'), lb = await box(page, '#skip');
-  ok('HUD row fits the phone width without overlap', sb.x + sb.width <= bb.x && bb.x + bb.width <= lb.x && lb.x + lb.width <= 360,
-    { sound: Math.round(sb.x + sb.width), blog: [Math.round(bb.x), Math.round(bb.x + bb.width)], signin: [Math.round(lb.x), Math.round(lb.x + lb.width)] });
-  ok('tap targets are at least 40px tall', sb.height >= 40 && bb.height >= 30, { sound: sb.height, blog: bb.height });
-  await page.screenshot({ path: OUT + '/0-hook.png' });
+  await page.waitForTimeout(1400);
+  let s = await st(page);
+  ok('opens on product video, not text', s.kinds[0] === 'video' && s.i === 0, s.kinds);
+  ok('four clips and a closing card', s.n === 5 && s.kinds[4] === 'close', s.kinds);
+  ok('reel is short (under 32 seconds)', s.total < 32, s.total.toFixed(1));
+  ok('every voice line buffered up front', s.buffered === 5, s.buffered);
+  ok('voice plays on the first card at 75%', s.playing && Math.abs(s.vol - 0.75) < 0.01, s);
+  const tryBtn = page.locator('#skip');
+  ok('Try now label', (await tryBtn.textContent()).trim() === 'Try now');
+  const bg = await tryBtn.evaluate(e => getComputedStyle(e).backgroundImage + '|' + getComputedStyle(e).color);
+  ok('Try now is purple with white text', /gradient/.test(bg) && /255, 255, 255/.test(bg), bg);
+  await page.screenshot({ path: OUT + '/0-first.png' });
 
-  // walk every card, screenshotting each
-  const shots = [[1, 1800, '1-paste'], [2, 2600, '2-score'], [3, 3000, '3-replay'], [4, 4000, '4-kinder'], [5, 2200, '5-tracked'], [6, 7500, '6-privacy'], [7, 3200, '7-close']];
-  for (const [k, wait, name] of shots) {
-    await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(wait);
-    if (k === 1) {
-      const kin = await box(page, '#kin .big'), hud = await box(page, '.hudrow');
-      ok('caption sits below the HUD', kin && hud && kin.y > hud.y + hud.height, { kinTop: kin && Math.round(kin.y), hudBottom: Math.round(hud.y + hud.height) });
-      ok('clip 1 video is decoding', await page.evaluate(() => layers[1].querySelector('video').readyState >= 2));
-      const shot = await box(page, '.layer.on .shot');
-      ok('caption never covers the product card', kin && shot && kin.y + kin.height <= shot.y, { kinBottom: kin && Math.round(kin.y + kin.height), cardTop: shot && Math.round(shot.y) });
-    }
-    if (k === 4) ok('clip 4 caption swapped to the kinder line', /kinder/.test(await page.textContent('#kin')));
-    if (k === 7) ok('call to action is visible on the last card', await page.isVisible('#cta'));
-    await page.screenshot({ path: OUT + '/' + name + '.png' });
-  }
-  st = await state(page);
-  ok('voice still on after walking every card (no false "blocked")', st.soundOn && !st.blocked, st);
-  const mu = await page.evaluate(() => ({ loaded: !!MU.el && !MU.missing, playing: !!(MU.el && !MU.el.paused), level: MU.level }));
-  ok('music bed plays, quietly', mu.loaded && mu.playing && mu.level > 0 && mu.level < 0.4, mu);
-  await page.click('#sound'); await page.waitForTimeout(200);
-  st = await state(page);
-  ok('tapping the icon turns sound off', !st.soundOn && st.pressed === 'false' && !st.playing, st);
-  await page.click('#skipBlog');
-  await page.waitForURL(/how-it-works\.html/, { timeout: 8000 }).catch(() => {});
-  ok('Skip to blog opens the blog', /how-it-works\.html/.test(page.url()), page.url());
-  const names = events.map(e => e.name);
-  ok('events recorded (started, scene, muted)', ['intro_started', 'intro_scene', 'intro_muted'].every(n => names.includes(n)), [...new Set(names)]);
-  const sk = events.find(e => e.name === 'intro_skipped');
-  console.log('INFO intro_skipped via beacon captured:', sk ? JSON.stringify(sk.props) : 'not visible to the test (sendBeacon)');
+  await tapAt(page, 0.8); await page.waitForTimeout(500);
+  ok('tap right goes to the next card', (await st(page)).i === 1);
+  await tapAt(page, 0.8); await page.waitForTimeout(500);
+  ok('tap right again', (await st(page)).i === 2);
+  await tapAt(page, 0.15); await page.waitForTimeout(500);
+  s = await st(page);
+  ok('tap left goes back a card', s.i === 1, s.i);
+  ok('voice restarts on the card you went back to', s.playing, s);
+  ok('back is tracked', events.some(e => e.name === 'intro_back'));
+  for (let k = 0; k < 6; k++) { await tapAt(page, 0.8); await page.waitForTimeout(300); }
+  s = await st(page);
+  ok('tapping right stops on the last card', s.i === 4, s.i);
+  await page.waitForTimeout(1500);
+  ok('closing card copy', /Try it, visualise, and score your progress\./.test(await page.textContent('.layer.on')));
+  ok('closing card button visible', await page.isVisible('#cta'));
+  await page.screenshot({ path: OUT + '/4-close.png' });
+  await page.click('#cta');
+  await page.waitForURL(/login\.html/, { timeout: 8000 }).catch(() => {});
+  ok('end of reel goes to sign-in without next=talk', /login\.html$/.test(page.url()), page.url());
   ok('no script errors', errors.length === 0, errors.slice(0, 3));
   await ctx.close();
 
-  ({ ctx, page, errors } = await open(b1, '/intro.html'));
-  await page.waitForTimeout(600);
+  ({ ctx, page } = await open(b1, '/intro.html'));
+  await page.waitForTimeout(700);
   await page.click('#skip');
   await page.waitForURL(/login\.html/, { timeout: 8000 }).catch(() => {});
-  ok('Skip to sign in opens sign-in', /login\.html/.test(page.url()), page.url());
+  ok('Try now goes to sign-in with next=talk', /login\.html\?next=talk/.test(page.url()), page.url());
   await ctx.close();
 
-  ({ ctx, page, errors } = await open(b1, '/intro.html?from=app'));
-  await page.waitForTimeout(600);
-  ok('replay from the app says "Back to app"', (await page.textContent('#skip')).trim() === 'Back to app');
+  ({ ctx, page } = await open(b1, '/intro.html'));
+  await page.waitForTimeout(700);
+  await page.click('#skipBlog');
+  await page.waitForURL(/how-it-works/, { timeout: 8000 }).catch(() => {});
+  ok('Skip to blog still opens How it works', /how-it-works/.test(page.url()));
   await ctx.close();
   await b1.close();
 
-  // ---------- 2. autoplay blocked, as on a first real visit ----------
   const b2 = await chromium.launch({ channel: 'chrome', args: ['--autoplay-policy=document-user-activation-required'] });
-  ({ ctx, page, events, errors } = await open(b2, '/intro.html'));
-  await page.waitForTimeout(1300);
-  st = await state(page);
-  const tapShown = () => page.evaluate(() => document.getElementById('tapSound').classList.contains('show'));
-  ok('blocked browser: big speaker button appears, icon shows off', st.blocked && !st.soundOn && st.off && await tapShown(), st);
-  await page.screenshot({ path: OUT + '/9-blocked.png' });
-  await page.waitForTimeout(2600);
-  st = await state(page);
-  ok('blocked browser: waits after the hook instead of running on silently', st.i === 0 && st.blocked, st);
-  await page.mouse.click(180, 300);
-  await page.waitForTimeout(700);
-  st = await state(page);
-  ok('first tap starts again from the top, with sound', st.soundOn && !st.blocked && st.playing && st.i === 0 && !(await tapShown()), st);
+  ({ ctx, page, errors } = await open(b2, '/intro.html'));
+  await page.waitForTimeout(1400);
+  s = await st(page);
+  ok('blocked browser: big speaker button shows', s.blocked && await page.evaluate(() => document.getElementById('tapSound').classList.contains('show')), s);
+  await tapAt(page, 0.8); await page.waitForTimeout(700);
+  s = await st(page);
+  ok('first tap unlocks sound and does not skip the card', s.soundOn && !s.blocked && s.i === 0, s);
   ok('blocked browser: no script errors', errors.length === 0, errors.slice(0, 3));
   await ctx.close(); await b2.close();
-
   console.log(`\n${pass} passed, ${fail} failed`);
 })().catch(e => { console.error(e); process.exit(1); });

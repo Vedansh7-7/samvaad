@@ -620,7 +620,8 @@ const EVENT_NAMES = new Set([
   'walkthrough_opened', 'walkthrough_completed', 'act1_played', 'act1_finished',
   'replay_played', 'breathing_opened', 'feedback_given', 'report_opened',
   'intro_sound_unlocked', 'sample_loaded', 'sample_analysed', 'bubbles_popped',
-  'record_started', 'record_finished', 'review_prompt_shown', 'review_dismissed'
+  'record_started', 'record_finished', 'review_prompt_shown', 'review_dismissed',
+  'intro_back', 'share_clicked', 'profile_saved', 'walkthrough_completed'
 ]);
 
 app.post('/api/event', async (req, res) => {
@@ -930,6 +931,7 @@ app.get('/api/me', async (req, res) => {
       kind: 'user', email: p.user?.email || null,
       status: prof?.status || 'active',
       phone: prof?.phone || null, phoneVerified: !!prof?.phone_verified,
+      displayName: prof?.display_name || null,
       features: prof?.features || {},
       quota: { minutes: Number(prof?.minutes_quota || DEFAULT_MINUTES_QUOTA), used },
       allowance: await allowance(p),
@@ -996,6 +998,35 @@ app.post('/api/profile/phone', async (req, res) => {
     if (error) { console.error('[samvaad] phone save failed:', error.message); return res.status(500).json({ error: 'Could not save that number.' }); }
 
     res.json({ ok: true, phone, verified: false });
+  } catch (e) { fail(res, e); }
+});
+
+// ---- Profile: the name and WhatsApp number from the Profile tab ----------------
+// One save for both, with every refusal said plainly. The old path saved the number silently after an
+// analysis and swallowed any failure, so a taken or mistyped number looked like it "did nothing".
+// An empty phone clears it; a name is plain text, trimmed and capped like the names in an analysis.
+app.post('/api/profile', async (req, res) => {
+  try {
+    const user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'Please sign in first.' });
+    if (!admin) return res.status(503).json({ error: 'Not configured.' });
+    if (!rateLimit('pf:' + user.id, 10)) return res.status(429).json({ error: 'Slow down a moment, then try again.' });
+    const name = String(req.body?.display_name ?? '').replace(/[\u0000-\u001f\u007f"`<>\\]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+    const raw = String(req.body?.phone ?? '').trim();
+    let phone = null;
+    if (raw) {
+      phone = normalisePhone(raw);
+      if (!/^91[6-9]\d{9}$/.test(phone)) return res.status(400).json({ error: 'Enter a 10-digit Indian mobile number.' });
+      const { data: taken } = await admin.from('profiles').select('user_id').eq('phone', phone).maybeSingle();
+      if (taken && taken.user_id !== user.id) return res.status(409).json({ error: 'That number is already linked to another account.' });
+    }
+    const prof = await ensureProfile({ kind: 'user', id: user.id, user });
+    if (!prof) return res.status(503).json({ error: 'Profiles are not set up yet. Please try again later.' });
+    const patch = { display_name: name || null, phone, updated_at: new Date().toISOString() };
+    if (phone !== (prof.phone || null)) patch.phone_verified = false;
+    const { error } = await admin.from('profiles').update(patch).eq('user_id', user.id);
+    if (error) { console.error('[samvaad] profile save failed:', error.message); return res.status(500).json({ error: 'Could not save your profile. Please try again.' }); }
+    res.json({ ok: true, displayName: patch.display_name, phone });
   } catch (e) { fail(res, e); }
 });
 

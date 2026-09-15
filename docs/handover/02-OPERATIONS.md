@@ -168,8 +168,10 @@ and the throughput with no code change.
 
 ## Regenerating the intro
 
-Narration lives in `web/audio/intro/script-v2.json`; the audio is `web/audio/intro/v2-00-f.mp3` to
-`v2-07-f.mp3`, one line per card, levelled to the same loudness (about -17.5 dB mean). To change a
+Narration lives in `web/audio/intro/script-v2.json`; the reel uses `v2-01-f.mp3` to `v2-04-m.mp3` for
+the four clips and `v3-close-f.mp3` ("Try it, visualise, and score your progress.") for the closing card,
+one line per card, levelled to the same loudness (about -17.5 dB mean). `v2-00`, `v2-05` and `v2-06` belong
+to the cards removed at the 2026-09-16 review. To change a
 line, regenerate it through the ElevenLabs API with the same voice ids (`ELEVEN_VOICE_A` female,
 `ELEVEN_VOICE_B` male), level it to match, and set that card's `dur` in the `SCENES` array in
 `intro.html` to the new measured length plus `PAD`.
@@ -181,7 +183,7 @@ as quiet, and update that credit.
 It plays at `MUSIC_BED` and dips to `MUSIC_DUCK` under every voice line, both relative to the 75%
 voice volume set at the top of the script. With no file, the reel plays without music.
 
-The product clips (`web/media/intro/s1.mp4` to `s5.mp4`, 720x1280 H.264) are real `app.html`
+The product clips (`web/media/intro/s1.mp4` to `s4.mp4`, 720x1280 H.264) are real `app.html`
 footage, captured with Chrome's own screencast (CDP `Page.startScreencast`, 360x640 at 3x density)
 against a mocked API. Markers on the same clock let every loading frame be cut and each clip be
 timed to its line. Re-record them whenever the app's look changes, or the reel will advertise an
@@ -189,4 +191,5 @@ app that no longer exists. The scripts are in `tools/intro/` (see its README).
 
 The marketing cut is recorded from `intro.html?film=1` the same way and muxed with the narration
 laid on the card timings. Recording it from the live page rather than building a separate video
-means the clip can never drift from the product it advertises.
+means the clip can never drift from the product it advertises. Copy the finished cut to
+`web/media/intro/reel.mp4` (the Home tab's demo video) and refresh `reel-poster.jpg` from a frame of it.

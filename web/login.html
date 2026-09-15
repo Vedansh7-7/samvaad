@@ -224,9 +224,16 @@
   var $ = function(id){ return document.getElementById(id); };
   var session = null, currentEmail = "";
   var validEmail = function(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); };
+  // Where to go after signing in. The intro's Try now arrives with ?next=talk and should land in a new session;
+  // everyone else lands on Home. Kept in localStorage too, because the magic link opens a fresh tab on app.html.
+  var NEXT = /[?&]next=talk\b/.test(location.search) ? 'talk' : '';
+  try{ if(NEXT) localStorage.setItem('samvaad.next', JSON.stringify({ to:'talk', t:Date.now() })); else localStorage.removeItem('samvaad.next'); }catch(e){}
+  var DEST = NEXT ? 'app.html#talk' : 'app.html';
+  // Fewer taps: once signed in (or in as a guest), move on by itself after a short moment.
+  function autoEnter(){ setTimeout(function(){ var b = $('enterBtn'); if(b && !b.disabled) b.click(); }, 900); }
   // Already signed in, and not in the middle of returning from a magic link: go straight to the app.
   (function(){ try{ var ss = SamvaadAuth.readSession();
-    if (ss && ss.access_token && (!ss.expires_at || ss.expires_at * 1000 > Date.now()) && !/access_token=/.test(location.hash)) location.replace('app.html');
+    if (ss && ss.access_token && (!ss.expires_at || ss.expires_at * 1000 > Date.now()) && !/access_token=/.test(location.hash)) location.replace(DEST);
   }catch(e){} })();
 
   function show(state){
@@ -239,6 +246,7 @@
     btn.disabled = on;
     btn.innerHTML = on ? '<span class="spin"></span>'+(label||'Working…') : btn.dataset.label;
   }
+  if(NEXT) $('enterBtn').textContent = 'Start a session';
   ['sendBtn','verifyBtn'].forEach(function(id){ $(id).dataset.label = $(id).textContent; });
 
   async function sbAuth(path, body){
@@ -285,7 +293,7 @@
       session = data; // contains access_token / user
       SamvaadAuth.saveSession(SamvaadAuth.fromTokenResponse(data)); // carry into app.html
       $('doneSub').textContent = 'Signed in as ' + currentEmail + '. Your reflections will be saved.';
-      show('done');
+      show('done'); autoEnter();
     }catch(err){
       m.className='msg err'; m.textContent = 'That code didn\u2019t work. Check it, or use the link in the email.';
     }finally{ busy($('verifyBtn'), false); }
@@ -319,13 +327,13 @@
     SamvaadAuth.setGuest(); // app.html allows guests through (no persistence)
     $('doneH').textContent = 'Welcome, friend.';
     $('doneSub').textContent = 'Exploring as a guest. Your sessions won\u2019t be saved until you sign in.';
-    show('done');
+    show('done'); autoEnter();
   };
   $('enterBtn').onclick = function(){
     // Session (or guest flag) is already in sessionStorage; carry it into the app.
     $('enterBtn').textContent = 'Opening your space…';
     $('enterBtn').disabled = true;
-    location.href = 'app.html';
+    location.href = DEST;
   };
 
   // submit on Enter
@@ -344,7 +352,7 @@
     history.replaceState(null, '', location.pathname + location.search); // strip tokens from the URL
     $('doneH').textContent = 'Breathe in. Let’s begin.';
     $('doneSub').textContent = 'You’re signed in. Your space is ready.';
-    show('done');
+    show('done'); autoEnter();
     SamvaadAuth.fetchUser(s.access_token).then(function(u){
       if(u && u.email) $('doneSub').textContent = 'Signed in as ' + u.email + '. Your reflections will be saved.';
     });

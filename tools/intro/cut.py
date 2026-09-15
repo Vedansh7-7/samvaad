@@ -1,4 +1,4 @@
-# Cuts the screencast into the five intro clips.
+# Cuts the screencast into the four intro clips.
 # Screencast frames only arrive when the screen changes, so each frame's on-screen time is the gap to
 # the next one. Each clip is a slice of that timeline between two markers (loading frames fall outside
 # every slice), time-scaled to its narration length, then encoded at a constant 30fps.
@@ -15,12 +15,10 @@ PAD = 0.3
 CLIPS = [
   # uploading is the headline way in, so the first clip shows a recording arriving
   ('s1', 'paste_start', 'click_analyse', 4.69 + PAD, 0.3),
-  # ends on the walk-through opener; the next slide shows an empty room until the avatars load
-  ('s2', 'score_shown', ('walk_open', 2.3), 5.99 + PAD, 0),
-  ('s3', 'act1_start',  'patterns',      6.27 + PAD, 0),
-  # ends on 'How to improve'; the 'What you did well' slide that follows does not match the caption
+  ('s2', 'score_shown', 'score_end',     5.99 + PAD, 0.4),
+  ('s3', 'act1_start',  'act1_end',      6.27 + PAD, 0),
+  # what went wrong, then what to say instead; the caption swaps between them
   ('s4', 'patterns',    ('improve', 1.65), 5.62 + PAD, 0),
-  ('s5', 'dash',        'end',           4.32 + PAD, 0),
 ]
 def slice_(a, b):
     at = lambda m: M[m[0]] + m[1] if isinstance(m, tuple) else M[m]

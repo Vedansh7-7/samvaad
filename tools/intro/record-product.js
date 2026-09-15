@@ -129,6 +129,7 @@ const HISTORY = [
   });
 
   // ── Scene 1: upload the recording ──────────────────────────────────────────
+  // Signed in, so the form only asks who you were talking with; your own name comes from Profile.
   await page.evaluate(() => {
     startSession('relationship', 'couple');
     document.getElementById('nameA').value = 'Kavya';
@@ -159,54 +160,39 @@ const HISTORY = [
   mark('click_analyse');
   await page.evaluate(() => document.getElementById('goBtn').click());
 
-  // ── Scene 2: the score ───────────────────────────────────────────────────
-  await page.waitForFunction(() => /Play the reflection/.test(document.getElementById('resultsStack').innerText), null, { timeout: 15000 });
-  await wait(120);
-  mark('score_shown');
-  await wait(2400);
-
-  mark('walk_open');
-  await page.evaluate(() => playReflection());
+  // The walk-through opens by itself after analysis (2026-09-16 review). The reel shows the score before the
+  // replay, so the recording jumps straight to each slide rather than walking them in app order.
+  await page.waitForFunction(() => document.getElementById('slides').classList.contains('show'), null, { timeout: 15000 });
   const titles = await page.evaluate(() => WALK.slides.map(s => s.eyebrow));
   console.log('slides:', JSON.stringify(titles));
-  await wait(2000);
-
   const goTo = async (re) => {
-    for (let k = 0; k < 10; k++) {
-      const eb = await page.$eval('#slideEyebrow', e => e.textContent);
-      if (new RegExp(re, 'i').test(eb)) return eb;
-      await page.evaluate(() => walkNav(1));
-      await wait(60);
-    }
-    throw new Error('slide not found: ' + re);
+    const k = await page.evaluate((src) => { const k = WALK.slides.findIndex(s => new RegExp(src, 'i').test(s.eyebrow)); if (k >= 0) { WALK.i = k; renderSlide(); } return k; }, re);
+    if (k < 0) throw new Error('slide not found: ' + re);
   };
   const riveUp = () => page.waitForFunction(() => S._rive && S._rive.a && S._rive.a.ready && S._rive.b && S._rive.b.ready, null, { timeout: 20000 }).catch(() => {});
 
-  // ── Scene 3: act 1 ───────────────────────────────────────────────────────
-  await goTo('how it went');
+  // ── Scene 2: the score ───────────────────────────────────────────────────
+  await goTo('your score');
+  await wait(150);
+  mark('score_shown');
+  await wait(2600);
+  mark('score_end');
+
+  // ── Scene 3: the conversation played back ────────────────────────────────
+  await goTo('your conversation');
   await riveUp();
   await wait(250);
   mark('act1_start');
   await wait(7200);
+  mark('act1_end');
 
-  // ── Scene 4: what went wrong, what to say, the kinder version ────────────
-  await goTo('where it caught');
+  // ── Scene 4: what went wrong, then what to say instead ───────────────────
+  await goTo('what went wrong');
   mark('patterns');
   await wait(2300);
-  await goTo('how to improve');
+  await goTo('what to say instead');
   mark('improve');
   await wait(2500);
-  await goTo('see it play out');
-  await riveUp();
-  await wait(250);
-  mark('act2_start');
-  await wait(6200);
-
-  // ── Scene 5: score tracking ──────────────────────────────────────────────
-  await page.evaluate(() => { closeSlides(); renderDash(); view('dash'); window.scrollTo({ top: 0, behavior: 'instant' }); });
-  await wait(150);
-  mark('dash');
-  await wait(3600);
   mark('end');
 
   await cdp.send('Page.stopScreencast');

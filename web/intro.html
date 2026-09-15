@@ -8,7 +8,7 @@
     device volume, with a music bed underneath that dips while someone speaks. Browsers refuse audible
     autoplay before a first interaction; when that happens the hook still plays, the reel waits a few
     seconds on a big speaker button, and the first tap anywhere starts it again with sound.
-  - It opens on a fast hook, jumps straight into REAL footage of the product (media/intro/s1-s5.mp4,
+  - It opens straight on REAL footage of the product (media/intro/s1-s4.mp4,
     recorded from app.html with every loading frame cut out), then winds down into illustration:
     a privacy beat and the two Rive rigs.
   - Product footage sits in a rounded card below its caption, so text never covers the app, and the
@@ -103,6 +103,7 @@
     font:inherit;font-size:3.4cqw;font-weight:800;color:var(--ink);padding:1.8cqw 3.2cqw;min-height:40px;cursor:pointer;white-space:nowrap;
     box-shadow:0 6px 18px -12px rgba(49,46,82,.45)}
   .skip.blog{color:var(--accent-ink)}
+  .skip.try{background:linear-gradient(180deg,var(--cherry),var(--cherry-2));color:#fff;box-shadow:0 10px 22px -12px rgba(88,72,191,.75)}
   .sound{flex:0 0 auto;width:10.5cqw;height:10.5cqw;min-width:40px;min-height:40px;padding:0;border-radius:50%;cursor:pointer;
     border:1px solid var(--glass-brd);background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
     color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 8px 22px -12px rgba(88,72,191,.55)}
@@ -205,7 +206,7 @@
       <button class="sound" id="sound" aria-label="Turn sound off" aria-pressed="true"></button>
       <span class="sp"></span>
       <button class="skip blog" id="skipBlog">Skip to blog</button>
-      <button class="skip" id="skip">Skip to sign in</button>
+      <button class="skip try" id="skip">Try now</button>
     </div>
   </div>
 
@@ -222,6 +223,8 @@ var $ = function(id){ return document.getElementById(id); };
 // ?from=app: a signed-in person replaying it from the You page goes back to the app, not to sign-in
 var FROM_APP = /[?&]from=app/.test(location.search);
 var LOGIN = FROM_APP ? 'app.html' : 'login.html', BLOG = 'how-it-works.html';
+// Try now leads straight into a new session (after sign-in); finishing the reel leads to sign-in, then Home
+var TRY = FROM_APP ? 'app.html#talk' : 'login.html?next=talk';
 var VOL = 0.75;                                   // voice at 75% of whatever the device volume is
 var MUSIC_SRC = 'audio/intro/music.mp3';          // optional; without the file the reel plays without music
 var MUSIC_BED = 0.44, MUSIC_DUCK = 0.22;          // relative to VOL: about 16 dB under the voice between lines, 22 dB under while someone speaks
@@ -254,8 +257,9 @@ function track(name, props, beacon){
    short breath, so muted and unmuted viewers share one clock.
 --------------------------------------------------------------------------- */
 var PAD = 0.3;
+// Shortened after the 2026-09-16 review: it opens on the product itself, so the promise lands in the first
+// six seconds, and the text-only hook, the privacy card and the tracking clip are gone.
 var SCENES = [
-  { kind:'hook', audio:'audio/intro/v2-00-f.mp3', dur:2.56+PAD },
   { kind:'video', src:'media/intro/s1.mp4', audio:'audio/intro/v2-01-f.mp3', dur:4.69+PAD, pos:'top',
     big:'Upload the <em>recording.</em>', small:'Or paste the chat · Hinglish · Hindi · English' },
   { kind:'video', src:'media/intro/s2.mp4', audio:'audio/intro/v2-02-m.mp3', dur:5.99+PAD, pos:'top',
@@ -265,13 +269,10 @@ var SCENES = [
   { kind:'video', src:'media/intro/s4.mp4', audio:'audio/intro/v2-04-m.mp3', dur:5.62+PAD, pos:'top',
     big:'The line that <em>turned it.</em>', small:'What went wrong',
     swap:{ at:3.45, big:'And the <em>kinder</em> one.', small:'What to say instead' } },
-  { kind:'video', src:'media/intro/s5.mp4', audio:'audio/intro/v2-05-f.mp3', dur:4.32+PAD, pos:'top',
-    big:'Watch yourselves <em>get better.</em>', small:'Your score, tracked every time' },
-  { kind:'privacy', audio:'audio/intro/v2-06-m.mp3', dur:10.4+PAD, beats:[0.15, 2.3, 5.9] },
-  { kind:'close', audio:'audio/intro/v2-07-f.mp3', dur:5.15+PAD, speaker:'a' }
+  { kind:'close', audio:'audio/intro/v3-close-f.mp3', dur:2.41+PAD, speaker:'a' }
 ];
 
-var i = -1, t0 = 0, raf = 0, au = null, soundOn = !FILM, blocked = false, holding = false, holdDone = false, holdTimer = 0, ended = false, completed = false, swapped = false;
+var lastUnlock = 0, i = -1, t0 = 0, raf = 0, au = null, soundOn = !FILM, blocked = false, holding = false, holdDone = false, holdTimer = 0, ended = false, completed = false, swapped = false;
 var layers = [];
 
 /* ---------- building each layer ---------- */
@@ -321,8 +322,8 @@ function roomSVG(){
 }
 function closeHTML(){
   return '<div class="close">'
-    + '<div class="head"><div class="eyebrow">Smart analysis</div>'
-    + '<h2 class="serif">A partner that actually <em>pays attention.</em></h2></div>'
+    + '<div class="head"><div class="eyebrow">Samvaad</div>'
+    + '<h2 class="serif">Try it, <em>visualise,</em> and score your progress.</h2></div>'
     + '<div class="room">'+roomSVG()
     + '<div class="ch a" id="ch-a"><canvas id="rv-a" width="300" height="400"></canvas></div>'
     + '<div class="ch b idle" id="ch-b"><canvas id="rv-b" width="300" height="400"></canvas></div>'
@@ -341,6 +342,8 @@ function build(){
     else if(s.kind === 'close') el.innerHTML = closeHTML();
     host.appendChild(el);
     layers.push(el);
+    // buffer each voice line up front: creating the element when its card opened made the voice start late
+    if(s.audio && !FILM){ s._au = new Audio(s.audio); s._au.preload = 'auto'; try{ s._au.load(); }catch(e){} }
   });
   $('bars').innerHTML = SCENES.map(function(){ return '<i><b></b></i>'; }).join('');
 }
@@ -492,7 +495,9 @@ function playAudioAt(at){
     if(s.kind === 'close' && at < s.dur - PAD) lipStart(s.speaker, null);
     return;
   }
-  au = new Audio(s.audio); au.volume = VOL;
+  au = s._au || (s._au = new Audio(s.audio));
+  try{ au.pause(); }catch(e){}
+  au.volume = VOL;
   try{ au.currentTime = at; }catch(e){}
   if(s.kind === 'close') lipStart(s.speaker, au);
   var pr = au.play();
@@ -558,10 +563,10 @@ function next(){
 function finish(how, dest){
   if(ended) return; ended = true;
   cancelAnimationFrame(raf); stopAudio(); stopMusic();
-  if(how === 'skipped') track('intro_skipped', { scene:i+1, at:elapsedAll(), sound:soundOn, to: dest === BLOG ? 'blog' : 'signin' }, true);
+  if(how === 'skipped') track('intro_skipped', { scene:i+1, at:elapsedAll(), sound:soundOn, to: dest === BLOG ? 'blog' : (dest === TRY ? 'try' : 'signin') }, true);
   else if(!completed) track('intro_completed', { at:elapsedAll(), sound:soundOn, early:true }, true);
   // the blog keeps the intro in history so Back returns to it; sign-in replaces it
-  if(dest === BLOG) location.href = BLOG; else location.replace(LOGIN);
+  if(dest === BLOG) location.href = BLOG; else location.replace(dest || LOGIN);
 }
 
 /* ---------- controls ---------- */
@@ -588,7 +593,7 @@ function showTapSound(on){ var b = $('tapSound'); if(b) b.classList.toggle('show
 // again from the top with sound; later on, it brings the sound in wherever they are.
 function unlock(){
   if(!blocked || ended) return;
-  blocked = false; soundOn = true; paintSound(); showTapSound(false);
+  blocked = false; soundOn = true; paintSound(); showTapSound(false); lastUnlock = Date.now();
   track('intro_sound_unlocked', { scene:i+1 });
   if(i <= 0 || holding){ clearTimeout(holdTimer); holdTimer = 0; holding = false; i = 0; show(0); }
   else playAudioAt((performance.now() - t0) / 1000);
@@ -599,12 +604,25 @@ document.addEventListener('pointerdown', function(e){
   unlock();
 }, true);
 $('tapSound').onclick = unlock;
-$('skip').onclick = function(){ finish('skipped', LOGIN); };
+// Like stories: tap the left third to go back a card, anywhere else to go to the next one.
+function prev(){
+  if(holding || holdTimer){ clearTimeout(holdTimer); holdTimer = 0; holding = false; holdDone = true; showTapSound(false); }
+  i = Math.max(0, i - 1); show(i);
+  track('intro_back', { scene:i+1 });
+}
+$('reel').addEventListener('click', function(e){
+  if(FILM || ended || i < 0 || blocked || Date.now() - lastUnlock < 500) return;
+  if(e.target.closest && e.target.closest('button,a')) return;
+  var r = $('reel').getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
+  if(x < 0.33) prev(); else if(i < SCENES.length - 1) next();
+});
+$('skip').onclick = function(){ finish('skipped', TRY); };
 $('skipBlog').onclick = function(){ finish('skipped', BLOG); };
 $('cta').onclick = function(){ finish('cta', LOGIN); };
 document.addEventListener('keydown', function(e){
   if(e.key === 'Escape') finish('skipped');
   else if(e.key === 'ArrowRight' && i < SCENES.length - 1){ e.preventDefault(); next(); }
+  else if(e.key === 'ArrowLeft' && i > 0){ e.preventDefault(); prev(); }
 });
 window.addEventListener('pagehide', function(){ if(!ended && !completed) track('intro_skipped', { scene:i+1, at:elapsedAll(), sound:soundOn, closed:true }, true); });
 
@@ -617,7 +635,7 @@ function start(){
 (function boot(){
   build();
   mountRigs();
-  if(FROM_APP){ $('skip').textContent = 'Back to app'; $('cta').textContent = 'Back to Samvaad'; }
+  if(FROM_APP){ $('cta').textContent = 'Back to Samvaad'; }
   paintSound();
   $('tapSound').innerHTML = ICON_ON;
   if(FILM){
